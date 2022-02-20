@@ -4,6 +4,7 @@ theory Faces
            LP_Duality.LP_Duality
           Jordan_Normal_Form.Matrix
           Jordan_Normal_Form.DL_Rank_Submatrix
+          Subsystems
 
 begin 
 
@@ -399,189 +400,7 @@ proof
 qed
   
 
-definition sub_system where
-  "sub_system A b I \<equiv> (submatrix A I UNIV,  vec_of_list (nths (list_of_vec b) I))"
 
-lemma sub_system_fst:
-  shows "fst (sub_system A b I) = submatrix A I UNIV" 
-  unfolding sub_system_def
-  by force
-
-lemma sub_system_snd:
-  shows "snd (sub_system A b I) = vec_of_list (nths (list_of_vec b) I)" 
-  unfolding sub_system_def
-  by force
-
-lemma dim_row_subsyst_mat:
-  shows "dim_row (fst (sub_system A b I)) = card {i. i < dim_row A \<and> i \<in> I}" 
-  using dim_submatrix(1)[of A I UNIV] sub_system_fst by metis
-
-lemma dim_col_subsyst_mat:
-  shows "dim_col (fst (sub_system A b I)) = dim_col A" 
-  using dim_submatrix(2)[of A I UNIV] sub_system_fst 
-  by (metis (no_types, lifting) Collect_cong UNIV_I card_Collect_less_nat)
-
-lemma dim_row_less_card_I:
-  assumes "finite I" 
-  shows "dim_row (fst (sub_system A b I)) \<le> card I" 
-proof -
-  have "{i. i < dim_row A \<and> i \<in> I} \<subseteq> I" by auto
-  then have "card {i. i < dim_row A \<and> i \<in> I} \<le> card I" 
-    using assms card_mono by blast
-  then show ?thesis 
-  using dim_row_subsyst_mat by metis
-qed
-
-lemma dim_subsyst_vec:
-  shows "dim_vec (snd (sub_system A b I)) = card {i. i < dim_vec b \<and> i \<in> I}"
-proof -
-  have "length (list_of_vec b) = dim_vec b" 
-    using Matrix.length_list_of_vec  carrier_vecD by blast
-  then show ?thesis
-  using sub_system_snd length_nths 
-  by (metis Matrix.length_list_of_vec list_of_vec_vec_of_list)
-qed
-
-lemma  dim_subsyst_vec_less_b:
-  shows "dim_vec (snd (sub_system A b I)) \<le> dim_vec b"
-proof -
-  have "{i. i < dim_vec b \<and> i \<in> I} \<subseteq> {0..<dim_vec b}" by auto
-  then have "card {i. i < dim_vec b \<and> i \<in> I} \<le> card  {0..<dim_vec b}" 
-    by (metis card_mono finite_atLeastLessThan)
-  then show ?thesis 
-    by (metis card_atLeastLessThan diff_zero dim_subsyst_vec)
-qed
-
-lemma  dim_subsyst_mat_less_A:
-  shows "dim_row (fst (sub_system A b I)) \<le> dim_row A"
-proof -
-  have "{i. i < dim_row A \<and> i \<in> I} \<subseteq> {0..<dim_row A}" by auto
-  then have "card {i. i < dim_row A \<and> i \<in> I} \<le> card  {0..<dim_row A}" 
-    by (metis card_mono finite_atLeastLessThan)
-  then show ?thesis 
-    by (metis card_atLeastLessThan diff_zero dim_row_subsyst_mat)
-qed
-
-lemma dims_subsyst_same:
-  assumes "dim_row A = dim_vec b"
-  shows "dim_row (fst (sub_system A b I)) = dim_vec (snd (sub_system A b I))" 
-  by (metis  assms dim_row_subsyst_mat dim_subsyst_vec) 
-
-lemma carrier_mat_subsyst:
-  assumes "dim_row A = dim_vec b"
-  shows "(fst (sub_system A b I)) \<in> carrier_mat (dim_row (fst (sub_system A b I))) (dim_col A)" 
-  using dim_col_subsyst_mat by blast
-
-lemma nths_list_pick_vec_same:
-  shows "vec_of_list (nths (list_of_vec b) I) = 
-    vec (card {i. i<dim_vec b \<and> i\<in>I})  (\<lambda> i. b $ (pick I i))"
-  by (smt (verit, best) Collect_cong Matrix.dim_vec_of_list Matrix.length_list_of_vec dim_vec eq_vecI index_vec length_nths list_of_vec_index nth_nths vec_of_list_index)
-
-lemma subsyst_b_i:
-  assumes "i< dim_vec (snd (sub_system A b I))"  
-  shows "(snd(sub_system A b I)) $ i = b $ (pick I i)" 
-  using nths_list_pick_vec_same sub_system_snd 
-  by (metis (no_types, lifting) assms dim_subsyst_vec index_vec)
-
-lemma nths_UNIV_same:
-  "nths xs UNIV = xs"
-  unfolding nths_def
-proof -
-  have "\<forall> p \<in> set ((zip xs [0..<length xs])). snd p \<in> UNIV" by blast
- 
-  then have "(filter (\<lambda>p. snd p \<in> UNIV) (zip xs [0..<length xs])) =
-          (zip xs [0..<length xs])" 
-    using filter_True by blast
-  then show " map fst (filter (\<lambda>p. snd p \<in> UNIV) (zip xs [0..<length xs])) =  xs" 
-    by simp
-qed
-
-lemma itself_is_subsyst:
- shows "(A, b) = sub_system A b UNIV" 
-proof
-  have "A = submatrix A UNIV UNIV"
-    apply rule
-      apply (simp add: dim_submatrix(1) dim_submatrix(2) pick_UNIV submatrix_index)
-  proof-
-    have "dim_row (submatrix A UNIV UNIV) = card {i. i<dim_row A \<and> i\<in>UNIV}"
-      using  dim_submatrix(1) by blast
-    then show " dim_row A = dim_row (submatrix A UNIV UNIV)" by simp
-    have "dim_col (submatrix A UNIV UNIV) = card {i. i<dim_col A \<and> i\<in>UNIV}" 
-      using  dim_submatrix(2) by fastforce
-    then show "dim_col A = dim_col (submatrix A UNIV UNIV)"
-      using  dim_submatrix(2) by simp
-  qed
-  
-  then show "fst (A, b) = fst (sub_system A b UNIV)"
-    by (metis fst_eqD sub_system_fst)
-  have "(nths (list_of_vec b) UNIV) =  (list_of_vec b)" 
-    using  nths_UNIV_same by auto  
-  then have "b = vec_of_list (nths (list_of_vec b) UNIV)" 
-    using  nths_UNIV_same by simp
-  then show "snd (A, b) = snd (sub_system A b UNIV)" 
-    by (simp add: sub_system_snd)
-qed  
-
-lemma pick_index_row_in_A:
-  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
-  fixes b
- assumes A: "A \<in> carrier_mat nr n"
- assumes b: "b \<in> carrier_vec nr"
- shows "\<forall> j < dim_vec (snd (sub_system A b I)). 
-        row (fst (sub_system A b I)) j = row A (pick I j) \<and> (snd (sub_system A b I)) $ j = b $ (pick I j)"
-proof(rule)
-  fix j
-  have "dim_row A = dim_vec b" 
-    using A b  by simp
-  show " j < dim_vec (snd (sub_system A b I)) \<longrightarrow>
-         row (fst (sub_system A b I)) j = row A (pick I j) \<and> snd (sub_system A b I) $ j = b $ (pick I j)"
-  proof
-    assume "j < dim_vec (snd (sub_system A b I))" 
-    then have "j < card {i. i < dim_row A \<and> i \<in> I}" 
-      using `dim_row A = dim_vec b`  
-      by (metis  dim_subsyst_vec)
-    have "row (submatrix A I UNIV) j = row A (pick I j)" 
-      using row_submatrix_UNIV[of j A I]  
-      using \<open>j < card {i. i < dim_row A \<and> i \<in> I}\<close> by blast
-
-
-  show "row (fst (sub_system A b I)) j = row A (pick I j) \<and> (snd (sub_system A b I)) $ j = b $ (pick I j)" 
-    
-    by (metis \<open>j < dim_vec (snd (sub_system A b I))\<close> \<open>row (submatrix A I UNIV) j = row A (pick I j)\<close> sub_system_fst subsyst_b_i)
-qed
-qed
-
-lemma exist_index_in_A:
-  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
-  fixes b
- assumes A: "A \<in> carrier_mat nr n"
- assumes b: "b \<in> carrier_vec nr"
- shows "\<forall> j < dim_vec (snd (sub_system A b I)). 
-        \<exists> i < nr. i \<in> I \<and> row (fst (sub_system A b I)) j = row A i \<and> (snd (sub_system A b I)) $ j = b $ i"
-proof(rule)
-  fix j
-  have "dim_row A = dim_vec b" 
-    using A b  by simp
-  show " j < dim_vec (snd (sub_system A b I)) \<longrightarrow>
-         (\<exists>i<nr. i \<in> I \<and> row (fst (sub_system A b I)) j = row A i \<and> snd (sub_system A b I) $ j = b $ i)"
-  proof
-    assume "j < dim_vec (snd (sub_system A b I))" 
-    then have "j < card {i. i < dim_row A \<and> i \<in> I}" 
-      using `dim_row A = dim_vec b`  
-      by (metis  dim_subsyst_vec)
-  
-    have "(pick I j) < nr" 
-      by (metis  \<open>j < dim_vec (snd (sub_system A b I))\<close> b carrier_vecD gram_schmidt.dim_subsyst_vec pick_le)
-    have "(pick I j) \<in> I" 
-      apply(cases "finite I") 
-       apply (metis (mono_tags, lifting) \<open>dim_row A = dim_vec b\<close> \<open>j < dim_vec (snd (sub_system A b I))\<close> dim_row_less_card_I dims_subsyst_same le_trans linorder_not_le pick_in_set_le)
-      using pick_in_set_inf by auto
-
-  then show " \<exists> i < nr. i \<in> I \<and> row (fst (sub_system A b I)) j = row A i \<and> (snd (sub_system A b I)) $ j = b $ i" 
-    
-    by (meson A \<open>j < dim_vec (snd (sub_system A b I))\<close> \<open>pick I j < nr\<close> b pick_index_row_in_A)
-qed
-qed
 
 lemma eqwe:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
@@ -597,7 +416,8 @@ lemma eqwe:
   and " fst (sub_system A b {i. y $ i > 0 \<and> i < nr})  *\<^sub>v x  = snd (sub_system A b {i. y $ i > 0 \<and> i < nr})" 
   (is "?A' *\<^sub>v x = ?b'")
 proof -
-
+  have "dim_row A = dim_vec b"
+      using A  b by auto
   have "y \<in> carrier_vec nr" 
     by (metis assms(6) carrier_vec_dim_vec index_zero_vec(2) less_eq_vec_def)
   show "x \<in> P" using assms(7) P_def 
@@ -613,7 +433,7 @@ proof -
     fix i
     assume "i < dim_vec ?b'" 
     then obtain j where "j < nr \<and> j \<in> {i. y $ i > 0 \<and> i < nr} \<and> row ?A' i = row A j \<and> ?b' $ i = b $ j"
-      using exist_index_in_A[of A nr b "{i. y $ i > 0 \<and> i < nr}"]   
+      using exist_index_in_A[of A b "{i. y $ i > 0 \<and> i < nr}"]  `dim_row A = dim_vec b`
       using A  b by blast
     then have " (row A j) \<bullet> x = b $ j" 
       using \<open>\<forall>i\<in>{i. 0 < y $ i \<and> i < nr}. row A i \<bullet> x = b $ i\<close> by blast
@@ -651,6 +471,7 @@ lemma eqwe2:
 assumes "x \<in> P" 
 shows "\<alpha> \<bullet> x = \<beta>" 
 proof -
+  have "dim_row A = dim_vec b" using A b by auto
   let ?I = "{i. y $ i > 0 \<and> i < nr}"
 
   have "\<forall> i < dim_vec ?b'. (row ?A' i) \<bullet> x = ?b' $ i"
@@ -676,7 +497,7 @@ proof -
         using \<open>card {a \<in> {i. 0 < y $ i \<and> i < nr}. a < i} < dim_vec (snd (sub_system A b {i. 0 < y $ i \<and> i < nr}))\<close> \<open>pick {i. 0 < y $ i \<and> i < nr} (card {a \<in> {i. 0 < y $ i \<and> i < nr}. a < i}) = i\<close> by blast
       then obtain j where "j < dim_vec ?b'\<and> pick ?I j  = i" by auto
       then have "row A i = row ?A' j" 
-        by (metis (no_types, lifting) A b gram_schmidt.pick_index_row_in_A)
+        by (metis (no_types, lifting) `dim_row A = dim_vec b`pick_index_row_in_A)
       have "b $ i = ?b' $ j" 
         by (simp add: \<open>j < dim_vec (snd (sub_system A b {i. 0 < y $ i \<and> i < nr})) \<and> pick {i. 0 < y $ i \<and> i < nr} j = i\<close> subsyst_b_i)
       then show "(row A i) \<bullet> x = b $ i" 
@@ -753,7 +574,7 @@ lemma subsyst_valid:
  assumes b: "b \<in> carrier_vec nr"
  assumes "x \<in> polyhedron A b" 
  shows "fst (sub_system A b I) *\<^sub>v x \<le> snd (sub_system A b I)"  
-  by (smt (verit, del_insts) A assms(3) b carrier_matD(1) dim_mult_mat_vec dims_subsyst_same gram_schmidt.exist_index_in_A gram_schmidt.polyhedron_def index_mult_mat_vec less_eq_vec_def mem_Collect_eq)
+  by (smt (verit, del_insts) A assms(3) b carrier_matD(1) dim_mult_mat_vec dims_subsyst_same exist_index_in_A gram_schmidt.polyhedron_def index_mult_mat_vec less_eq_vec_def mem_Collect_eq)
 
 
 
@@ -850,7 +671,7 @@ proof -
     }
     show " A'\<^sup>T *\<^sub>v 1\<^sub>v (dim_vec b') \<in> carrier_vec n"
       
-      by (metis A assms(4) b carrier_matD(1) carrier_matD(2) carrier_vecD gram_schmidt.carrier_mat_subsyst gram_schmidt.dims_subsyst_same mult_mat_vec_carrier one_carrier_vec prod.sel(1) prod.sel(2) transpose_carrier_mat)
+      by (metis A assms(4) b carrier_matD(1) carrier_matD(2) carrier_vecD carrier_mat_subsyst dims_subsyst_same mult_mat_vec_carrier one_carrier_vec prod.sel(1) prod.sel(2) transpose_carrier_mat)
   qed
   then show "face P F" using face_intro2[of P ?\<alpha> ?\<beta> F] assms(5-6)
         `{x. A' *\<^sub>v x = b' \<and> x \<in> P} = {x. ?\<alpha> \<bullet> x = ?\<beta> \<and> x \<in> P}` by auto 
@@ -945,33 +766,12 @@ lemma min_face_intro[intro]:
   shows "min_face P F"
   unfolding min_face_def using assms by auto
 
-lemma insert_sub_system:
-  assumes "i \<notin> I" 
-  assumes "(A', b') = sub_system A b I" 
-  assumes "(A'', b'') = sub_system A b (I \<union> {i})"
-  shows "{x. A'' *\<^sub>v x = b''} = {x. A' *\<^sub>v x = b' \<and> row A i \<bullet> x = b $ i}"
-  sorry
 
-lemma remove_index_sub_system:
-  assumes "i \<in> I"
-  assumes "(A', b') = sub_system A b I" 
-  assumes "(A'', b'') = sub_system A b (I - {i})"
-  shows "{x. A' *\<^sub>v x \<le> b'} = {x. A'' *\<^sub>v x \<le> b'' \<and> row A i \<bullet> x \<le> b $ i}"
-  sorry
+thm "pick_index_row_in_A" 
 
-lemma remove_index_sub_system_dims:
-  assumes "i \<in> I"
-  assumes "(A', b') = sub_system A b I" 
-  assumes "(A'', b'') = sub_system A b (I - {i})"
-  shows "dim_vec b' = dim_vec b'' + 1"
-  sorry
 
-lemma add_index_sub_system_dims:
-  assumes "i \<notin> I"
-  assumes "(A', b') = sub_system A b I" 
-  assumes "(A'', b'') = sub_system A b (I \<union> {i})"
-  shows "dim_vec b'' = dim_vec b' + 1"
-  sorry
+     
+ 
 
 lemma smult_minus_distrib_vec:
   assumes "v \<in> carrier_vec n" "w \<in> carrier_vec n"
@@ -997,8 +797,14 @@ lemma char_min_face1:
  assumes "min_face P F"
  obtains A' b' I where  " F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'}" "(A', b') = sub_system A b I" 
 proof -
-  have 1: "finite  {dim_vec d| C d I.  (C, d) = sub_system A b I \<and> F = {x. C *\<^sub>v x = d \<and> x \<in> P}}"
-    sorry
+  have "dim_vec b = nr" using b by auto
+  let ?M = "{dim_vec d| C d I.  (C, d) = sub_system A b I \<and> F = {x. C *\<^sub>v x = d \<and> x \<in> P}}"
+  
+  have "\<forall> nd \<in> ?M. nd\<le> nr"  
+    by (smt (verit, ccfv_SIG) \<open>dim_vec b = nr\<close> dim_subsyst_vec_less_b mem_Collect_eq snd_eqD)
+  then have "?M \<subseteq> {0..<nr+1}" by fastforce 
+  then have 1:"finite ?M"  
+    using subset_eq_atLeast0_lessThan_finite by blast
   have "face P F" using assms(4) min_face_elim by simp
   then obtain A' b' I  where sub_A:"((A', b') = sub_system A b I)" 
                       "F = {x. A' *\<^sub>v x = b' \<and> x \<in> P}"
@@ -1013,21 +819,86 @@ proof -
        "dim_vec b'' = Min {dim_vec d| C d I.  (C, d) = sub_system A b I 
                                   \<and> F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}}"
     using  exist_min_ineq_subsystem[of A nr b A' b' I F] assms(1-3) by auto
-  have "I \<inter> I'' = {}" sorry
 
+  let ?N =  "{dim_vec d| C d I.  (C, d) = sub_system A b I 
+                                  \<and> F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}}" 
+
+ have "dim_vec b = nr" using b by auto
+
+  have "\<forall> nd \<in> ?N. nd\<le> nr"  
+    by (smt (verit, ccfv_SIG) \<open>dim_vec b = nr\<close> dim_subsyst_vec_less_b mem_Collect_eq snd_eqD)
+  then have "?N \<subseteq> {0..<nr+1}" by fastforce 
+  then have 2:"finite ?N"  
+    using subset_eq_atLeast0_lessThan_finite by blast
+  have "I \<inter> I'' \<inter> {0..<nr}= {}"
+  proof(rule ccontr)
+    assume "I \<inter> I'' \<inter> {0..<nr}\<noteq> {}" 
+    then obtain i where i:"i \<in> I \<and> i \<in> I'' \<and> i < nr" by fastforce
+    then obtain C d where "(C, d) = sub_system A b (I'' - {i})" 
+      by (metis surj_pair)
+    
+    then have "{x. A'' *\<^sub>v x \<le> b''} = {x. C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i}"
+      using remove_index_sub_system[of A b i I'' A'' b'' C d] 
+      using \<open>(A'', b'') = sub_system A b I''\<close> i 
+      using A \<open>dim_vec b = nr\<close> by blast
+    moreover have "{x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> A'' *\<^sub>v x \<le> b'' } =
+            {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'} \<inter> {x.  A'' *\<^sub>v x \<le> b''}" by auto
+    moreover have "{x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i} =
+            {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'} \<inter> {x. C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i}" by auto
+    ultimately have "F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i}"
+      using \<open>F = {x \<in> carrier_vec n. A' *\<^sub>v x = b' \<and> A'' *\<^sub>v x \<le> b''}\<close> by presburger
+    have "{x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i} =
+          {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}"
+    proof(safe) 
+      fix x
+      assume "x \<in> carrier_vec n" "C *\<^sub>v x \<le> d" "b' = A' *\<^sub>v x" 
+      obtain j where "j < dim_vec (snd (sub_system A b I)) \<and>
+       row (fst (sub_system A b I)) j = row A i \<and> 
+          (snd (sub_system A b I)) $ j = b $ i" using exist_index_in_A'[of A b i I] i
+        using A \<open>dim_vec b = nr\<close> b by blast
+      then have "row A' j = row A i \<and> b' $ j = b $ i" 
+        by (metis fst_conv snd_conv sub_A(1))
+      have "j < dim_row A'" 
+        by (metis A \<open>j < dim_vec (snd (sub_system A b I)) \<and> row (fst (sub_system A b I)) j = row A i \<and> snd (sub_system A b I) $ j = b $ i\<close> b carrier_matD(1) carrier_vecD dims_subsyst_same prod.sel(1) sub_A(1))
+
+      then have "b' $ j = row A' j \<bullet> x" using `b' = A' *\<^sub>v x` unfolding mult_mat_vec_def by simp
+      then have "b $ i = row A i \<bullet> x" using `row A' j = row A i \<and> b' $ j = b $ i` by auto
+      then show "row A i \<bullet> x \<le> b $ i" by auto
+    qed
+    then have "F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}" 
+      using \<open>F = {x \<in> carrier_vec n. A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i}\<close> by fastforce
+  
+     then have "dim_vec d \<in> {dim_vec d| C d I.  (C, d) = sub_system A b I
+                                  \<and> F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}}" 
+       using `(C, d) = sub_system A b (I'' - {i})` by blast
+   then have "dim_vec d \<ge> Min {dim_vec d| C d I.  (C, d) = sub_system A b I
+                                  \<and> F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}}"
+     using 2 by auto
+   then have "dim_vec d \<ge> dim_vec b''" using `dim_vec b'' = Min {dim_vec d| C d I.  (C, d) = sub_system A b I 
+                                  \<and> F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}}`
+     by auto
+   have "dim_vec d + 1 = dim_vec b''"
+     using \<open>(A'', b'') = sub_system A b I''\<close> \<open>(C, d) = sub_system A b (I'' - {i})\<close> i remove_index_sub_system_dims 
+     by (metis \<open>dim_vec b = nr\<close>)
+   then have "dim_vec d < dim_vec b''" by auto
+   then show False 
+     using \<open>dim_vec b'' \<le> dim_vec d\<close> linorder_not_le by blast
+ qed
   have "dim_vec b'' = 0" 
   proof(rule ccontr)
     assume "dim_vec b'' \<noteq> 0" 
     then have "dim_vec b'' > 0" by auto
   then obtain j where "j < dim_vec b''" by auto
   then obtain i where "i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i" 
-      using exist_index_in_A[of A nr b I''] 
-      by (metis A \<open>(A'', b'') = sub_system A b I''\<close> b fst_conv snd_conv)
+      using exist_index_in_A[of A  b I''] 
+      by (metis A \<open>(A'', b'') = sub_system A b I''\<close> \<open>dim_vec b = nr\<close> carrier_matD(1) fst_conv snd_conv)
     obtain C d where sub_C: "((C, d) = sub_system A b (I'' - {i}))" 
       by (metis surj_pair)
     have "{x. A'' *\<^sub>v x \<le> b''} = {x. C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i}"    
-      using remove_index_sub_system[of i I'' A'' b'' A b C d]  
-      using \<open>(A'', b'') = sub_system A b I''\<close> \<open>(C, d) = sub_system A b (I'' - {i})\<close> \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close> by fastforce
+      using remove_index_sub_system[of A b i I'' A'' b''  C d]  
+      using \<open>(A'', b'') = sub_system A b I''\<close> 
+            \<open>(C, d) = sub_system A b (I'' - {i})\<close> \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close> 
+      using A \<open>dim_vec b = nr\<close> by blast
     moreover have "{x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i} = 
       {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'} \<inter> {x.  C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i}"
       by blast
@@ -1043,9 +914,7 @@ proof -
     show False
     proof(cases "{x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d} \<inter> {x. row A i \<bullet> x > b $ i} = {}")
       case True
-      have 1: "finite {dim_vec d| C d I.  (C, d) = sub_system A b I
-                                  \<and> F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}}"
-        sorry
+     
       have "{x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i} = 
           {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}" 
         using True by fastforce
@@ -1060,12 +929,16 @@ proof -
      by auto 
    then have "dim_vec d \<ge> Min {dim_vec d| C d I.  (C, d) = sub_system A b I
                                   \<and> F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}}"
-     using 1 by auto
+     using 2 by auto
    then have "dim_vec d \<ge> dim_vec b''" using `dim_vec b'' = Min {dim_vec d| C d I.  (C, d) = sub_system A b I 
                                   \<and> F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d}}`
      by auto
-   have "dim_vec d + 1 = dim_vec b''" 
-     by (metis \<open>(A'', b'') = sub_system A b I''\<close> \<open>(C, d) = sub_system A b (I'' - {i})\<close> \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close> remove_index_sub_system_dims)
+   have "dim_vec d + 1 = dim_vec b''" using
+    \<open>(A'', b'') = sub_system A b I''\<close> 
+    \<open>(C, d) = sub_system A b (I'' - {i})\<close> 
+    \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close> 
+      remove_index_sub_system_dims 
+     by (metis \<open>dim_vec b = nr\<close>)
    then have "dim_vec d < dim_vec b''" by auto
    
       
@@ -1116,8 +989,21 @@ proof -
           then have "?z = (1 - ?l) \<cdot>\<^sub>v y + ?l  \<cdot>\<^sub>v x"
             using diff_smult_distrib_vec[of 1 ?l y] `?z =  y  + ?l  \<cdot>\<^sub>v x - ?l \<cdot>\<^sub>v y `  
             by presburger
-            have "0 < ?l" sorry
-            have "?l < 1" sorry
+          have "0 < ?l" 
+          proof - 
+            have "b $ i - row A i \<bullet> y < 0" using y by auto
+            have "row A i \<bullet> x - row A i \<bullet> y < 0" using y x by auto
+            then show "0 < ?l" 
+              using \<open>b $ i - row A i \<bullet> y < 0\<close> divide_neg_neg by blast
+          qed
+          have "?l \<le> 1" 
+          proof -
+            have "b $ i \<ge> row A i \<bullet> x" using x by auto
+            then have " b $ i - row A i \<bullet> y \<ge> row A i \<bullet> x - row A i \<bullet> y"
+              by auto
+            then show "?l \<le> 1" 
+              by (meson divide_le_eq_1_neg less_iff_diff_less_0 order_le_less_trans y)
+          qed
             have "?z \<in> carrier_vec n" 
               by (simp add: \<open>x \<in> carrier_vec n\<close> \<open>y \<in> carrier_vec n\<close>)
             have " A' *\<^sub>v ?z = b'" 
@@ -1168,8 +1054,8 @@ proof -
                   unfolding mult_mat_vec_def 
                   by (metis \<open>C *\<^sub>v y \<le> d\<close> \<open>j < dim_vec d\<close> dim_vec index_mult_mat_vec less_eq_vec_def)
                 then have "(1 - ?l) * (row C j \<bullet> y) \<le> (1 - ?l) * d $ j" 
-                  using `?l < 1` 
-                  by simp
+                  using `?l \<le> 1`  
+                  by (simp add: m_comm mult_right_mono)
                 then have "row C j \<bullet> ((1 - ?l) \<cdot>\<^sub>v y) = (1 - ?l) * (row C j \<bullet> y)"
                   using  `row C j \<in> carrier_vec n`  `y \<in> carrier_vec n` by auto    
                 then have "row C j \<bullet> ((1 - ?l) \<cdot>\<^sub>v y) \<le> (1 - ?l) * d $ j" 
@@ -1194,7 +1080,7 @@ proof -
                   by (smt (verit, del_insts) R.add.m_comm \<open>y + (b $ i - row A i \<bullet> y) / (row A i \<bullet> x - row A i \<bullet> y) \<cdot>\<^sub>v (x - y) = (1 - (b $ i - row A i \<bullet> y) / (row A i \<bullet> x - row A i \<bullet> y)) \<cdot>\<^sub>v y + (b $ i - row A i \<bullet> y) / (row A i \<bullet> x - row A i \<bullet> y) \<cdot>\<^sub>v x\<close> add_diff_cancel_left' add_diff_eq comm_semiring_class.distrib m_comm r_one)
               qed
               have "dim_row C = dim_vec d" 
-                by (metis A b carrier_matD(1) carrier_vecD gram_schmidt.dims_subsyst_same prod.sel(1) prod.sel(2) sub_C)
+                by (metis A b carrier_matD(1) carrier_vecD dims_subsyst_same prod.sel(1) prod.sel(2) sub_C)
               then show ?thesis using `\<forall> j < dim_vec d. row C j \<bullet> ?z \<le> d $ j` unfolding mult_mat_vec_def 
                 by (simp add: less_eq_vec_def)
             qed
@@ -1204,13 +1090,14 @@ proof -
               using \<open>F = {x \<in> carrier_vec n. A' *\<^sub>v x = b' \<and> C *\<^sub>v x \<le> d \<and> row A i \<bullet> x \<le> b $ i}\<close> by presburger
             then have "?z \<in> P" using `face P F`  
               by (metis IntE gram_schmidt.face_def)
-            have "i \<notin> I" using `I \<inter> I'' = {}` 
-              using \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close> by blast
-             
+            have "i \<notin> I" using `I \<inter> I'' \<inter> {0..<nr}= {}` 
+              using \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close>
+              by fastforce
            obtain C' d'  where "(C', d') = sub_system A b (I \<union> {i})" 
              by (metis surj_pair)
            then have "{x. C' *\<^sub>v x = d'} = {x. A' *\<^sub>v x = b' \<and> row A i \<bullet> x = b $ i}" 
-             by (smt (verit, best) Collect_cong \<open>i \<notin> I\<close> insert_sub_system sub_A(1))
+             using insert_sub_system[of A b i I A' b' C' d'] \<open>i \<notin> I\<close> sub_A(1)
+             using A \<open>dim_vec b = nr\<close> \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close> by blast
            then have "{x. C' *\<^sub>v x = d' \<and> x \<in> P} = {x. A' *\<^sub>v x = b' \<and> row A i \<bullet> x = b $ i \<and> x \<in> P}" 
              by blast
            have "?z \<in>  {x. A' *\<^sub>v x = b' \<and> row A i \<bullet> x = b $ i \<and> x \<in> P}" 
@@ -1233,7 +1120,8 @@ proof -
            then have "dim_vec d' \<le> dim_vec b'" 
              using sub_A(3) by presburger
            have "dim_vec d' = dim_vec b' + 1" using add_index_sub_system_dims 
-             using \<open>(C', d') = sub_system A b (I \<union> {i})\<close> \<open>i \<notin> I\<close> sub_A(1) by blast
+             using \<open>(C', d') = sub_system A b (I \<union> {i})\<close> \<open>i \<notin> I\<close> sub_A(1) 
+             using \<open>dim_vec b = nr\<close> \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close> by blast
         then show ?thesis 
           using \<open>dim_vec d' \<le> dim_vec b'\<close> by linarith
       qed
