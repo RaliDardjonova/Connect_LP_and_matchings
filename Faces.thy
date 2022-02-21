@@ -32,9 +32,6 @@ lemma scalar_prod_right_one[simp]: "(v :: 'a :: semiring_1 vec) \<in> carrier_ve
 context gram_schmidt
 begin
 
-
-
-
 definition support_hyp where
   "support_hyp P \<alpha> \<beta> \<equiv> (\<beta> = Maximum { \<alpha> \<bullet> x | x. x \<in> P}) 
                         \<and> has_Maximum { \<alpha> \<bullet> x | x. x \<in> P} 
@@ -84,8 +81,6 @@ lemma exists_greater_if_not_Maximum:
   using assms 
   by (metis assms(2) eqMaximumI leI) 
 
-
-
 lemma valid_ineq_non_empty_is_support:
   assumes "valid_ineq P \<alpha> \<beta>"
   assumes "{x. \<alpha> \<bullet> x = \<beta>} \<inter> P \<noteq> {}"
@@ -95,15 +90,8 @@ proof
     by blast
   then have " \<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}"
     by auto
-  show "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P}"
-  proof(rule ccontr)
-    assume " \<beta> \<noteq> Maximum {\<alpha> \<bullet> x |x. x \<in> P}"
-    then have "\<exists> x \<in> P. \<alpha> \<bullet> x > \<beta>" 
-      
-      by (smt (verit) \<open>\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}\<close> exists_greater_if_not_Maximum mem_Collect_eq)
-    then show False using assms(1) 
-      by (meson leD valid_ineq_def)
-  qed
+  then show "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P}" 
+    by (smt (verit, ccfv_SIG) assms(1) eqMaximumI mem_Collect_eq valid_ineq_elim(1))
   show "has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}" 
     using \<open>\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}\<close> assms(1) has_Maximum_def valid_ineq_elim by fast
   show "\<alpha> \<in> carrier_vec n" 
@@ -115,23 +103,19 @@ lemma support_hyp_is_valid:
   shows  "valid_ineq P \<alpha> \<beta>"
      and "{x. \<alpha> \<bullet> x = \<beta>} \<inter> P \<noteq> {}"
 proof
-  have "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P}  \<and> has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}" using assms by force 
+  have \<beta>_max: "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P} \<and> has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}" using assms by force 
   then show "\<forall>x\<in>P. \<alpha> \<bullet> x \<le> \<beta>" 
     using has_MaximumD(2) by blast
   have "\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}" 
-    using \<open>\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P} \<and> has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}\<close> has_MaximumD(1) by blast
+    using \<beta>_max has_MaximumD(1) by blast
   then show "{x. \<alpha> \<bullet> x = \<beta>} \<inter> P \<noteq> {}" 
     by blast
   show "\<alpha> \<in> carrier_vec n" 
     using assms support_hyp_elim(3) by blast
 qed
 
-
-
 definition face :: "'a vec set \<Rightarrow> 'a vec set \<Rightarrow> bool" where
   "face P F \<equiv> P \<noteq> {} \<and> (\<exists> \<alpha> \<beta>. F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta> )"
-
-
 
 lemma face_elim[elim]:
   assumes "face P F"
@@ -170,38 +154,24 @@ lemma face_non_empty:
   using assms by blast
 
 lemma face_subset_polyhedron:
-  assumes "face (polyhedron A b) F"
-  shows "F \<subseteq> polyhedron A b"
+  assumes "face P F"
+  shows "F \<subseteq> P"
   using assms unfolding face_def 
   by auto
 
 lemma face_is_Max':
-  fixes A b
-  defines "P \<equiv> polyhedron A b"
   assumes "F = {x. \<alpha> \<bullet> x = \<beta>  \<and> x \<in> P}"
   assumes "valid_ineq P \<alpha> \<beta>"
   assumes "F \<noteq> {}" 
-  shows "\<beta> =  Maximum {\<alpha> \<bullet> x | x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}" (is "\<beta> = Maximum ?Ineq")
-  and "has_Maximum {\<alpha> \<bullet> x | x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}"  (is "has_Maximum ?Ineq")
+  shows "\<beta> =  Maximum {\<alpha> \<bullet> x | x. x \<in> P}" (is "\<beta> = Maximum ?Ineq")
+  and "has_Maximum {\<alpha> \<bullet> x | x. x \<in> P}"  (is "has_Maximum ?Ineq")
 proof - 
-  have "P \<noteq> {}" using assms unfolding face_def by auto
-  obtain x where "x \<in> F" using assms(4) by auto
-  then have "\<beta> = \<alpha> \<bullet> x" using assms(2) by auto
-  have "x \<in> carrier_vec n \<and>  A *\<^sub>v x \<le> b"
-    using assms(1) unfolding polyhedron_def 
-    using assms(2)
-    
-    using \<open>x \<in> F\<close> by fastforce
-  then have "\<beta> \<in> {\<alpha> \<bullet> x | x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}"
-    using `\<beta> = \<alpha> \<bullet> x` by auto
+  have "\<beta> \<in> {\<alpha> \<bullet> x | x. x \<in> P}" using assms(1) assms(3) by auto
   then show "\<beta> = Maximum ?Ineq" 
-    using assms(3) unfolding valid_ineq_def
-    using assms(1) unfolding polyhedron_def 
-    by (smt (verit, ccfv_threshold) eqMaximumI mem_Collect_eq)
-  show "has_Maximum ?Ineq"   
-    by (smt (verit, best) P_def \<open>\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}\<close> assms(3) gram_schmidt.polyhedron_def has_Maximum_def mem_Collect_eq valid_ineq_elim(1))
+    by (smt (verit, best) assms(2) eqMaximumI valid_ineq_def mem_Collect_eq)
+  show "has_Maximum ?Ineq"
+    using \<open>\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}\<close> assms(2) has_Maximum_def valid_ineq_elim(1) by fastforce
 qed
-
 
 lemma face_primal_bounded:
   fixes A b
@@ -244,271 +214,137 @@ proof -
     using A \<open>\<alpha> \<in> carrier_vec n\<close> \<open>b \<in> carrier_vec nr\<close> bounded sat by blast
 qed
 
-
-lemma asas:
-  fixes a b :: "'a ::  trivial_conjugatable_linordered_field"
-  assumes "a \<ge> 0"
-  assumes "b \<ge> 0"
-  assumes "a +b =0"
-  shows "a = 0 \<and> b = 0" 
-  using add_nonneg_eq_0_iff assms(1) assms(2) assms(3) by blast
-
-lemma wef:
+lemma if_sum_0_then_all_0:
   fixes f :: "nat \<Rightarrow> 'a :: trivial_conjugatable_linordered_field"
   assumes "(\<Sum>i = 0..<nr. f i) = 0"
   assumes "\<forall> i < nr. f i \<ge> 0"
   shows "\<forall> i < nr. f i = 0" 
   using assms(1-2)
-proof(induct rule: nat_induct)
-  case 0
-  then show ?case by auto
-next
-  case (Suc n)
-  have "\<forall>i<n. 0 \<le> f i" 
-    using Suc.prems(2) by force
-  then have "(\<Sum>i = 0..<n. f i) \<ge> 0" 
-    by (meson atLeastLessThan_iff sum_nonneg)
-  have "(\<Sum>i = 0..<(Suc n). f i) = (\<Sum>i = 0..<n. f i) + f n" 
-    by simp
-  have "f n \<ge> 0" 
-    by (simp add: Suc.prems(2))
-  then have "f n = 0" using asas 
-    using Suc(2) \<open>0 \<le> sum f {0..<n}\<close> \<open>sum f {0..<Suc n} = sum f {0..<n} + f n\<close> by presburger
-  then show "\<forall>i<Suc n. f i = 0" 
-    by (metis Suc(2) Suc.hyps \<open>0 \<le> f n\<close> \<open>0 \<le> sum f {0..<n}\<close> \<open>\<forall>i<n. 0 \<le> f i\<close> \<open>sum f {0..<Suc n} = sum f {0..<n} + f n\<close> asas less_Suc_eq)
-qed
- 
+  apply (induct rule: nat_induct)
+   apply blast
+  by (metis add_nonneg_eq_0_iff atLeastLessThan_iff less_Suc_eq 
+      sum.atLeast0_lessThan_Suc sum_nonneg)
+
+lemma dsf:
+ fixes a :: "'a :: trivial_conjugatable_linordered_field vec"
+ assumes "a \<in> carrier_vec nr"
+ assumes "b \<in> carrier_vec nr"
+  assumes "y \<in> carrier_vec nr"
+  assumes "a \<le> b" 
+  assumes "y \<bullet> a = y \<bullet> b" 
+  assumes "y \<ge> 0\<^sub>v nr" 
+  shows "\<forall> i < nr. y $ i * (b - a) $ i = 0" 
+proof -
+  have "y \<bullet> b - y \<bullet> a  = 0" using assms(5)  by auto
+  then have "y \<bullet> (b - a) = 0" 
+    by (metis assms(1-3) scalar_prod_minus_distrib)
+  then have "(\<Sum>i = 0..<nr. y $ i * (b - a) $ i) = 0"
+     unfolding scalar_prod_def
+     by (metis assms(1) carrier_vecD index_minus_vec(2))
+   have "\<forall> i < nr. y $ i * (b - a) $ i \<ge> 0" 
+     by (metis assms(1) assms(2) assms(3) assms(4) assms(6) carrier_vecD diff_ge_0_iff_ge 
+         index_minus_vec(1) index_zero_vec(1) lesseq_vecD zero_le_mult_iff)
+   then show "\<forall> i < nr. y $ i * (b - a) $ i = 0"  using if_sum_0_then_all_0 
+     using \<open>(\<Sum>i = 0..<nr. y $ i * (b - a) $ i) = 0\<close> by blast
+ qed
 
 lemma complementary_slackness:
- fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
- fixes b
- assumes A: "A \<in> carrier_mat nr n"
- assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
-  assumes "P \<noteq> {}" 
+  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
   assumes "x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b \<and> \<alpha> \<bullet> x = \<beta>"
   assumes "y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha> \<and> b \<bullet> y = \<beta>" 
   shows "\<forall> i < nr. y $ i = 0 \<or> (row A i) \<bullet> x = b $ i"
-proof(rule)
-      have "\<alpha> \<bullet> x = b \<bullet> y" using assms(5-6)  
-        by presburger 
-      have " (A\<^sup>T *\<^sub>v y) \<bullet> x = \<alpha> \<bullet> x" 
-        by (simp add: assms(6))
-      have "y \<in> carrier_vec  nr" using assms(6)
-              using Matrix.less_eq_vec_def 
-  by (metis carrier_vec_dim_vec index_zero_vec(2)) 
+proof -
+  have "dim_row A = nr" using A by auto
+  have "y \<in> carrier_vec nr" 
+    by (metis assms(4) carrier_dim_vec index_zero_vec(2) less_eq_vec_def)
   then   have "(A\<^sup>T *\<^sub>v y) \<bullet> x = y \<bullet> (A *\<^sub>v x)" using transpose_vec_mult_scalar[of A nr n x y]  
-    using assms(1) assms(5) by simp
+    using assms(1) assms(3) by simp
   then have " y \<bullet> (A *\<^sub>v x) = y \<bullet> b" 
-    by (metis \<open>(A\<^sup>T *\<^sub>v y) \<bullet> x = \<alpha> \<bullet> x\<close> \<open>\<alpha> \<bullet> x = b \<bullet> y\<close> \<open>y \<in> carrier_vec nr\<close> b comm_scalar_prod)
-  then have "y \<bullet> b - y \<bullet> (A *\<^sub>v x)  = 0" by auto
-  then have "y \<bullet> ( b - (A *\<^sub>v x) ) = 0" 
-    by (metis \<open>y \<in> carrier_vec nr\<close> assms(5) b carrier_vecD carrier_vec_dim_vec less_eq_vec_def scalar_prod_minus_distrib)
-  have "b  \<ge> A *\<^sub>v x" using assms(5) by auto 
-   have "b - A *\<^sub>v x \<ge> 0\<^sub>v nr"
-     unfolding less_eq_vec_def
-   proof
-     show"dim_vec (0\<^sub>v nr) = dim_vec (b - A *\<^sub>v x)" 
-       by (metis \<open>A *\<^sub>v x \<le> b\<close> b carrier_vecD index_minus_vec(2) index_zero_vec(2) less_eq_vec_def)
-     show "\<forall>i<dim_vec (b - A *\<^sub>v x). 0\<^sub>v nr $ i \<le> (b - A *\<^sub>v x) $ i" 
-       using `b  \<ge> A *\<^sub>v x` 
-       by (smt (verit, ccfv_SIG) \<open>dim_vec (0\<^sub>v nr) = dim_vec (b - A *\<^sub>v x)\<close> b carrier_vec_dim_vec diff_eq_diff_less index_minus_vec(1) index_minus_vec(2) index_zero_vec(2) lesseq_vecD linorder_le_less_linear minus_zero_vec order_less_imp_not_eq2 order_less_le_trans)
-   qed
-   have "\<forall> i < nr. y $ i * (b - A *\<^sub>v x) $ i \<ge> 0" 
-   proof
-     fix i
-     show "i < nr \<longrightarrow> y $ i * (b - A *\<^sub>v x) $ i \<ge> 0"
-     proof
-       assume "i < nr"
-       show "y $ i * (b - A *\<^sub>v x) $ i \<ge> 0" 
-       proof -
-         have "(b - A *\<^sub>v x) $ i \<ge> 0\<^sub>v nr $ i" using `b - A *\<^sub>v x \<ge> 0\<^sub>v nr`
-     by (metis \<open>i < nr\<close> index_zero_vec(2) less_eq_vec_def)
-   then have "(b - A *\<^sub>v x) $ i \<ge> 0" 
-     by (metis \<open>i < nr\<close> index_zero_vec(1))
-   then have "y $ i \<ge> 0" using assms(6) 
-     by (metis \<open>i < nr\<close> \<open>y \<in> carrier_vec nr\<close> index_zero_vec(1) lesseq_vecD)
-   then show ?thesis 
-     using \<open>0 \<le> (b - A *\<^sub>v x) $ i\<close> zero_le_mult_iff by blast
- qed
-qed
-qed
-  have "dim_vec (b - A *\<^sub>v x) = nr" 
-    by (metis \<open>A *\<^sub>v x \<le> b\<close> b carrier_vecD index_minus_vec(2) less_eq_vec_def)
-  then have "(\<Sum>i = 0..<nr. y $ i * (b - A *\<^sub>v x) $ i) = 0"
-     using `y \<bullet> ( b - (A *\<^sub>v x) ) = 0`
-      unfolding scalar_prod_def by blast
-    then have "\<forall> i < nr. y $ i * (b - A *\<^sub>v x) $ i = 0" 
-      using `\<forall>i<nr. 0 \<le> y $ i * (b - A *\<^sub>v x) $ i` 
-      using wef 
-      by blast
-
-  fix i
-  show "i < nr \<longrightarrow> y $ i = 0 \<or> row A i \<bullet> x = b $ i"
-  proof
-    assume "i < nr"
-    show "y $ i = 0 \<or> row A i \<bullet> x = b $ i"
-    proof -
-      have "y $ i * (b - A *\<^sub>v x) $ i = 0" 
-        using \<open>\<forall>i<nr. y $ i * (b - A *\<^sub>v x) $ i = 0\<close> \<open>i < nr\<close> by blast
-      then have "y $ i = 0 \<or> (b - A *\<^sub>v x) $ i = 0" 
-        using mult_eq_0_iff by blast
-      have "(b - A *\<^sub>v x) $ i = 0 \<equiv> b $ i - (A *\<^sub>v x) $ i = 0" 
-        
-        using \<open>dim_vec (b - A *\<^sub>v x) = nr\<close> \<open>i < nr\<close> by force
-      then have "b $ i - (A *\<^sub>v x) $ i = 0 \<equiv> b $ i = (A *\<^sub>v x) $ i"
-        using r_right_minus_eq by presburger
-      have "(A *\<^sub>v x) $ i = row A i \<bullet> x " 
-        using A \<open>i < nr\<close> index_mult_mat_vec by blast
-      then show "y $ i = 0 \<or> row A i \<bullet> x = b $ i" 
-        using \<open>(b - A *\<^sub>v x) $ i = 0 \<equiv> b $ i - (A *\<^sub>v x) $ i = 0\<close> \<open>b $ i - (A *\<^sub>v x) $ i = 0 \<equiv> b $ i = (A *\<^sub>v x) $ i\<close> \<open>y $ i = 0 \<or> (b - A *\<^sub>v x) $ i = 0\<close> by presburger
-    qed
-  qed
+    by (metis \<open>y \<in> carrier_vec nr\<close> assms(3) assms(4) b comm_scalar_prod)
+  then have "\<forall> i < nr. y $ i * (b - A *\<^sub>v x) $ i = 0" using dsf[of "A *\<^sub>v x" nr b y]  
+    using A \<open>y \<in> carrier_vec nr\<close> assms(3) assms(4) b mult_mat_vec_carrier by blast
+  then show ?thesis 
+    by (metis \<open>dim_row A = nr\<close> dim_mult_mat_vec index_minus_vec(1) index_mult_mat_vec
+        no_zero_divisors r_right_minus_eq)
 qed
 
-lemma complementary_slackness2:
+lemma complementary_slackness2':
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
- fixes b
  assumes A: "A \<in> carrier_mat nr n"
  assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
   assumes "y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha> \<and> b \<bullet> y = \<beta>" 
   assumes "\<forall> i < nr. y $ i = 0 \<or> (row A i) \<bullet> x = b $ i"
-  assumes "x \<in> P" 
-  shows "x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b \<and> \<alpha> \<bullet> x = \<beta>"
-proof 
-  show "x \<in> carrier_vec n" 
-    using P_def assms(6) gram_schmidt.polyhedron_def by blast
+  assumes "x \<in> polyhedron A b"
+  shows "\<alpha> \<bullet> x = \<beta>"
+proof -
+  have "y \<in> carrier_vec nr" 
+    by (metis assms(3) carrier_dim_vec index_zero_vec(2) less_eq_vec_def)
+  have "A *\<^sub>v x \<in> carrier_vec nr"  
+    by (metis A carrier_dim_vec carrier_matD(1) dim_mult_mat_vec)
   have "dim_vec (b - A *\<^sub>v x) = nr" 
     using A by force
-  have "\<forall> i < nr. y $ i * (b - A *\<^sub>v x) $ i = 0" 
-    by (metis A assms(5) carrier_matD(1) dim_mult_mat_vec index_minus_vec(1) index_mult_mat_vec mult_eq_0_iff r_right_minus_eq)
-  then have "y \<bullet> ( b - (A *\<^sub>v x) ) = 0" 
-    unfolding scalar_prod_def
-    using `dim_vec (b - A *\<^sub>v x) = nr` 
-    by (meson atLeastLessThan_iff finsum_zero')
+  then have "\<forall> i < nr. y $ i * (b - A *\<^sub>v x) $ i = 0" 
+    using assms(4) index_minus_vec(2) by auto
+  then have "y \<bullet> (b - (A *\<^sub>v x)) = 0" 
+    by (metis (no_types, lifting) \<open>dim_vec (b - A *\<^sub>v x) = nr\<close>
+        atLeastLessThan_iff finsum_zero' scalar_prod_def)
   then have " y \<bullet> (A *\<^sub>v x) = y \<bullet> b" 
-    by (smt (verit, ccfv_threshold) \<open>dim_vec (b - A *\<^sub>v x) = nr\<close> assms(4) b carrier_vec_dim_vec eq_iff_diff_eq_0 index_minus_vec(2) index_zero_vec(2) less_eq_vec_def scalar_prod_minus_distrib)
+    using scalar_prod_minus_distrib right_minus_eq
+    by (metis \<open>y \<in> carrier_vec nr\<close> \<open>A *\<^sub>v x \<in> carrier_vec nr\<close> b)
   then   have "(A\<^sup>T *\<^sub>v y) \<bullet> x = y \<bullet> (A *\<^sub>v x)"
    using transpose_vec_mult_scalar[of A nr n x y]  
-    using assms(1) `x \<in> carrier_vec n` 
-    by (metis assms(4) carrier_dim_vec index_zero_vec(2) less_eq_vec_def)
-  then have "\<alpha> \<bullet> x = \<beta>" 
-    by (metis \<open>y \<bullet> (A *\<^sub>v x) = y \<bullet> b\<close> assms(4) b carrier_vec_dim_vec comm_scalar_prod index_zero_vec(2) less_eq_vec_def)
-  show "A *\<^sub>v x \<le> b \<and> \<alpha> \<bullet> x = \<beta>" 
-    using P_def \<open>\<alpha> \<bullet> x = \<beta>\<close> assms(6) gram_schmidt.polyhedron_def by blast
+   using A \<open>y \<in> carrier_vec nr\<close> assms(5) polyhedron_def by blast
+  then show "\<alpha> \<bullet> x = \<beta>" 
+    using \<open>y \<bullet> (A *\<^sub>v x) = y \<bullet> b\<close> \<open>y \<in> carrier_vec nr\<close> assms(3) b comm_scalar_prod by auto
 qed
-  
-
-
 
 lemma eqwe:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
- fixes b
  assumes A: "A \<in> carrier_mat nr n"
  assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
-  assumes "valid_ineq P \<alpha> \<beta>"
-  assumes "P \<noteq> {}" 
   assumes "y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha> \<and> b \<bullet> y = \<beta>"  
   assumes "x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b \<and> \<alpha> \<bullet> x = \<beta>"
-  shows "x \<in> P"
-  and " fst (sub_system A b {i. y $ i > 0 \<and> i < nr})  *\<^sub>v x  = snd (sub_system A b {i. y $ i > 0 \<and> i < nr})" 
+  shows "fst (sub_system A b {i. y $ i > 0 \<and> i < nr}) *\<^sub>v x = snd (sub_system A b {i. y $ i > 0 \<and> i < nr})" 
   (is "?A' *\<^sub>v x = ?b'")
 proof -
   have "dim_row A = dim_vec b"
       using A  b by auto
-  have "y \<in> carrier_vec nr" 
-    by (metis assms(6) carrier_vec_dim_vec index_zero_vec(2) less_eq_vec_def)
-  show "x \<in> P" using assms(7) P_def 
-    using gram_schmidt.polyhedron_def by blast
   have "\<forall> i < nr. y $ i = 0 \<or> (row A i) \<bullet> x = b $ i" 
-    using A P_def assms(4) assms(5) assms(6) assms(7) b gram_schmidt.complementary_slackness by blast
-  then have "\<forall>i \<in> {i. y $ i > 0 \<and> i < nr}. (row A i) \<bullet> x = b $ i" 
-    by force
-  have "dim_row ?A' = dim_vec ?b'" 
-    by (metis (no_types, lifting) A b carrier_matD(1) carrier_vecD dims_subsyst_same)
-  moreover  have "\<forall> i < dim_vec ?b'. (row ?A' i) \<bullet> x = ?b' $ i" 
-  proof(rule)+
-    fix i
-    assume "i < dim_vec ?b'" 
-    then obtain j where "j < nr \<and> j \<in> {i. y $ i > 0 \<and> i < nr} \<and> row ?A' i = row A j \<and> ?b' $ i = b $ j"
-      using exist_index_in_A[of A b "{i. y $ i > 0 \<and> i < nr}"]  `dim_row A = dim_vec b`
-      using A  b by blast
-    then have " (row A j) \<bullet> x = b $ j" 
-      using \<open>\<forall>i\<in>{i. 0 < y $ i \<and> i < nr}. row A i \<bullet> x = b $ i\<close> by blast
-    then show "(row ?A' i) \<bullet> x = ?b' $ i" 
-      using \<open>j < nr \<and> j \<in> {i. 0 < y $ i \<and> i < nr} \<and> row (fst (sub_system A b {i. 0 < y $ i \<and> i < nr})) i = row A j \<and> snd (sub_system A b {i. 0 < y $ i \<and> i < nr}) $ i = b $ j\<close> by presburger
-  qed
-  ultimately show "?A' *\<^sub>v x = ?b'" by auto
-qed
-
-lemma I_subsys_same_card:
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr"
-  assumes "I \<subseteq> {0..<nr}"
-  shows "dim_row (fst (sub_system A b I)) = card I"
-      "dim_vec (snd (sub_system A b I)) = card I"
-proof -
-  have "{i. i < nr \<and> i \<in> I} = I" using assms(3) by auto 
-  then have " card {i. i < dim_row A \<and> i \<in> I} = card I" using A by auto
-  then show "dim_row (fst (sub_system A b I)) = card I" using dim_row_subsyst_mat by metis 
-  then show "dim_vec (snd (sub_system A b I)) = card I" using b 
-    by (simp add: \<open>{i. i < nr \<and> i \<in> I} = I\<close> dim_subsyst_vec)
+    using assms complementary_slackness by blast
+  then have "\<forall>i \<in> {i. y $ i > 0 \<and> i < nr} \<inter> {0..<dim_row A}. (row A i) \<bullet> x = b $ i" 
+    by fastforce
+  then have "\<forall> i < dim_row ?A'. (row ?A' i) \<bullet> x = ?b' $ i" 
+    using subsystem_fulfills_P'[of A b ?A' ?b' _ "(\<lambda> a c. a \<bullet> x = c)"] 
+    using \<open>dim_row A = dim_vec b\<close> prod.collapse by blast
+  then show "?A' *\<^sub>v x = ?b'" 
+    by (meson \<open>dim_row A = dim_vec b\<close> dims_subsyst_same eq_for_all_index_then_eq)
 qed
 
 lemma eqwe2:
- fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
- fixes b
- assumes A: "A \<in> carrier_mat nr n"
- assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
-  assumes "valid_ineq P \<alpha> \<beta>"
-  assumes "P \<noteq> {}" 
+  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
   assumes "y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha> \<and> b \<bullet> y = \<beta>"  
   assumes " fst (sub_system A b {i. y $ i > 0 \<and> i < nr})  *\<^sub>v x  = snd (sub_system A b {i. y $ i > 0 \<and> i < nr})" 
-  (is "?A' *\<^sub>v x = ?b'")
-assumes "x \<in> P" 
-shows "\<alpha> \<bullet> x = \<beta>" 
+    (is "?A' *\<^sub>v x = ?b'")
+  assumes "x \<in> polyhedron A b" 
+  shows "\<alpha> \<bullet> x = \<beta>" 
 proof -
+  have "dim_vec y = nr" 
+    by (metis assms(3) index_zero_vec(2) less_eq_vec_def)
   have "dim_row A = dim_vec b" using A b by auto
-  let ?I = "{i. y $ i > 0 \<and> i < nr}"
-
-  have "\<forall> i < dim_vec ?b'. (row ?A' i) \<bullet> x = ?b' $ i"
-    by (metis (no_types, lifting) assms(7) dim_mult_mat_vec index_mult_mat_vec)
-  have "\<forall>i \<in> {i. y $ i > 0 \<and> i < nr}. (row A i) \<bullet> x = b $ i" 
-  proof
-    fix i
-    assume "i \<in> ?I"
-    then have "pick ?I (card {a\<in>?I. a < i}) = i"
-      using pick_card_in_set[of i ?I]  by simp  
-    have "{a\<in>?I. a < i} \<subset> ?I" 
-      using \<open>i \<in> {i. 0 < y $ i \<and> i < nr}\<close> by blast
-    have "?I \<subseteq> {0..<nr}" by auto
-    then have "card ?I = dim_vec ?b'" using I_subsys_same_card(2)
-      by (metis (full_types) A b)
-    have "finite ?I" by simp
-    then have "(card {a\<in>?I. a < i}) < dim_vec ?b'" 
-        using `{a\<in>?I. a < i} \<subset> ?I` 
-        by (smt (verit, best) \<open>card {i. 0 < y $ i \<and> i < nr} = dim_vec (snd (sub_system A b {i. 0 < y $ i \<and> i < nr}))\<close> psubset_card_mono)
-
-      have "\<exists> j < dim_vec ?b'. pick ?I j  = i"
-        
-        using \<open>card {a \<in> {i. 0 < y $ i \<and> i < nr}. a < i} < dim_vec (snd (sub_system A b {i. 0 < y $ i \<and> i < nr}))\<close> \<open>pick {i. 0 < y $ i \<and> i < nr} (card {a \<in> {i. 0 < y $ i \<and> i < nr}. a < i}) = i\<close> by blast
-      then obtain j where "j < dim_vec ?b'\<and> pick ?I j  = i" by auto
-      then have "row A i = row ?A' j" 
-        by (metis (no_types, lifting) `dim_row A = dim_vec b`pick_index_row_in_A)
-      have "b $ i = ?b' $ j" 
-        by (simp add: \<open>j < dim_vec (snd (sub_system A b {i. 0 < y $ i \<and> i < nr})) \<and> pick {i. 0 < y $ i \<and> i < nr} j = i\<close> subsyst_b_i)
-      then show "(row A i) \<bullet> x = b $ i" 
-        using \<open>\<forall>i<dim_vec (snd (sub_system A b {i. 0 < y $ i \<and> i < nr})). row (fst (sub_system A b {i. 0 < y $ i \<and> i < nr})) i \<bullet> x = snd (sub_system A b {i. 0 < y $ i \<and> i < nr}) $ i\<close> \<open>j < dim_vec (snd (sub_system A b {i. 0 < y $ i \<and> i < nr})) \<and> pick {i. 0 < y $ i \<and> i < nr} j = i\<close> \<open>row A i = row (fst (sub_system A b {i. 0 < y $ i \<and> i < nr})) j\<close> by presburger
-    qed
-    then have "\<forall> i < nr. y $ i = 0 \<or> (row A i) \<bullet> x = b $ i"  
-      by (smt (verit, ccfv_SIG) assms(6) index_zero_vec(1) index_zero_vec(2) less_eq_vec_def mem_Collect_eq not_less_iff_gr_or_eq not_less_real)
-    then show "\<alpha> \<bullet> x = \<beta>"
-      
-      using A P_def assms(6) assms(8) b complementary_slackness2 by blast
-  qed
+  then have "\<forall>i \<in> {i. y $ i > 0 \<and> i < nr} \<inter> {0..<dim_row A}. (row A i) \<bullet> x = b $ i"
+    using subsystem_fulfills_P[of A b ?A' ?b' _ "(\<lambda> a c. a \<bullet> x = c)"] 
+    by (metis (no_types, lifting) \<open>dim_row A = dim_vec b\<close> assms(4) index_mult_mat_vec prod.collapse)
+  then have "\<forall>i \<in> {i. y $ i > 0 \<and> i < nr}. (row A i) \<bullet> x = b $ i" using A by auto
+  then have "\<forall> i < nr. y $ i = 0 \<or> (row A i) \<bullet> x = b $ i"  
+    by (metis (no_types, lifting) \<open>dim_vec y = nr\<close> assms(3) index_zero_vec(1) less_eq_vec_def
+        mem_Collect_eq order_le_imp_less_or_eq)
+  then show "\<alpha> \<bullet> x = \<beta>"    
+    using A  assms(3) assms(5) b complementary_slackness2' by blast 
+qed
 
 lemma char_face1:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
@@ -523,10 +359,11 @@ proof -
     using assms(4) face_elim2 by presburger
   then have "F = {x. \<alpha> \<bullet> x = \<beta>  \<and> x \<in> P}" by auto
   then have "\<beta> =  Maximum {\<alpha> \<bullet> x | x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}"
-    using face_is_Max'[of F \<alpha> \<beta> A b] face P_def by auto  
+    using face_is_Max'(1)[of F \<alpha> \<beta> P] face P_def 
+    by (smt (verit, best) Collect_cong mem_Collect_eq polyhedron_def)  
   have "has_Maximum {\<alpha> \<bullet> x | x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}"
-    using face_is_Max'[of F \<alpha> \<beta> A b] face P_def by auto
-  
+    using face_is_Max'(2)[of F \<alpha> \<beta> P] face P_def 
+    by (metis (mono_tags, lifting) A  assms(4) b gram_schmidt.face_def gram_schmidt.face_non_empty1(2))
   have " \<beta> =  Minimum {b \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha>}"
     using face_non_empty1[of A nr b \<alpha>]  
     by (metis A P_def \<open>\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}\<close> assms(4) b face gram_schmidt.face_def)
@@ -546,8 +383,8 @@ proof -
       then have "x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b \<and> \<alpha> \<bullet> x = \<beta>" 
         using P_def \<open>F = {x. \<alpha> \<bullet> x = \<beta> \<and> x \<in> P}\<close> gram_schmidt.polyhedron_def by blast
       then show "?A'  *\<^sub>v x  =?b'"
-        using eqwe[of A nr b \<alpha> \<beta> y' x] 
-        by (metis A P_def \<open>0\<^sub>v nr \<le> y' \<and> A\<^sup>T *\<^sub>v y' = \<alpha> \<and> b \<bullet> y' = \<beta>\<close> assms(4) b face gram_schmidt.face_elim(1))
+        using eqwe[of A nr b y' \<alpha> \<beta> x ] 
+        by (metis A  \<open>0\<^sub>v nr \<le> y' \<and> A\<^sup>T *\<^sub>v y' = \<alpha> \<and> b \<bullet> y' = \<beta>\<close>  b)
 
         
     }
@@ -557,7 +394,7 @@ proof -
       fix x
       assume "?A' *\<^sub>v x = ?b'" 
       assume "x \<in> P" 
-      show "x \<in> F" using eqwe2[of A nr b \<alpha> \<beta> y' x] 
+      show "x \<in> F" using eqwe2[of A nr b y' \<alpha> \<beta> x] 
         using A P_def \<open>0\<^sub>v nr \<le> y' \<and> A\<^sup>T *\<^sub>v y' = \<alpha> \<and> b \<bullet> y' = \<beta>\<close> \<open>fst (sub_system A b {i. 0 < y' $ i \<and> i < nr}) *\<^sub>v x = snd (sub_system A b {i. 0 < y' $ i \<and> i < nr})\<close> \<open>x \<in> P\<close> b face by blast
     }
   qed
@@ -890,7 +727,7 @@ proof -
     then have "dim_vec b'' > 0" by auto
   then obtain j where "j < dim_vec b''" by auto
   then obtain i where "i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i" 
-      using exist_index_in_A[of A  b I''] 
+      using exist_index_in_A[of A  b j I''] 
       by (metis A \<open>(A'', b'') = sub_system A b I''\<close> \<open>dim_vec b = nr\<close> carrier_matD(1) fst_conv snd_conv)
     obtain C d where sub_C: "((C, d) = sub_system A b (I'' - {i}))" 
       by (metis surj_pair)
@@ -1096,7 +933,7 @@ proof -
            obtain C' d'  where "(C', d') = sub_system A b (I \<union> {i})" 
              by (metis surj_pair)
            then have "{x. C' *\<^sub>v x = d'} = {x. A' *\<^sub>v x = b' \<and> row A i \<bullet> x = b $ i}" 
-             using insert_sub_system[of A b i I A' b' C' d'] \<open>i \<notin> I\<close> sub_A(1)
+             using insert_sub_system_eq[of A b i  A' b' I  C' d'] \<open>i \<notin> I\<close> sub_A(1)
              using A \<open>dim_vec b = nr\<close> \<open>i < nr \<and> i \<in> I'' \<and> row A'' j = row A i \<and> b'' $ j = b $ i\<close> by blast
            then have "{x. C' *\<^sub>v x = d' \<and> x \<in> P} = {x. A' *\<^sub>v x = b' \<and> row A i \<bullet> x = b $ i \<and> x \<in> P}" 
              by blast
@@ -1139,8 +976,5 @@ proof -
       using sub_A(1) by auto 
 qed
 
-
-
 end
-
 end
