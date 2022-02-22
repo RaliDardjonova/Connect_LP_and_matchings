@@ -275,6 +275,7 @@ lemma leq_for_all_index_then_eq:
   unfolding mult_mat_vec_def 
   by (simp add: assms(1) assms(2) less_eq_vec_def) 
 
+
 lemma insert_sub_system_eq:
   assumes "dim_row A = dim_vec b"
   assumes "i < dim_vec b" 
