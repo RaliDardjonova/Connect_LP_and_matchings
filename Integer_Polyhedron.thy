@@ -1,4 +1,4 @@
-theory Integer_polyhedron
+theory Integer_Polyhedron
   imports Faces
    Well_Quasi_Orders.Minimal_Elements
 begin
