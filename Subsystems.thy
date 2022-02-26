@@ -333,6 +333,21 @@ proof -
     by argo
 qed
 
+lemma remove_index_sub_system_eq:
+  assumes "dim_row A = dim_vec b" 
+  assumes "i \<in> I"
+  assumes "i < dim_vec b"
+  assumes "(A', b') = sub_system A b I" 
+  assumes "(A'', b'') = sub_system A b (I - {i})"
+  shows "{x. A' *\<^sub>v x = b'} = {x. A'' *\<^sub>v x = b'' \<and> row A i \<bullet> x = b $ i}"
+proof -
+  have "i \<notin> (I - {i})" using assms(2) by auto
+  moreover have "I = (I - {i}) \<union> {i}" using assms(2) by auto
+  ultimately show ?thesis 
+    using insert_sub_system_eq[of A b i  A'' b'' "I - {i}" A' b'] assms(1) assms(3-5)
+    by argo
+qed
+
 lemma add_index_sub_system_dims:
   assumes "i \<notin> I"
   assumes "i < dim_vec b"
@@ -368,11 +383,6 @@ proof -
     by argo
 qed  
 
-lemma subsystem_of_subsyst:
-  assumes "J \<subseteq> I" 
-  assumes "(A', b') = sub_system A b I" 
-  assumes "(A'', b'') = sub_system A b J"
-  shows "\<exists> I'. (A'', b'') = sub_system A' b' I'" 
-  sorry
+
 
 end

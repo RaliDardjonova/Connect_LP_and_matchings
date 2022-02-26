@@ -1112,5 +1112,119 @@ lemma char_min_face:
   using char_min_face1 char_min_face2 
   by (smt (verit, best) A P_def b face_non_empty face_subset_polyhedron min_face_elim(1))
 
+lemma face_is_polyhedron'':
+   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+ fixes b
+ assumes A: "A \<in> carrier_mat nr n"
+ assumes b: "b \<in> carrier_vec nr"
+  defines "P \<equiv> polyhedron A b"
+ assumes "(A', b') = sub_system A b I'"
+  assumes " F = {x.  x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> A *\<^sub>v x \<le> b}"
+  shows "F = polyhedron ((A' @\<^sub>r (-A')) @\<^sub>r A) ((b' @\<^sub>v (-b')) @\<^sub>v b)" 
+        "dim_row ((A' @\<^sub>r (-A')) @\<^sub>r A) = dim_vec ((b' @\<^sub>v (-b')) @\<^sub>v b)"
+        "dim_col ((A' @\<^sub>r (-A')) @\<^sub>r A) = n"
+  unfolding polyhedron_def
+proof(safe)
+  show "\<And>x. x \<in> F \<Longrightarrow> x \<in> carrier_vec n" 
+    using assms(5) by blast
+ have "dim_col A' = n" using dim_col_subsyst_mat A 
+      by (metis assms(4) carrier_matD(2) prod.sel(1))
+    then have 1:"A' \<in> carrier_mat (dim_row A') n" 
+      by blast
+    then have 2:"- A' \<in> carrier_mat (dim_row A') n" 
+      using uminus_carrier_mat by blast
+    have 3:" b' \<in> carrier_vec (dim_row A')"  
+      by (metis A assms(4) b carrier_dim_vec carrier_matD(1) dims_subsyst_same')
+  show "\<And>x. x \<in> F \<Longrightarrow> ((A' @\<^sub>r - A') @\<^sub>r A) *\<^sub>v x \<le> (b' @\<^sub>v - b') @\<^sub>v b" 
+  proof -
+    fix x 
+    assume "x \<in> F" 
+    have "dim_col A' = n" using dim_col_subsyst_mat A 
+      by (metis assms(4) carrier_matD(2) prod.sel(1))
+    have 4:"x \<in> carrier_vec n" using `x \<in> F` assms(5) by blast
+    have "A' *\<^sub>v x \<le> b' \<and> (-A') *\<^sub>v x \<le> - b'" using eq_system_is_leq_system 
+      using \<open>dim_col A' = n\<close> \<open>x \<in> F\<close> assms(5) carrier_vecD by blast
+    then show "((A' @\<^sub>r - A') @\<^sub>r A) *\<^sub>v x \<le> (b' @\<^sub>v - b') @\<^sub>v b" 
+      using append_rows_le[of A' "dim_row A'" n "-A'" "dim_row A'" b' x "-b'"]  
+      1 2 3 4  
+      by (metis (no_types, lifting) A \<open>x \<in> F\<close> append_rows_le assms(4) assms(5) b carrier_matI carrier_vec_dim_vec face_is_polyhedron'(2) face_is_polyhedron'(3) mem_Collect_eq)
+  qed
+  {
+  fix x
+  assume "x \<in> carrier_vec n" "((A' @\<^sub>r - A') @\<^sub>r A) *\<^sub>v x \<le> (b' @\<^sub>v - b') @\<^sub>v b"
+  then have  "A' *\<^sub>v x \<le> b' \<and> (-A') *\<^sub>v x \<le> - b' \<and> A *\<^sub>v x \<le> b" 
+    using "1" "2" "3" append_rows_le 
+    by (smt (verit, ccfv_threshold) A assms(4) b carrier_matI carrier_vec_dim_vec face_is_polyhedron'(2) face_is_polyhedron'(3))
+    then have "A' *\<^sub>v x = b'" using eq_system_is_leq_system[of x A' b'] 
+      using \<open>dim_col A' = n\<close> \<open>x \<in> carrier_vec n\<close> carrier_vecD by blast
+  then show "x \<in> F" 
+    using \<open>x \<in> carrier_vec n\<close> assms(5) 
+    using \<open>A' *\<^sub>v x \<le> b' \<and> - A' *\<^sub>v x \<le> - b' \<and> A *\<^sub>v x \<le> b\<close> by blast
+}
+  show "dim_row ((A' @\<^sub>r - A') @\<^sub>r A) = dim_vec ((b' @\<^sub>v - b') @\<^sub>v b)" 
+    using "1" "2" "3" append_carrier_vec carrier_append_rows carrier_matD(1) carrier_vecD uminus_carrier_vec
+    by (smt (verit, ccfv_SIG) A b)
+
+  show " dim_col ((A' @\<^sub>r - A') @\<^sub>r A) = n" 
+    using "1" "2" carrier_append_rows carrier_matD(2) 
+    by (metis append_rows_def index_mat_four_block(3) index_zero_mat(3))
+qed
+
+lemma face_is_polyhedron''2:
+   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+ fixes b
+ assumes A: "A \<in> carrier_mat nr n"
+ assumes b: "b \<in> carrier_vec nr"
+  defines "P \<equiv> polyhedron A b"
+ assumes "(A', b') = sub_system A b I'"
+  assumes " F = {x.  x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> A *\<^sub>v x \<le> b}"
+  shows "F = polyhedron (A @\<^sub>r (A' @\<^sub>r (-A'))) ( b @\<^sub>v(b' @\<^sub>v (-b')))" 
+        "dim_row (A @\<^sub>r(A' @\<^sub>r (-A'))) = dim_vec (b @\<^sub>v(b' @\<^sub>v (-b')))"
+        "dim_col (A @\<^sub>r(A' @\<^sub>r (-A'))) = n"
+proof - 
+have "dim_col A' = n" using dim_col_subsyst_mat A 
+      by (metis assms(4) carrier_matD(2) prod.sel(1))
+    then have 1:"A' \<in> carrier_mat (dim_row A') n" 
+      by blast
+    then have 2:"- A' \<in> carrier_mat (dim_row A') n" 
+      using uminus_carrier_mat by blast
+  have "F = polyhedron ((A' @\<^sub>r (-A')) @\<^sub>r A) ((b' @\<^sub>v (-b')) @\<^sub>v b)"
+    using face_is_polyhedron'' assms 
+    by blast
+  then show "F = polyhedron (A @\<^sub>r A' @\<^sub>r - A') (b @\<^sub>v b' @\<^sub>v - b')" 
+    by (smt (verit, best) A Collect_cong append_rows_le assms(4) b carrier_matI carrier_vec_dim_vec face_is_polyhedron'(2) face_is_polyhedron'(3) gram_schmidt.polyhedron_def)
+  have "dim_row ((A' @\<^sub>r - A') @\<^sub>r A) = dim_vec ((b' @\<^sub>v - b') @\<^sub>v b)" 
+    using face_is_polyhedron''(2) assms by blast
+  have "dim_row ((A' @\<^sub>r - A') @\<^sub>r A) = dim_row (A @\<^sub>r (A' @\<^sub>r - A'))"
+    unfolding append_rows_def 
+    by (simp add: add.commute)
+  have "dim_vec ((b' @\<^sub>v - b') @\<^sub>v b) =  dim_vec (b @\<^sub>v b' @\<^sub>v - b')" 
+    unfolding append_vec_def 
+    by (metis add.commute dim_vec)
+  then show "dim_row (A @\<^sub>r A' @\<^sub>r - A') = dim_vec (b @\<^sub>v b' @\<^sub>v - b')" 
+  by (metis \<open>dim_row ((A' @\<^sub>r - A') @\<^sub>r A) = dim_row (A @\<^sub>r A' @\<^sub>r - A')\<close> \<open>dim_row ((A' @\<^sub>r - A') @\<^sub>r A) = dim_vec ((b' @\<^sub>v - b') @\<^sub>v b)\<close>)
+
+  show "dim_col (A @\<^sub>r(A' @\<^sub>r (-A'))) = n"
+    using "1" "2" carrier_append_rows carrier_matD(2) 
+    using A by blast
+qed
+
+lemma face_is_polyhedron:
+   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+ fixes b
+ assumes A: "A \<in> carrier_mat nr n"
+ assumes b: "b \<in> carrier_vec nr"
+ defines "P \<equiv> polyhedron A b"
+ assumes "face P F"
+ obtains A' b' where "F = polyhedron A' b'" "dim_row A' = dim_vec b'" "dim_col A' = n"
+proof -
+  obtain  A' b' I'  where  "(A', b') = sub_system A b I'" 
+                      " F = {x.  A' *\<^sub>v x = b' \<and> x \<in> P}"
+    using char_face1[of A nr b F]
+    using A P_def assms(4) b by blast
+  then show ?thesis using face_is_polyhedron'' 
+    by (smt (verit, best) A Collect_cong P_def b gram_schmidt.polyhedron_def mem_Collect_eq that)
+qed
+
 end
 end
