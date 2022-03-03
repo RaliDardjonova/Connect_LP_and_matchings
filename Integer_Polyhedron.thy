@@ -25,42 +25,8 @@ proof
     using \<open>dim_vec b' = 0\<close> by linarith
 qed
 
-lemma tuiob:
- fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
- assumes A: "A \<in> carrier_mat nr n"
- assumes b: "b \<in> carrier_vec nr"
- defines "P \<equiv> polyhedron A b"
- assumes "face P F"
- obtains A' b' I'  where "((A', b') = sub_system A b I')" 
-                      "{x. A' *\<^sub>v x = b' \<and> x \<in> P} \<noteq> {}"
-                      "{x. A' *\<^sub>v x = b' \<and> x \<in> P} \<subseteq> F"
-                      "dim_vec b' = Max {dim_vec d| C d I. (C, d) = sub_system A b I \<and> 
-                                                {x. C *\<^sub>v x = d \<and> x \<in> P} \<noteq> {} 
-                                              \<and> {x. C *\<^sub>v x = d \<and> x \<in> P} \<subseteq> F}"
 
-proof-
- have "dim_vec b = nr" using b by auto
-  let ?M = "{dim_vec d| C d I. (C, d) = sub_system A b I \<and> {x. C *\<^sub>v x = d \<and> x \<in> P} \<noteq> {}
-\<and> {x. C *\<^sub>v x = d \<and> x \<in> P} \<subseteq> F}"
-  have "finite ?M"
-    using subset_set_of_sub_dims_finite[of ?M A b] by blast
-  obtain C d I where  C_d: "((C, d) = sub_system A b I)" 
-                      "F = {x. C *\<^sub>v x = d  \<and> x \<in> P}" 
-    using char_face1[of A nr b F] assms
-    by blast
-  then have "{x. C *\<^sub>v x = d \<and> x \<in> P} \<noteq> {}  \<and> {x. C *\<^sub>v x = d \<and> x \<in> P} \<subseteq> F" 
-    using assms(4) face_non_empty by blast
-  then have "dim_vec d \<in> ?M" using C_d by auto
-  then have "?M \<noteq> {}"  
-    by blast
-  then have "Max ?M \<in> ?M \<and> (\<forall>a \<in> ?M. a \<le> (Max ?M))"
-    using eq_Max_iff[of ?M] `?M \<noteq> {}` `finite ?M` 
-    by auto
-then show ?thesis 
-    using that by force
-qed
-
-lemma wrtfqwr:
+lemma subsyst_with_max_ineq:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
  assumes A: "A \<in> carrier_mat nr n"
  assumes b: "b \<in> carrier_vec nr"
@@ -291,7 +257,7 @@ fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
    
       
 
-lemma tuiob':
+lemma face_trans:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
  assumes A: "A \<in> carrier_mat nr n"
  assumes b: "b \<in> carrier_vec nr"
@@ -459,7 +425,7 @@ proof -
 qed
 
 
-lemma wrtfqwr':
+lemma subsyst_with_max_ineq_is_min_face:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
  assumes A: "A \<in> carrier_mat nr n"
  assumes b: "b \<in> carrier_vec nr"
@@ -522,15 +488,15 @@ proof -
                       "{x. A' *\<^sub>v x = b' \<and> x \<in> P} \<noteq> {}"
                       "dim_vec b' = Max {dim_vec d| C d I. (C, d) = sub_system A b I \<and> 
                                                 {x. C *\<^sub>v x = d \<and> x \<in> P} \<noteq> {}}"
-using  wrtfqwr[of A nr b] assms 
+using  subsyst_with_max_ineq[of A nr b] assms 
   by blast 
   then have "min_face P {x. A' *\<^sub>v x = b' \<and> x \<in> P}" 
-    using wrtfqwr'[of A nr b A' b' I'] assms by fast
+    using subsyst_with_max_ineq_is_min_face[of A nr b A' b' I'] assms by fast
   then show ?thesis 
     by (simp add: that)
 qed
 
-lemma yui:
+lemma face_contains_min_face:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
  assumes A: "A \<in> carrier_mat nr n"
  assumes b: "b \<in> carrier_vec nr"
@@ -546,11 +512,11 @@ proof -
     using obtain_min_face_polyhedron[of C "dim_row C" d] C_d  
     by (metis \<open>F \<noteq> {}\<close> carrier_mat_triv carrier_vec_dim_vec) 
   have "face P F'" 
-    using A P_def \<open>min_face F F'\<close> assms(4) b min_face_elim(1) tuiob' by presburger
+    using A P_def \<open>min_face F F'\<close> assms(4) b min_face_elim(1) face_trans by presburger
   have "\<not> (\<exists>S\<subset>F'. face F S)" 
     by (simp add: \<open>min_face F F'\<close> min_face_elim(2))
   then have "\<not> (\<exists>S\<subset>F'. face P S)" 
-    by (meson \<open>min_face F F'\<close> assms(4) face_subset_polyhedron face_trans min_face_elim(1) psubset_imp_subset subset_trans)
+    by (meson \<open>min_face F F'\<close> assms(4) face_subset_polyhedron subset_is_face min_face_elim(1) psubset_imp_subset subset_trans)
   then have "min_face P F'" 
     using \<open>face P F'\<close> by blast
   then show ?thesis 
@@ -558,7 +524,7 @@ proof -
 qed
 
 
-lemma iufjguiwegfiowe:
+lemma int_all_min_faces_then_int_all_faces:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
  assumes A: "A \<in> carrier_mat nr n"
  assumes b: "b \<in> carrier_vec nr"
@@ -571,11 +537,33 @@ proof
   show "face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)" 
   proof 
     assume "face P F" 
-  then obtain F' where "F' \<subseteq> F \<and> min_face P F'" using yui assms by metis
+  then obtain F' where "F' \<subseteq> F \<and> min_face P F'" using face_contains_min_face assms by metis
   then show "\<exists> x \<in> F. x \<in> \<int>\<^sub>v" 
     by (meson assms(4) subset_iff)
 qed
 qed
+
+lemma int_all_faces_then_int_all_min_faces:
+  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+ assumes A: "A \<in> carrier_mat nr n"
+ assumes b: "b \<in> carrier_vec nr"
+ defines "P \<equiv> polyhedron A b"
+ assumes "\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)"
+ shows "\<forall> F. min_face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)" 
+  using assms(4) min_face_elim(1) 
+  by presburger
+
+
+lemma int_all_min_faces_iff_int_all_faces:
+  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+ assumes A: "A \<in> carrier_mat nr n"
+ assumes b: "b \<in> carrier_vec nr"
+ defines "P \<equiv> polyhedron A b"
+ shows "(\<forall> F. min_face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)) \<longleftrightarrow> (\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))"
+  using int_all_min_faces_then_int_all_faces[of A nr b]
+    int_all_faces_then_int_all_min_faces[of A nr b]  assms 
+  by blast
+
   
 end
 end

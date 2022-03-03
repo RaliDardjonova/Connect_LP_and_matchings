@@ -383,6 +383,72 @@ proof -
     by argo
 qed  
 
+lemma linear_comb_holds_eq:
+  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+  assumes "A \<in> carrier_mat nr n" 
+  assumes "x \<in> carrier_vec n"
+  assumes "y \<in> carrier_vec n"
+  assumes "z \<in> carrier_vec n"
+  assumes "A *\<^sub>v x = b"
+  assumes "A *\<^sub>v y = b"
+  assumes "z = l \<cdot>\<^sub>v x + (1 - l) \<cdot>\<^sub>v y"
+  assumes "0 \<le> l \<and> l \<le> 1" 
+  shows "A *\<^sub>v z = b" 
+proof -
+  have "A *\<^sub>v z = A *\<^sub>v (l \<cdot>\<^sub>v x) + A *\<^sub>v ((1 - l) \<cdot>\<^sub>v y)" 
+    using mult_add_distrib_mat_vec[of A nr n "l \<cdot>\<^sub>v x" "(1 - l) \<cdot>\<^sub>v y"] 
+    using assms(1) assms(2) assms(3) assms(7) smult_carrier_vec by blast
+  also have "\<dots> = l \<cdot>\<^sub>v (A *\<^sub>v x) + (1 - l) \<cdot>\<^sub>v (A *\<^sub>v y)"
+    using mult_mat_vec[of A] 
+    using assms(1) assms(2) assms(3) by presburger
+  also have "\<dots> = l \<cdot>\<^sub>v b + (1 - l) \<cdot>\<^sub>v b" 
+    using assms(5) assms(6) by presburger
+  finally show "A *\<^sub>v z = b" 
+    by (metis add_smult_distrib_vec assms(8) le_add_diff_inverse one_smult_vec)
+qed
 
+lemma multiply_by_zero_eq:
+fixes a :: "'a :: trivial_conjugatable_linordered_field vec"
+  assumes "dim_vec a = dim_vec b"
+  shows "0 \<cdot>\<^sub>v a = 0 \<cdot>\<^sub>v b" 
+  apply rule
+   apply (simp add: assms)
+  by (simp add: assms)
+
+lemma linear_comb_holds_less_eq:
+  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+  assumes "A \<in> carrier_mat nr n" 
+  assumes "x \<in> carrier_vec n"
+  assumes "y \<in> carrier_vec n"
+  assumes "z \<in> carrier_vec n"
+  assumes "A *\<^sub>v x \<le> b"
+  assumes "A *\<^sub>v y \<le> b"
+  assumes "z = l \<cdot>\<^sub>v x + (1 - l) \<cdot>\<^sub>v y"
+  assumes "0 \<le> l \<and> l \<le> 1" 
+  shows "A *\<^sub>v z \<le> b" 
+proof -
+  have "l \<cdot>\<^sub>v (A *\<^sub>v x) \<le> l \<cdot>\<^sub>v b" 
+    apply (cases "l = 0")
+    apply (metis multiply_by_zero_eq Orderings.order_eq_iff assms(5) less_eq_vec_def)
+   by (smt (verit, del_insts) assms(5) assms(8) index_smult_vec(1) index_smult_vec(2) less_eq_vec_def mult_le_cancel_left_pos order_le_imp_less_or_eq)
+  have "(1 - l) \<cdot>\<^sub>v (A *\<^sub>v y) \<le> (1 - l) \<cdot>\<^sub>v b" 
+        apply (cases "l = 0")
+    using assms(6) apply force
+    by (smt (verit, best) Orderings.order_eq_iff assms(6) assms(8) diff_gt_0_iff_gt diff_numeral_special(9) index_smult_vec(1) index_smult_vec(2) less_eq_vec_def mult_le_cancel_left_pos multiply_by_zero_eq order_le_imp_less_or_eq)
+
+  have "A *\<^sub>v z \<le> A *\<^sub>v (l \<cdot>\<^sub>v x) + A *\<^sub>v ((1 - l) \<cdot>\<^sub>v y)" 
+    using mult_add_distrib_mat_vec[of A nr n "l \<cdot>\<^sub>v x" "(1 - l) \<cdot>\<^sub>v y"] 
+    using assms(1) assms(2) assms(3) assms(7) smult_carrier_vec 
+    by (metis dual_order.refl)
+  also have "\<dots> = l \<cdot>\<^sub>v (A *\<^sub>v x) + (1 - l) \<cdot>\<^sub>v (A *\<^sub>v y)"
+    using mult_mat_vec[of A] 
+    using assms(1) assms(2) assms(3) by presburger
+  also have "\<dots> \<le> l \<cdot>\<^sub>v b + (1 - l) \<cdot>\<^sub>v b" 
+    using `l \<cdot>\<^sub>v (A *\<^sub>v x) \<le> l \<cdot>\<^sub>v b` `(1 - l) \<cdot>\<^sub>v (A *\<^sub>v y) \<le> (1 - l) \<cdot>\<^sub>v b`
+    by (metis index_smult_vec(2) vec_add_mono)
+    finally show "A *\<^sub>v z \<le> b" 
+      
+    by (metis add_smult_distrib_vec assms(8) le_add_diff_inverse one_smult_vec)
+qed
 
 end
