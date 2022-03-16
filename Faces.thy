@@ -49,6 +49,14 @@ lemma support_hyp_elim[elim]:
   unfolding support_hyp_def
   by auto
 
+lemma suport_hypE:
+  "support_hyp P \<alpha> \<beta> \<Longrightarrow>
+   (\<lbrakk>\<beta> = Maximum { \<alpha> \<bullet> x | x. x \<in> P};
+   has_Maximum { \<alpha> \<bullet> x | x. x \<in> P};
+   \<alpha> \<in> carrier_vec n\<rbrakk> \<Longrightarrow> R)
+   \<Longrightarrow> R"
+  by(auto simp: support_hyp_def)
+
 lemma support_hyp_intro[intro]:
   assumes "has_Maximum { \<alpha> \<bullet> x | x. x \<in> P}"
   assumes "\<beta> = Maximum { \<alpha> \<bullet> x | x. x \<in> P}"
@@ -57,6 +65,7 @@ lemma support_hyp_intro[intro]:
   unfolding support_hyp_def
   using assms 
   by auto
+
 
 lemma valid_ineq_elim[elim]:
   assumes "valid_ineq P \<alpha> \<beta>"
@@ -100,18 +109,17 @@ qed
 
 lemma support_hyp_is_valid:
   assumes "support_hyp P \<alpha> \<beta>"
-  shows  "valid_ineq P \<alpha> \<beta>"
-     and "{x. \<alpha> \<bullet> x = \<beta>} \<inter> P \<noteq> {}"
-proof
-  have \<beta>_max: "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P} \<and> has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}" using assms by force 
-  then show "\<forall>x\<in>P. \<alpha> \<bullet> x \<le> \<beta>" 
-    using has_MaximumD(2) by blast
+  shows  "valid_ineq P \<alpha> \<beta>" (is ?g1)
+     and "{x. \<alpha> \<bullet> x = \<beta>} \<inter> P \<noteq> {}" (is ?g2)
+proof-
+  have \<beta>_max: "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P}" "has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}" using assms by force+
+  then show ?g1
+    using \<open>support_hyp P \<alpha> \<beta>\<close>
+    by (auto elim: suport_hypE dest: has_MaximumD(2) intro: valid_ineq_intro)
   have "\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}" 
     using \<beta>_max has_MaximumD(1) by blast
   then show "{x. \<alpha> \<bullet> x = \<beta>} \<inter> P \<noteq> {}" 
     by blast
-  show "\<alpha> \<in> carrier_vec n" 
-    using assms support_hyp_elim(3) by blast
 qed
 
 definition face :: "'a vec set \<Rightarrow> 'a vec set \<Rightarrow> bool" where
@@ -491,7 +499,6 @@ using subset_set_of_sub_dims_finite[of ?M A b] by blast
   then have "Min ?M \<in> ?M \<and> (\<forall>a \<in> ?M. a \<ge> (Min ?M))"
     using eq_Min_iff[of ?M] `?M \<noteq> {}`
     by auto
-
   then show ?thesis using that by force
 qed
 
@@ -723,7 +730,7 @@ proof -
         by blast
       have "?z \<in>  {x. A' *\<^sub>v x = b' \<and> row A i \<bullet> x = b $ i \<and> x \<in> P}" 
         using `?z \<in> P` 
-        using \<open>A' *\<^sub>v (y + (b $ i - row A i \<bullet> y) / (row A i \<bullet> x - row A i \<bullet> y) \<cdot>\<^sub>v (x - y)) = b'\<close> \<open>row A i \<bullet> (y + (b $ i - row A i \<bullet> y) / (row A i \<bullet> x - row A i \<bullet> y) \<cdot>\<^sub>v (x - y)) = b $ i\<close> by blast
+        using \<open>A' *\<^sub>v ?z = b'\<close> \<open>row A i \<bullet> ?z = b $ i\<close> by blast
       then have "{x. C' *\<^sub>v x = d' \<and> x \<in> P} \<noteq> {}" 
         using \<open>{x. C' *\<^sub>v x = d' \<and> x \<in> P} = {x. A' *\<^sub>v x = b' \<and> row A i \<bullet> x = b $ i \<and> x \<in> P}\<close> by blast
       then have "face P {x. C' *\<^sub>v x = d' \<and> x \<in> P}" using char_face2 

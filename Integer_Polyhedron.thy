@@ -1,6 +1,7 @@
 theory Integer_Polyhedron
   imports Faces
    Well_Quasi_Orders.Minimal_Elements
+  Linear_Inequalities.Integer_Hull
 begin
 
 context gram_schmidt
@@ -219,13 +220,13 @@ proof -
   have "sub_system A b I = sub_system A b (I \<inter> {0..<nr})"
     using same_subsyst_I_intersect_rows A b 
     by blast
-  then have "dim_row A' = card (I \<inter> {0..<nr})" using I_subsys_same_card
+  then have "dim_row A' = card (I \<inter> {0..<nr})" using I_subsys_same_card(2)
   by (metis (mono_tags, lifting) A assms(4) b carrier_matD(1) carrier_vecD dims_subsyst_same' inf.cobounded2 snd_conv)
 
 have "sub_system A b J = sub_system A b (J \<inter> {0..<nr})"
     using same_subsyst_I_intersect_rows A b 
     by blast
-  then have "dim_row C = card (J \<inter> {0..<nr})" using I_subsys_same_card
+  then have "dim_row C = card (J \<inter> {0..<nr})" using I_subsys_same_card(2)
   by (metis (mono_tags, lifting) A assms(5) b carrier_matD(1) carrier_vecD dims_subsyst_same' inf.cobounded2 snd_conv)
   have "finite (J \<inter> {0..<nr})" 
     by blast
@@ -253,7 +254,7 @@ fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
  assumes A: "A \<in> carrier_mat nr1 n"
  assumes "B \<in> carrier_mat nr2 n" 
  shows "\<lbrakk> i \<ge> nr1; i < nr1 + nr2 \<rbrakk> \<Longrightarrow> (row (A @\<^sub>r B)i) = row B (i - nr1)" 
-  by (metis A append_rows_nth(2) assms(2) carrier_matD(1))
+  by (metis A append_rows_nth(2) assms(2))
    
       
 
@@ -564,6 +565,711 @@ lemma int_all_min_faces_iff_int_all_faces:
     int_all_faces_then_int_all_min_faces[of A nr b]  assms 
   by blast
 
+text \<open>a ==> b\<close>
+
+lemma dqwd:
+  shows "map f (x#xs) = f x # (map f xs)" 
+  by auto
+
+thm "size_def" 
+
+lemma ff:
+  assumes "m > 0" 
+  shows " 0 # [1..< m] = [0..<m]"
+  using assms 
+  by (metis add_0 upt_eq_Cons_conv)
+
+
+
+lemma mult_preserve_direction_ineq:
+  fixes c :: "'a :: trivial_conjugatable_linordered_field"
+  assumes "0 < c \<and> c  \<le> 1" 
+  assumes "a < b"
+  shows "c * a < b" 
+proof -
+   have "c * a < c * b" using Factorial.mult_less_iff1[of c a b] 
+     using assms(1) assms(2) by force
+   have "c * b \<le> 1 * b" 
+     using assms(1) 
+     oops
+
+lemma fefewf:
+  fixes c :: "'b \<Rightarrow> 'a" 
+  assumes "finite S" 
+  assumes "\<forall>i \<in> S. c i \<ge> 0" 
+  assumes "sum c S \<le> 1"
+  shows "\<forall>i \<in> S. c i \<le> 1" 
+proof
+  fix i
+  assume  "i \<in> S"
+  then show "c i \<le> 1"
+  using member_le_sum[of i S c] 
+  using assms by auto
+qed
+
+lemma vrh:
+ fixes f :: "'b \<Rightarrow> 'a :: trivial_conjugatable_linordered_field"
+ shows "k * sum f S = sum (\<lambda> i. k * (f i)) S" 
+  by (metis  mult_hom.hom_sum)
+
+lemma jjoij:
+  fixes f :: "nat \<Rightarrow> 'a :: trivial_conjugatable_linordered_field"
+  shows "f 0 + sum f {1..<n +1} = sum f {0..<n+1}" 
+proof(induct n)
+  case 0
+  have "sum f {0..<0} = 0" by fastforce
+  have "sum f {0..<0 + 1} = sum f {0}" 
+    by simp 
+  then show ?case 
+    by simp
+next
+  case (Suc n)
+  have "sum f {1..<Suc n + 1} = sum f {1..<n + 1} + f (n+1)" 
+    by simp
+  then show ?case 
+    by (metis R.add.m_assoc Suc Suc_eq_plus1 sum.atLeast0_lessThan_Suc)
+qed
+
+lemma fhghg:
+  fixes f :: "nat \<Rightarrow> 'a  vec"
+  assumes "f : set xs \<rightarrow> carrier_vec n"
+  assumes "k \<noteq> 0"
+ shows "sumlist (map f xs) = 
+    k \<cdot>\<^sub>v sumlist (map (\<lambda>i. (1/k)\<cdot>\<^sub>v(f i)) xs)"
+  using assms(1-2)
+proof(induct xs)
+  case Nil
+  then show ?case
+    by simp
+next
+  case (Cons a xs)
+
+  have "f \<in> set xs \<rightarrow> carrier_vec n" 
+    using Cons.prems(1) by auto
+  have "M.sumlist (map f xs) = k \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)" 
+    using Cons.hyps `f \<in> set xs \<rightarrow> carrier_vec n` `k \<noteq> 0` 
+    by blast
+  have "sumlist (map f (a # xs)) = f a + sumlist (map f xs)" 
+    by simp
+  have "k \<cdot>\<^sub>v sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) (a # xs)) =
+    k \<cdot>\<^sub>v ((\<lambda>i. 1 / k \<cdot>\<^sub>v f i) a + sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs))" 
+    by fastforce
+  have "( 1 / k \<cdot>\<^sub>v f a) \<in> carrier_vec n" 
+    using Cons.prems(1) 
+    by (simp add: Pi_mem)
+  have "set (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs) \<subseteq> carrier_vec  n"
+     using Cons.prems(1) Pi_mem 
+    by auto
+  then  have "(sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)) \<in> carrier_vec  n" 
+    by force
+    then have " k \<cdot>\<^sub>v ((\<lambda>i. 1 / k \<cdot>\<^sub>v f i) a + sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)) =
+     k \<cdot>\<^sub>v ((\<lambda>i. 1 / k \<cdot>\<^sub>v f i) a) + k \<cdot>\<^sub>v (sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs))" 
+      using smult_add_distrib_vec 
+      using \<open>1 / k \<cdot>\<^sub>v f a \<in> carrier_vec n\<close> by blast
+  have "  k \<cdot>\<^sub>v ((\<lambda>i. 1 / k \<cdot>\<^sub>v f i) a) = f a" using assms(2) 
+    by fastforce
+  then show ?case 
+    using \<open>M.sumlist (map f (a # xs)) = f a + M.sumlist (map f xs)\<close> \<open>M.sumlist (map f xs) = k \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)\<close> \<open>k \<cdot>\<^sub>v (1 / k \<cdot>\<^sub>v f a + M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)) = k \<cdot>\<^sub>v (1 / k \<cdot>\<^sub>v f a) + k \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)\<close> \<open>k \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) (a # xs)) = k \<cdot>\<^sub>v (1 / k \<cdot>\<^sub>v f a + M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs))\<close> by presburger
+qed
+lemma jlewfweg:
+  fixes ax :: "'a :: trivial_conjugatable_linordered_field vec list"
+  assumes "finite (set ax)"
+  assumes "set ax \<subseteq> carrier_vec n"
+  assumes "set ax \<subseteq> P \<inter> \<int>\<^sub>v"
+  assumes "P = integer_hull P"
+  assumes "sum c {0..<length ax} = 1"
+  assumes "(\<forall>i<length ax. 0 \<le> c i) " 
+  shows "sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v ax ! i) [0..<length ax]) \<in> P" 
+proof -
+  let ?z = "sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
+  have "lincomb_list c ax = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
+     using lincomb_list_def by blast
+   then have "nonneg_lincomb_list c ax ?z" 
+     using assms(6) nonneg_lincomb_list_def by blast 
+   then have "convex_lincomb_list c ax ?z" 
+     using assms(5) convex_lincomb_list_def by blast
+   have "convex_hull (set ax) = convex_hull_list ax" 
+     using assms(2) finite_convex_hull_iff_convex_hull_list by auto
+   then have "?z \<in> convex_hull (set ax)" 
+     using \<open>convex_lincomb_list c ax (M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v ax ! i) [0..<length ax]))\<close> convex_hull_list_def by blast
+   then have "convex_hull (set ax) \<subseteq> convex_hull (P \<inter> \<int>\<^sub>v)" 
+     using assms(3) convex_hull_mono by presburger
+   then show "?z \<in> P" 
+     using assms(4) unfolding integer_hull_def using `?z \<in> convex_hull (set ax)` 
+     by blast 
+ qed
+
+lemma mvdryy:
+  fixes f :: "nat \<Rightarrow> 'a"
+  assumes "sum f {0..<m} = 1"
+  assumes "\<forall>i < m. f i \<ge> 0"
+  shows "\<forall>i < m. f i \<le> 1" 
+  by (metis assms(1) assms(2) atLeastLessThan_iff finite_atLeastLessThan gram_schmidt.fefewf le_numeral_extra(4) zero_le)
+
+lemma lfff:
+  fixes xs :: "'a vec list" 
+  assumes "set xs \<subseteq> carrier_vec n"
+  assumes "i < length xs"
+  assumes "j < length xs"
+  shows "sumlist (xs[i:= xs ! j, j:= xs ! i]) =sumlist xs" 
+proof -
+  have "sumlist xs = summset (mset xs)" using sumlist_as_summset
+    using assms(1) by auto
+  have "sumlist (xs[i:= xs ! j, j:= xs ! i]) = 
+      summset (mset (xs[i:= xs ! j, j:= xs ! i]))"
+using sumlist_as_summset
+    using assms(1) 
+    using assms(2) assms(3) set_swap by blast
+  have "mset (xs[i:= xs ! j, j:= xs ! i]) =  mset xs"
+    by (simp add: assms(2) assms(3) perm_swap)
+  then show ?thesis 
+    using \<open>M.sumlist (xs[i := xs ! j, j := xs ! i]) = M.summset (mset (xs[i := xs ! j, j := xs ! i]))\<close> \<open>M.sumlist xs = M.summset (mset xs)\<close> by presburger
+qed
+
+lemma nmdo:
+  fixes xs :: "'a vec list" 
+  assumes "i < length xs"
+  assumes "j < length xs"
+  shows "(map (f(i:=f j, j := f i))
+        [0..<length (xs[i := xs ! j, j := xs ! i])]) =
+      (map f [0..<length xs])
+    [i := (map f [0..<length xs]) ! j, 
+     j := (map f [0..<length xs]) ! i]"
+  by (simp add: assms  map_nth_eq_conv)
+
+lemma jkkl:
+  fixes xs :: "'a vec list" 
+  assumes "i < length xs"
+  assumes "j < length xs"
+  assumes "\<forall>ia < length xs. 0 \<le> c ia" 
+  assumes "ia<length (xs[i := xs ! j, j := xs ! i])"
+  shows "0 \<le> (c(i := c j, j := c i)) ia"
+  using assms(1) assms(2) assms(3) assms(4) by auto
+
+lemma jkkhhhjl:
+  fixes xs :: "'a vec list" 
+  assumes "finite (set xs)"
+  assumes "i < length xs"
+  assumes "j < length xs"
+  assumes "sum c {0..<length xs} = 1"
+  shows " sum (c(i := c j, j := c i)) {0..<length (xs[i := xs ! j, j := xs ! i])} = 1"
+proof(cases "i = j")
+  case True
+  then show ?thesis 
+    by (simp add: assms(4))
+next
+  case False
+ 
+  have "finite {0..<length xs}" 
+    by simp
+  have "{0..<length xs} - {i, j} \<union> {i, j} = {0..<length xs}" 
+    using assms(2) assms(3) by fastforce
+  have "{i, j} - ({0..<length xs} - {i, j}) = {i, j}" 
+    using assms(2) assms(3) by fastforce
+
+  then have "sum (c(i := c j, j := c i)) {0..<length xs} = sum (c(i := c j, j := c i)) ({0..<length xs} - {i, j}) 
+  + sum (c(i := c j, j := c i)) {i, j}" 
+    using sum_Un2[of "{0..<length xs} - {i, j}" "{i, j}" "(c(i := c j, j := c i))"]
+    by (metis Diff_disjoint \<open>finite {0..<length xs}\<close> \<open>{0..<length xs} - {i, j} \<union> {i, j} = {0..<length xs}\<close> finite.emptyI finite.insertI finite_Diff sum.union_disjoint) 
+
+ have "sum c {0..<length xs} = sum c ({0..<length xs} - {i, j})  + sum c {i, j}" 
+    using sum_Un2[of "{0..<length xs} - {i, j}" "{i, j}" "c"] `{i, j} - ({0..<length xs} - {i, j}) = {i, j}`
+    by (metis Diff_disjoint \<open>finite {0..<length xs}\<close> \<open>{0..<length xs} - {i, j} \<union> {i, j} = {0..<length xs}\<close> finite.emptyI finite.insertI finite_Diff sum.union_disjoint) 
+  
+
+  have "\<forall>k \<in> ({0..<length xs} - {i, j}). (c(i := c j, j := c i)) k = c k" 
+    by simp
+  then have "sum (c(i := c j, j := c i)) ({0..<length xs} - {i, j}) =
+       sum c ({0..<length xs} - {i, j})" 
+    by (meson sum.cong)
+  have "sum (c(i := c j, j := c i)) {i, j} = (c(i := c j, j := c i)) i + (c(i := c j, j := c i)) j"
+      using False by auto 
+    then have "(c(i := c j, j := c i)) i + (c(i := c j, j := c i)) j = c i + c j" 
+      by (simp add: add.commute)
+    then have "sum (c(i := c j, j := c i)) {i, j} = sum c {i, j}" 
+      by (smt (verit, best) finite.emptyI finite.insertI fun_upd_apply group_cancel.add2 insert_absorb insert_iff insert_not_empty sum.empty sum.insert)
+    then show ?thesis 
+      by (metis \<open>sum (c(i := c j, j := c i)) ({0..<length xs} - {i, j}) = sum c ({0..<length xs} - {i, j})\<close> \<open>sum (c(i := c j, j := c i)) {0..<length xs} = sum (c(i := c j, j := c i)) ({0..<length xs} - {i, j}) + sum (c(i := c j, j := c i)) {i, j}\<close> \<open>sum c {0..<length xs} = sum c ({0..<length xs} - {i, j}) + sum c {i, j}\<close> assms(4) length_list_update)
+  qed
+
+lemma vvwe:
+  shows "0\<^sub>v n \<in>  \<int>\<^sub>v" 
+  unfolding Ints_vec_def zero_vec_def 
+  by fastforce
+
+lemma bjrtj:
+  assumes "a \<in> carrier_vec n"
+  assumes "b \<in> carrier_vec n"
+  assumes "a \<in> \<int>\<^sub>v"
+  assumes "b \<in> \<int>\<^sub>v"
+  shows "a + b \<in> \<int>\<^sub>v"  
+  unfolding Ints_vec_def 
+  by (smt (verit, ccfv_SIG) Ints_add Ints_vec_def assms carrier_vecD index_add_vec(1) 
+      index_add_vec(2) mem_Collect_eq)
+
+
+
+lemma nrtn:
+assumes "f : {0..<m} \<rightarrow> carrier_vec n"
+  assumes "\<forall>j < m. f  j \<in> \<int>\<^sub>v"
+  shows "sumlist (map f [0..<m]) \<in> \<int>\<^sub>v"
+  using assms 
+proof(induct m)
+  case 0
+  have "(map f [0..<0]) = []" by auto
+  then have "sumlist (map f [0..<0]) = 0\<^sub>v n" 
+    using M.sumlist_Nil by presburger
+  then show ?case 
+    by (simp add: vvwe)
+next
+  case (Suc m)
+  have "f \<in> {0..<m} \<rightarrow> carrier_vec n" 
+    using Suc.prems(1) by auto
+  have " \<forall>j<m. f j \<in> \<int>\<^sub>v" 
+    using Suc.prems(2) less_Suc_eq by presburger
+  then have "M.sumlist (map f [0..<m]) \<in> \<int>\<^sub>v" 
+    using Suc.hyps \<open>f \<in> {0..<m} \<rightarrow> carrier_vec n\<close> by blast
+  
+  have "M.sumlist (map f [0..<Suc m]) = sumlist (map f [0..<m]) + f m"
+    using sumlist_snoc[of "(map f [0..<m])" "f m"] 
+    using Suc.prems(1) 
+    by force
+  have "f m \<in> \<int>\<^sub>v" using Suc.prems(2) 
+    by fast
+  have "set (map f [0..<m]) \<subseteq> carrier_vec n"  using Suc.prems(1) by auto
+  have "f m \<in> carrier_vec n"  using Suc.prems(1) by auto
+  have "sumlist (map f [0..<m]) \<in> carrier_vec n" 
+    using M.sumlist_carrier \<open>set (map f [0..<m]) \<subseteq> carrier_vec n\<close> by presburger
+  then show ?case using `M.sumlist (map f [0..<Suc m]) = sumlist (map f [0..<m]) + f m` 
+      `M.sumlist (map f [0..<m]) \<in> \<int>\<^sub>v` using bjrtj
+    by (metis \<open>f m \<in> \<int>\<^sub>v\<close> \<open>f m \<in> carrier_vec n\<close>)
+qed
+
+lemma bnter:
+fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
+  assumes "convex_lincomb_list c Wsl x"
+  assumes "x \<notin> \<int>\<^sub>v"
+  assumes "set Wsl \<subseteq> \<int>\<^sub>v"  
+ assumes "set Wsl \<subseteq> carrier_vec n"  
+  shows "\<forall> i < length Wsl. c i < 1" 
+proof(rule+)
+  fix i
+  assume "i < length Wsl" 
+  have "finite (set Wsl)" 
+    by simp
+  have "(\<forall> i < length Wsl. c i \<ge> 0) \<and> sum c {0..<length Wsl} = 1" 
+    using assms(1) convex_lincomb_list_def nonneg_lincomb_list_def by blast
+  show "c i < 1" 
+  proof(rule ccontr)
+    assume " \<not> c i < 1" 
+    then have "c i =  1" using mvdryy[of c "length Wsl"] 
+      by (metis \<open>(\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> \<open>i < length Wsl\<close> order_le_imp_less_or_eq)
+    have "\<forall>j < length Wsl. i \<noteq> j \<longrightarrow> c j = 0" 
+    proof(rule+)
+      fix j
+      assume "j < length Wsl" 
+      assume "i \<noteq> j"
+      show "c j = 0"
+      proof(rule ccontr)
+        assume "c j \<noteq> 0" 
+        then have "c j > 0" 
+          by (metis \<open>(\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> \<open>j < length Wsl\<close> order_le_imp_less_or_eq)
+        then have "c j + c i > 1" 
+          by (simp add: \<open>c i = 1\<close>)
+
+ have "finite {0..<length Wsl}" 
+    by simp
+  have "{0..<length Wsl} - {i, j} \<union> {i, j} = {0..<length Wsl}" 
+    using `j < length Wsl` `i < length Wsl`  by fastforce
+  have "{i, j} - ({0..<length Wsl} - {i, j}) = {i, j}" 
+     by fastforce
+
+ then have "sum c {0..<length Wsl} = sum c ({0..<length Wsl} - {i, j})  + sum c {i, j}" 
+    using sum_Un2[of "{0..<length Wsl} - {i, j}" "{i, j}" "c"] 
+    by (metis Diff_disjoint \<open>finite {0..<length Wsl}\<close> \<open>{0..<length Wsl} - {i, j} \<union> {i, j} = {0..<length Wsl}\<close> finite.emptyI finite.insertI finite_Diff sum.union_disjoint) 
+  
+  have "sum c ({0..<length Wsl} - {i, j}) \<ge> 0" 
+    by (meson DiffD1 \<open>(\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> atLeastLessThan_iff sum_nonneg)
+
+  then have "c i + c j \<le> sum c {0..<length Wsl}" 
+    using `sum c {0..<length Wsl} = sum c ({0..<length Wsl} - {i, j})  + sum c {i, j}` `i \<noteq> j`
+    by simp
+  then show False 
+    using \<open>(\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> \<open>1 < c j + c i\<close> by linarith
+qed
+qed
+  have "\<forall> j < length Wsl. Wsl ! j \<in> carrier_vec n" 
+    using assms(4) nth_mem by blast
+  then have "\<forall>j<length Wsl. i \<noteq> j \<longrightarrow> c j \<cdot>\<^sub>v Wsl ! j = 0\<^sub>v n" 
+    using `\<forall>j<length Wsl. i \<noteq> j \<longrightarrow> c j = 0` 
+    by auto
+  have "x =  sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) [0..<length Wsl])"
+    by (metis assms(1) convex_lincomb_list_def lincomb_list_def  nonneg_lincomb_list_def)
+  then have "x = sumlist (map (\<lambda>j. if j = i then  c i \<cdot>\<^sub>v Wsl ! i else 0\<^sub>v n) [0..<length Wsl])"
+    using `\<forall>j<length Wsl. i \<noteq> j \<longrightarrow> c j \<cdot>\<^sub>v Wsl ! j = 0\<^sub>v n` 
+    by (smt (verit, ccfv_SIG) add_0 length_map map_eq_conv' map_nth nth_upt)
+
+  have "(\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) \<in> {0..<length Wsl} \<rightarrow> carrier_vec n" 
+    by (simp add: \<open>\<forall>j<length Wsl. Wsl ! j \<in> carrier_vec n\<close>)
+  have "\<forall>j < length Wsl.  (\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i)  j \<in> \<int>\<^sub>v"
+  proof(rule)
+    fix j
+    show " j < length Wsl \<longrightarrow> c j \<cdot>\<^sub>v Wsl ! j \<in> \<int>\<^sub>v"
+    proof
+      assume " j < length Wsl"
+      have "Wsl ! j \<in> \<int>\<^sub>v" 
+        using \<open>j < length Wsl\<close> assms(3) nth_mem by blast
+      have "c j \<in> \<int>" 
+        by (metis Ints_0 Ints_1 \<open>\<forall>j<length Wsl. i \<noteq> j \<longrightarrow> c j = 0\<close> \<open>c i = 1\<close> \<open>j < length Wsl\<close>)
+      show " c j \<cdot>\<^sub>v Wsl ! j \<in> \<int>\<^sub>v" 
+        by (metis \<open>Wsl ! j \<in> \<int>\<^sub>v\<close> \<open>\<forall>j<length Wsl. i \<noteq> j \<longrightarrow> c j \<cdot>\<^sub>v Wsl ! j = 0\<^sub>v n\<close> \<open>c i = 1\<close> \<open>j < length Wsl\<close> scalar_vec_one vvwe)
+
+    qed
+  qed
+
+  then have "sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) [0..<length Wsl]) \<in>  \<int>\<^sub>v" 
+    using nrtn[of "(\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i)" "length Wsl"]  
+    using \<open>(\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) \<in> {0..<length Wsl} \<rightarrow> carrier_vec n\<close> by blast
+
+  then have "x \<in> \<int>\<^sub>v" 
+    using \<open>x = M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) [0..<length Wsl])\<close> by blast
+  then show False 
+    by (simp add: assms(2))
+qed
+qed
+
+lemma fwqfqwf:
+  fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
+  assumes "P \<subseteq> carrier_vec n"
+  assumes "P = integer_hull P"
+  assumes "finite Ws"
+  assumes "Ws \<subseteq> P \<inter> \<int>\<^sub>v"  
+  assumes "x \<notin> \<int>\<^sub>v"
+  assumes "convex_lincomb c' Ws x"
+  obtains y z l where "y \<in> P \<inter> \<int>\<^sub>v" "z \<in> P" "x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z" "l > 0 \<and> l \<le> 1"
+proof -
+  have "Ws \<subseteq> carrier_vec n" using assms by blast
+
+    have "x \<in> convex_hull Ws" 
+      using assms convex_hull_def by blast
+
+    obtain Wsl c where Wc: "convex_lincomb_list c Wsl x \<and> c 0 \<noteq> 0 \<and> Ws = set Wsl"
+    proof -
+obtain Wsl where "set Wsl =  Ws " using assms
+      by (meson finite_list) 
+
+    
+    then have "convex_hull Ws = convex_hull_list Wsl" 
+      using finite_convex_hull_iff_convex_hull_list 
+      using \<open>set Wsl = Ws\<close> `Ws \<subseteq> carrier_vec n` by force
+    have "x \<in> convex_hull Ws" 
+      using assms convex_hull_def by blast
+    then have "x \<in> convex_hull_list Wsl" 
+      by (simp add: \<open>convex_hull Ws = convex_hull_list Wsl\<close>)
+    then obtain c where c:"convex_lincomb_list c Wsl x" 
+      using gram_schmidt.convex_hull_list_def by fastforce
+
+    have "\<exists> i < length Wsl. c i \<noteq> 0" using assms(5) 
+      using \<open>convex_lincomb_list c Wsl x\<close> class_field.zero_not_one convex_lincomb_list_def finsum_zero'
+      by (metis atLeastLessThan_iff)
+    then obtain i where "i < length Wsl \<and> c i \<noteq> 0" by blast
+    have "Ws = set (Wsl[0:= Wsl ! i, i:=Wsl ! 0])"
+      by (metis \<open>i < length Wsl \<and> c i \<noteq> 0\<close> \<open>set Wsl = Ws\<close> length_pos_if_in_set nth_mem set_swap)
+    have "convex_hull_list Wsl = convex_hull_list (Wsl[0:= Wsl ! i, i:=Wsl ! 0])"
+      using convex_hull_list_mono 
+      by (metis \<open>Ws = set (Wsl[0 := Wsl ! i, i := Wsl ! 0])\<close> \<open>Ws \<subseteq> carrier_vec n\<close> \<open>set Wsl = Ws\<close> convex_hull_list_eq_set)
+ 
+    let ?Wsl' = "Wsl[0:= Wsl ! i, i:=Wsl ! 0]" 
+    let ?c' = "c(0:= c i, i:= c 0)"
+
+    have cll:"(lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i)) \<and> sum c {0..<length Wsl} = 1" 
+      using c unfolding convex_lincomb_list_def nonneg_lincomb_list_def by auto
+    have "sumlist (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl]) = x" using cll
+      unfolding lincomb_list_def by auto
+
+
+    have "(\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia)(0 := c i \<cdot>\<^sub>v Wsl ! i, i := c 0 \<cdot>\<^sub>v Wsl ! 0) = 
+(\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia)" 
+      apply auto
+      apply rule+
+      
+      using \<open>i < length Wsl \<and> c i \<noteq> 0\<close> length_pos_if_in_set nth_mem apply fastforce
+  by (smt (verit) \<open>i < length Wsl \<and> c i \<noteq> 0\<close> fun_upd_apply length_list_update not_less_zero nth_list_update zero_less_iff_neq_zero)
+
+  then have "map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia)
+      [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])] =
+  (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])
+      [0:= (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl]) ! i, 
+      i := (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl]) ! 0]"
+    using nmdo[of 0 Wsl i "(\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia)"] 
+    by (metis \<open>i < length Wsl \<and> c i \<noteq> 0\<close> less_nat_zero_code  neq0_conv)
+  have "set (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl]) \<subseteq> carrier_vec n"
+  proof
+    fix z
+    assume "z \<in> set (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])"
+    then obtain j where "j <length Wsl \<and> z = c j \<cdot>\<^sub>v Wsl ! j" 
+      by auto
+    then show "z \<in> carrier_vec n" 
+    using `Ws \<subseteq> carrier_vec n` `set Wsl = Ws` 
+    using nth_mem by blast
+qed
+
+  then have " M.sumlist
+      (map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia)
+        [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])]) =
+      sumlist (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])" 
+    using lfff[of "(map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])" 0 i] 
+    by (metis \<open>i < length Wsl \<and> c i \<noteq> 0\<close> \<open>map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia) [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])] = (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl]) [0 := map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl] ! i, i := map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl] ! 0]\<close> length_map less_nat_zero_code map_nth neq0_conv)
+        
+      
+
+
+
+
+    have " M.sumlist
+      (map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia)
+        [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])]) =
+     x" 
+      using \<open>M.sumlist (map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia) [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])]) = M.sumlist (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])\<close> \<open>M.sumlist (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl]) = x\<close> by blast
+    have "(\<forall>ia<length (Wsl[0 := Wsl ! i, i := Wsl ! 0]). 0 \<le> (c(0 := c i, i := c 0)) ia)"
+using jkkl[of 0 Wsl i]  
+  by (metis \<open>i < length Wsl \<and> c i \<noteq> 0\<close> cll less_zeroE zero_less_iff_neq_zero)
+
+    then have "convex_lincomb_list ?c' ?Wsl' x" 
+      unfolding convex_lincomb_list_def  nonneg_lincomb_list_def lincomb_list_def
+using jkkhhhjl
+      by (metis (mono_tags, lifting) \<open>M.sumlist (map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia) [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])]) = x\<close> \<open>i < length Wsl \<and> c i \<noteq> 0\<close> \<open>set Wsl = Ws\<close> assms(3) cll length_pos_if_in_set nth_mem)
+
+    then show ?thesis 
+      by (metis \<open>Ws = set (Wsl[0 := Wsl ! i, i := Wsl ! 0])\<close> \<open>i < length Wsl \<and> c i \<noteq> 0\<close> fun_upd_other fun_upd_same that)
+    qed
+    have "convex_hull Ws = convex_hull_list Wsl" 
+      using finite_convex_hull_iff_convex_hull_list 
+      using Wc 
+      using \<open>Ws \<subseteq> carrier_vec n\<close> by presburger 
+    have "x \<in> convex_hull Ws" 
+      using assms convex_hull_def by blast
+    then have "x \<in> convex_hull_list Wsl" 
+      by (simp add: \<open>convex_hull Ws = convex_hull_list Wsl\<close>)
+
+  
+    then have "lincomb_list c Wsl = x \<and> (\<forall> i < length Wsl. c i \<ge> 0) \<and> sum c {0..<length Wsl} = 1"
+      using convex_lincomb_list_def nonneg_lincomb_list_def Wc by blast
+    have "lincomb_list c Wsl = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) [0..<length Wsl])"
+      by (simp add: lincomb_list_def)
+    have "Ws \<noteq> {}" 
+      using \<open>x \<in> convex_hull Ws\<close> convex_hull_empty(2) by blast
+    have "Wsl \<noteq> []" 
+      using \<open>Ws \<noteq> {}\<close> Wc by blast
+    have "set Wsl \<subseteq> carrier_vec n" 
+      using \<open>Ws \<subseteq> carrier_vec n\<close> Wc by auto
+    have "sum c {0..<length Wsl} = 1" 
+      using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by blast
+
+    obtain a ax where "Wsl = a # ax" 
+      by (meson \<open>Wsl \<noteq> []\<close> neq_Nil_conv)
+
+  have "0 # [1..<length (a # ax)] = [0..<length (a # ax)]"
+            using ff 
+            by blast 
+  
+ then have "map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [0..<length (a #ax)] = 
+       (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) 0 # map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]"
+   using List.list.map(2)[of "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i)" 0 "[1..<length (a # ax)]"] by argo
+  then have "sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [0..<length (a #ax)]) =
+       (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) 0 + sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])"
+    using M.sumlist_Cons by presburger
+  then have "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) 0 + sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) =
+      c 0 \<cdot>\<^sub>v a + sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])"
+    by force
+  have "set Wsl \<subseteq> \<int>\<^sub>v" using assms(4) 
+    by (simp add: Wc)
+  have "set Wsl \<subseteq> carrier_vec n" 
+    using \<open>set Wsl \<subseteq> carrier_vec n\<close> by auto
+  then have " \<forall>i<length Wsl. c i < 1" using bnter[of c Wsl x] using Wc assms(4-5) 
+    using \<open>set Wsl \<subseteq> \<int>\<^sub>v\<close> by presburger
+  then have "c 0 \<noteq> 1" 
+    by (metis \<open>Wsl \<noteq> []\<close> length_greater_0_conv less_numeral_extra(4))
+  let ?f = "(\<lambda>i. c (i + 1) / (1 - c 0))" 
+  have "sum ?f {0..<length ax} = 1" 
+  proof -
+    have "length (a # ax) = 1 + length ax" 
+      by simp
+    then have "sum (\<lambda>i. c (i + 1)) {0..<length ax} = sum (\<lambda>i. c i) {1..<length (a # ax)}"
+      by (metis Nat.add_0_right  add.commute sum.shift_bounds_nat_ivl)
+    then have "(1/(1 - c 0)) * sum (\<lambda>i. c (i + 1)) {0..<length ax} =
+              (1/(1 - c 0)) * sum (\<lambda>i. c i) {1..<length (a # ax)}" by simp
+    have "sum ?f {0..<length ax} = (1/(1 - c 0)) * sum (\<lambda>i. c (i + 1)) {0..<length ax}" 
+      using vrh[of "(1/(1 - c 0))" "(\<lambda>i. c (i + 1))" "{0..<length ax}"]
+      by simp
+    then have "c 0 + sum c {1..<length Wsl} = sum c {0..<length Wsl}" 
+      using jjoij[of c]
+      by (metis \<open>Wsl = a # ax\<close> \<open>length (a # ax) = 1 + length ax\<close> add.commute gram_schmidt.jjoij)
+    then have "c 0 + sum c {1..<length (a#ax)} = 1" 
+      by (metis \<open>Wsl = a # ax\<close> \<open>sum c {0..<length Wsl} = 1\<close>)
+    then have "sum (\<lambda>i. c (i + 1)) {0..<length ax} = 1 - c 0" 
+      using \<open>(\<Sum>i = 0..<length ax. c (i + 1)) = sum c {1..<length (a # ax)}\<close> by linarith 
+    then have "(1/(1 - c 0)) * (1 - c 0) =  1" using `c 0 \<noteq> 1` 
+      by (metis nonzero_eq_divide_eq r_right_minus_eq)
+    then show ?thesis 
+      using \<open>(\<Sum>i = 0..<length ax. c (i + 1) / (1 - c 0)) = 1 / (1 - c 0) * (\<Sum>i = 0..<length ax. c (i + 1))\<close> \<open>(\<Sum>i = 0..<length ax. c (i + 1)) = 1 - c 0\<close> by presburger
+  qed
+
+
+  have "\<forall>i \<in>  set [1..<length (a # ax)].  c i \<cdot>\<^sub>v (a # ax) ! i \<in> carrier_vec n" 
+  proof 
+    fix i
+    assume "i \<in>  set [1..<length (a # ax)]" 
+    then have "i < length (a # ax)" 
+      by (metis atLeastLessThan_iff set_upt)
+    then have "(a # ax) ! i \<in> set (a # ax)" 
+      using nth_mem by blast
+    then show "c i \<cdot>\<^sub>v (a # ax) ! i \<in> carrier_vec n" 
+      using \<open>Wsl = a # ax\<close> \<open>set Wsl \<subseteq> carrier_vec n\<close> by blast
+  qed
+
+  then have "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) \<in> set [1..<length (a # ax)] \<rightarrow> carrier_vec n" 
+    by blast
+  then have " M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) =
+    (1 - c 0) \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v (c i \<cdot>\<^sub>v (a # ax) ! i)) [1..<length (a # ax)])"
+    using fhghg[of "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i)" " [1..<length (a # ax)]" "(1 - c 0)"] `c 0 \<noteq> 1` 
+    by linarith
+  have "(\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v (c i \<cdot>\<^sub>v (a # ax) ! i)) =  (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i)"
+    using `c 0 \<noteq> 1` 
+    by fastforce  
+
+  then have "sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = 
+    (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])" 
+   
+   using \<open>M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = (1 - c 0) \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v (c i \<cdot>\<^sub>v (a # ax) ! i)) [1..<length (a # ax)])\<close> by presburger
+
+  have "sumlist ( map (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = 
+      sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
+    by (smt (z3) \<open>0 # [1..<length (a # ax)] = [0..<length (a # ax)]\<close> add.commute add_cancel_left_left diff_diff_left dqwd length_upt list.inject map_eq_conv' map_nth nth_upt zero_less_diff)
+
+  have "finite (set ax)" 
+    by auto
+  have "set ax \<subseteq> set Wsl" 
+    using \<open>Wsl = a # ax\<close> by auto
+  then have "set ax \<subseteq> carrier_vec n" using `set Wsl \<subseteq> carrier_vec n`  
+    by blast
+  have " set ax \<subseteq> P \<inter> \<int>\<^sub>v" 
+    using Wc \<open>set ax \<subseteq> set Wsl\<close> assms(4) by blast
+  have "(\<forall> i < length Wsl. c i \<ge> 0)" 
+    using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by presburger
+  have "(1 - c 0) > 0" using mvdryy[of c "length Wsl"] 
+    by (metis \<open>c 0 \<noteq> 1\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> atLeastLessThan_empty bot_nat_0.extremum_unique diff_ge_0_iff_ge empty_iff gr_zeroI not_one_le_zero order_le_imp_less_or_eq r_right_minus_eq sum_nonpos) 
+  
+  then have " \<forall>i<length ax. 0 \<le> c (i + 1) / (1 - c 0)"  
+    by (simp add: \<open>Wsl = a # ax\<close> \<open>\<forall>i<length Wsl. 0 \<le> c i\<close>)
+  have 1:"sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax]) \<in> P" 
+    using jlewfweg[of ax P ?f] `sum ?f {0..<length ax} = 1`  
+    using \<open>\<forall>i<length ax. 0 \<le> c (i + 1) / (1 - c 0)\<close> \<open>set ax \<subseteq> P \<inter> \<int>\<^sub>v\<close> \<open>set ax \<subseteq> carrier_vec n\<close> assms(2) by blast  
+  have 2:"x = c 0 \<cdot>\<^sub>v a + (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
+    using \<open>M.sumlist (map (\<lambda>i. c i / (1 - c 0) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = M.sumlist (map (\<lambda>i. c (i + 1) / (1 - c 0) \<cdot>\<^sub>v ax ! i) [0..<length ax])\<close> \<open>M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [0..<length (a # ax)]) = c 0 \<cdot>\<^sub>v (a # ax) ! 0 + M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])\<close> \<open>M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = (1 - c 0) \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. c i / (1 - c 0) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])\<close> \<open>Wsl = a # ax\<close> \<open>c 0 \<cdot>\<^sub>v (a # ax) ! 0 + M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = c 0 \<cdot>\<^sub>v a + M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])\<close> \<open>lincomb_list c Wsl = M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) [0..<length Wsl])\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by presburger
+  have 3:"a \<in> P \<inter> \<int>\<^sub>v" 
+    using \<open>Wsl = a # ax\<close> Wc assms(4) by force
+  have 4:"c 0 \<ge> 0" 
+    by (simp add: \<open>Wsl = a # ax\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close>)
+  have 5:"c 0 \<le> 1" using member_le_sum[of 0 "{0..<length Wsl}" c] 
+    using \<open>Wsl = a # ax\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by force
+  
+  have "c 0 \<noteq> 0" 
+    by (simp add: Wc)
+  then show ?thesis using 1 2 3 4 5
+    using that 
+    by auto 
+qed
+
+
+lemma P_int_then_face_int:
+   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+ assumes A: "A \<in> carrier_mat nr n"
+ assumes b: "b \<in> carrier_vec nr"
+ defines "P \<equiv> polyhedron A b"
+ assumes "P = integer_hull P" 
+ shows "(\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))" 
+proof(rule) 
+  fix F
+  show " face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)"
+  proof 
+    assume "face P F"
+    obtain x where "x \<in> F" 
+      using \<open>face P F\<close> face_non_empty by fastforce
+    show "\<exists>x\<in>F. x \<in> \<int>\<^sub>v" 
+    proof(cases "x \<in> \<int>\<^sub>v")
+      case True
+      then show ?thesis using `x \<in> F` 
+        by blast
+    next
+      case False
+
+    obtain \<alpha> \<beta>  where "P \<noteq> {} \<and>  F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta> " 
+      using \<open>face P F\<close> face_def by auto
+
+  then obtain Ws c' where  "finite Ws \<and> Ws \<subseteq> P \<inter> \<int>\<^sub>v \<and> convex_lincomb c' Ws x"
+      using assms(4) unfolding integer_hull_def
+      by (smt (verit, ccfv_SIG) IntD1 \<open>x \<in> F\<close> gram_schmidt.convex_hull_def mem_Collect_eq)
+    then obtain y z l where "y \<in> P \<inter> \<int>\<^sub>v" "z \<in> P" "x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z" "l > 0 \<and> l \<le> 1"
+      using fwqfqwf[of P Ws x c'] 
+      using P_def assms(4) gram_schmidt.polyhedron_def False by blast
+    have "\<alpha> \<bullet> (l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z) = \<beta>" 
+      using \<open>P \<noteq> {} \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta>\<close> \<open>x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z\<close> \<open>x \<in> F\<close> by fastforce
+    then have "\<alpha> \<bullet> (l \<cdot>\<^sub>v y) + \<alpha> \<bullet> ((1 - l) \<cdot>\<^sub>v z) = \<beta>" 
+      using scalar_prod_add_distrib[of \<alpha> n "l \<cdot>\<^sub>v y" "(1 - l) \<cdot>\<^sub>v z"] 
+      by (metis (no_types, lifting) IntE P_def \<open>P \<noteq> {} \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta>\<close> \<open>y \<in> P \<inter> \<int>\<^sub>v\<close> \<open>z \<in> P\<close> gram_schmidt.polyhedron_def mem_Collect_eq smult_closed support_hyp_elim(3))
+    then have 1: "l * (\<alpha> \<bullet> y) + (1 - l) * (\<alpha> \<bullet> z) = \<beta>" 
+      by (metis (no_types, lifting) IntE P_def \<open>P \<noteq> {} \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta>\<close> \<open>y \<in> P \<inter> \<int>\<^sub>v\<close> \<open>z \<in> P\<close> gram_schmidt.polyhedron_def mem_Collect_eq scalar_prod_smult_distrib support_hyp_elim(3))
+    have "\<alpha> \<bullet> y \<le> \<beta>" using `y \<in> P \<inter> \<int>\<^sub>v` 
+      by (meson IntD1 \<open>P \<noteq> {} \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta>\<close> support_hyp_is_valid(1) valid_ineq_def)
+    have "\<alpha> \<bullet> z \<le> \<beta>" using `z \<in> P` 
+          by (meson  \<open>P \<noteq> {} \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta>\<close> support_hyp_is_valid(1) valid_ineq_def)
+        have "l \<noteq> 0" using `l > 0 \<and> l \<le> 1` by blast 
+
+        show "\<exists>x\<in>F. x \<in> \<int>\<^sub>v" 
+        proof(cases "l = 1")
+          case True
+          have "x = 1 \<cdot>\<^sub>v y + 0 \<cdot>\<^sub>v z" using `x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z` True by algebra
+          then have "x = 1 \<cdot>\<^sub>v y" 
+            by (metis (no_types, lifting) IntD1 P_def True \<open>0 < l \<and> l \<le> 1\<close> \<open>y \<in> P \<inter> \<int>\<^sub>v\<close> \<open>z \<in> P\<close> add_smult_distrib_vec diff_numeral_special(9) gram_schmidt.polyhedron_def le_add_diff_inverse mem_Collect_eq smult_l_null)
+          then have "x = y" 
+            by simp
+
+          then show ?thesis 
+            using \<open>x \<in> F\<close> \<open>y \<in> P \<inter> \<int>\<^sub>v\<close> by blast
+        next
+          case False
+          have "l < 1" using False  `l > 0 \<and> l \<le> 1` by linarith  
+    have "\<alpha> \<bullet> y = \<beta>" 
+    proof(cases "\<alpha> \<bullet> z = \<beta>")
+      case True
+      have "l * (\<alpha> \<bullet> y) + (1 - l) * \<beta> = \<beta>" using 1 True by argo
+      then have "l * (\<alpha> \<bullet> y) = \<beta> - (1 - l) * \<beta>" by auto
+      then have "l * (\<alpha> \<bullet> y) = l * \<beta>" by algebra
+      then show ?thesis using `l \<noteq> 0` 
+        using mult_cancel_left by blast
+    next
+      case False
+      have "\<alpha> \<bullet> z < \<beta>" 
+        by (simp add: False \<open>\<alpha> \<bullet> z \<le> \<beta>\<close> order.strict_iff_order)
+      then have "(1 - l) * (\<alpha> \<bullet> z) < (1 - l) * \<beta>" using `l < 1` 
+        by auto
+      have "l * (\<alpha> \<bullet> y) \<le> l * \<beta>" 
+        by (simp add: \<open>0 < l \<and> l \<le> 1\<close> \<open>\<alpha> \<bullet> y \<le> \<beta>\<close>)
+      then have "l * (\<alpha> \<bullet> y) + (1 - l) * (\<alpha> \<bullet> z) < l * \<beta> + (1 - l) * \<beta>" 
+        using \<open>(1 - l) * (\<alpha> \<bullet> z) < (1 - l) * \<beta>\<close> add_mono_thms_linordered_field(4) by blast
+      then have "l * (\<alpha> \<bullet> y) + (1 - l) * (\<alpha> \<bullet> z) < \<beta>" by algebra
+      
+      then show ?thesis using `l * (\<alpha> \<bullet> y) + (1 - l) * (\<alpha> \<bullet> z) = \<beta>` by blast  
+    qed
+    then have "y \<in> F" using `y \<in> P \<inter> \<int>\<^sub>v` 
+      using \<open>P \<noteq> {} \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta>\<close> by blast
+    then show ?thesis 
+      using \<open>y \<in> P \<inter> \<int>\<^sub>v\<close> by blast
+  qed
+qed
+qed
+qed
   
 end
 end
