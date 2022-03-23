@@ -2,6 +2,7 @@ theory Integer_Polyhedron
   imports Faces
    Well_Quasi_Orders.Minimal_Elements
   Linear_Inequalities.Integer_Hull
+  Missing_Sums 
 begin
 
 context gram_schmidt
@@ -580,132 +581,6 @@ lemma ff:
   by (metis add_0 upt_eq_Cons_conv)
 
 
-
-lemma mult_preserve_direction_ineq:
-  fixes c :: "'a :: trivial_conjugatable_linordered_field"
-  assumes "0 < c \<and> c  \<le> 1" 
-  assumes "a < b"
-  shows "c * a < b" 
-proof -
-   have "c * a < c * b" using Factorial.mult_less_iff1[of c a b] 
-     using assms(1) assms(2) by force
-   have "c * b \<le> 1 * b" 
-     using assms(1) 
-     oops
-
-lemma fefewf:
-  fixes c :: "'b \<Rightarrow> 'a" 
-  assumes "finite S" 
-  assumes "\<forall>i \<in> S. c i \<ge> 0" 
-  assumes "sum c S \<le> 1"
-  shows "\<forall>i \<in> S. c i \<le> 1" 
-proof
-  fix i
-  assume  "i \<in> S"
-  then show "c i \<le> 1"
-  using member_le_sum[of i S c] 
-  using assms by auto
-qed
-
-lemma vrh:
- fixes f :: "'b \<Rightarrow> 'a :: trivial_conjugatable_linordered_field"
- shows "k * sum f S = sum (\<lambda> i. k * (f i)) S" 
-  by (metis  mult_hom.hom_sum)
-
-lemma jjoij:
-  fixes f :: "nat \<Rightarrow> 'a :: trivial_conjugatable_linordered_field"
-  shows "f 0 + sum f {1..<n +1} = sum f {0..<n+1}" 
-proof(induct n)
-  case 0
-  have "sum f {0..<0} = 0" by fastforce
-  have "sum f {0..<0 + 1} = sum f {0}" 
-    by simp 
-  then show ?case 
-    by simp
-next
-  case (Suc n)
-  have "sum f {1..<Suc n + 1} = sum f {1..<n + 1} + f (n+1)" 
-    by simp
-  then show ?case 
-    by (metis R.add.m_assoc Suc Suc_eq_plus1 sum.atLeast0_lessThan_Suc)
-qed
-
-lemma fhghg:
-  fixes f :: "nat \<Rightarrow> 'a  vec"
-  assumes "f : set xs \<rightarrow> carrier_vec n"
-  assumes "k \<noteq> 0"
- shows "sumlist (map f xs) = 
-    k \<cdot>\<^sub>v sumlist (map (\<lambda>i. (1/k)\<cdot>\<^sub>v(f i)) xs)"
-  using assms(1-2)
-proof(induct xs)
-  case Nil
-  then show ?case
-    by simp
-next
-  case (Cons a xs)
-
-  have "f \<in> set xs \<rightarrow> carrier_vec n" 
-    using Cons.prems(1) by auto
-  have "M.sumlist (map f xs) = k \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)" 
-    using Cons.hyps `f \<in> set xs \<rightarrow> carrier_vec n` `k \<noteq> 0` 
-    by blast
-  have "sumlist (map f (a # xs)) = f a + sumlist (map f xs)" 
-    by simp
-  have "k \<cdot>\<^sub>v sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) (a # xs)) =
-    k \<cdot>\<^sub>v ((\<lambda>i. 1 / k \<cdot>\<^sub>v f i) a + sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs))" 
-    by fastforce
-  have "( 1 / k \<cdot>\<^sub>v f a) \<in> carrier_vec n" 
-    using Cons.prems(1) 
-    by (simp add: Pi_mem)
-  have "set (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs) \<subseteq> carrier_vec  n"
-     using Cons.prems(1) Pi_mem 
-    by auto
-  then  have "(sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)) \<in> carrier_vec  n" 
-    by force
-    then have " k \<cdot>\<^sub>v ((\<lambda>i. 1 / k \<cdot>\<^sub>v f i) a + sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)) =
-     k \<cdot>\<^sub>v ((\<lambda>i. 1 / k \<cdot>\<^sub>v f i) a) + k \<cdot>\<^sub>v (sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs))" 
-      using smult_add_distrib_vec 
-      using \<open>1 / k \<cdot>\<^sub>v f a \<in> carrier_vec n\<close> by blast
-  have "  k \<cdot>\<^sub>v ((\<lambda>i. 1 / k \<cdot>\<^sub>v f i) a) = f a" using assms(2) 
-    by fastforce
-  then show ?case 
-    using \<open>M.sumlist (map f (a # xs)) = f a + M.sumlist (map f xs)\<close> \<open>M.sumlist (map f xs) = k \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)\<close> \<open>k \<cdot>\<^sub>v (1 / k \<cdot>\<^sub>v f a + M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)) = k \<cdot>\<^sub>v (1 / k \<cdot>\<^sub>v f a) + k \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs)\<close> \<open>k \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) (a # xs)) = k \<cdot>\<^sub>v (1 / k \<cdot>\<^sub>v f a + M.sumlist (map (\<lambda>i. 1 / k \<cdot>\<^sub>v f i) xs))\<close> by presburger
-qed
-lemma jlewfweg:
-  fixes ax :: "'a :: trivial_conjugatable_linordered_field vec list"
-  assumes "finite (set ax)"
-  assumes "set ax \<subseteq> carrier_vec n"
-  assumes "set ax \<subseteq> P \<inter> \<int>\<^sub>v"
-  assumes "P = integer_hull P"
-  assumes "sum c {0..<length ax} = 1"
-  assumes "(\<forall>i<length ax. 0 \<le> c i) " 
-  shows "sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v ax ! i) [0..<length ax]) \<in> P" 
-proof -
-  let ?z = "sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
-  have "lincomb_list c ax = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
-     using lincomb_list_def by blast
-   then have "nonneg_lincomb_list c ax ?z" 
-     using assms(6) nonneg_lincomb_list_def by blast 
-   then have "convex_lincomb_list c ax ?z" 
-     using assms(5) convex_lincomb_list_def by blast
-   have "convex_hull (set ax) = convex_hull_list ax" 
-     using assms(2) finite_convex_hull_iff_convex_hull_list by auto
-   then have "?z \<in> convex_hull (set ax)" 
-     using \<open>convex_lincomb_list c ax (M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v ax ! i) [0..<length ax]))\<close> convex_hull_list_def by blast
-   then have "convex_hull (set ax) \<subseteq> convex_hull (P \<inter> \<int>\<^sub>v)" 
-     using assms(3) convex_hull_mono by presburger
-   then show "?z \<in> P" 
-     using assms(4) unfolding integer_hull_def using `?z \<in> convex_hull (set ax)` 
-     by blast 
- qed
-
-lemma mvdryy:
-  fixes f :: "nat \<Rightarrow> 'a"
-  assumes "sum f {0..<m} = 1"
-  assumes "\<forall>i < m. f i \<ge> 0"
-  shows "\<forall>i < m. f i \<le> 1" 
-  by (metis assms(1) assms(2) atLeastLessThan_iff finite_atLeastLessThan gram_schmidt.fefewf le_numeral_extra(4) zero_le)
-
 lemma lfff:
   fixes xs :: "'a vec list" 
   assumes "set xs \<subseteq> carrier_vec n"
@@ -938,6 +813,24 @@ qed
 qed
 qed
 
+
+lemma aghjk: 
+"( map (\<lambda>i. f i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = 
+      ( map (\<lambda> i. (f (i+1)) \<cdot>\<^sub>v ax ! i) [0..<length ax])"
+proof -
+  have 1:"\<forall>  i < length ax. ([Suc 0..<length ax] @ [length ax]) ! i = i + 1" 
+    using nth_upt[of 1 _ "length ax + 1"] by auto
+  have " ( map (\<lambda> i. (f (i+1)) \<cdot>\<^sub>v ax ! i) [0..<length ax]) =
+       ( map (\<lambda> i. (f (i+1) \<cdot>\<^sub>v (a # ax) ! (i+1))) [0..<length ax])" 
+    by fastforce
+   also have "\<dots> = ( map (\<lambda> i. (f i \<cdot>\<^sub>v (a # ax) ! i)) [1..<length ax + 1])"
+     apply (auto simp: map_eq_conv' 1)
+    by (meson Suc_leI length_greater_0_conv)
+  ultimately show ?thesis
+    by auto
+qed
+
+
 lemma fwqfqwf:
   fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
   assumes "P \<subseteq> carrier_vec n"
@@ -1100,11 +993,10 @@ using jkkhhhjl
     then have "(1/(1 - c 0)) * sum (\<lambda>i. c (i + 1)) {0..<length ax} =
               (1/(1 - c 0)) * sum (\<lambda>i. c i) {1..<length (a # ax)}" by simp
     have "sum ?f {0..<length ax} = (1/(1 - c 0)) * sum (\<lambda>i. c (i + 1)) {0..<length ax}" 
-      using vrh[of "(1/(1 - c 0))" "(\<lambda>i. c (i + 1))" "{0..<length ax}"]
+      using mult_hom.hom_sum[of "(1/(1 - c 0))" "(\<lambda>i. c (i + 1))" "{0..<length ax}"]
       by simp
     then have "c 0 + sum c {1..<length Wsl} = sum c {0..<length Wsl}" 
-      using jjoij[of c]
-      by (metis \<open>Wsl = a # ax\<close> \<open>length (a # ax) = 1 + length ax\<close> add.commute gram_schmidt.jjoij)
+      by (metis \<open>Wsl = a # ax\<close> \<open>length (a # ax) = 1 + length ax\<close> add.commute sum_range_divided_at_zero)
     then have "c 0 + sum c {1..<length (a#ax)} = 1" 
       by (metis \<open>Wsl = a # ax\<close> \<open>sum c {0..<length Wsl} = 1\<close>)
     then have "sum (\<lambda>i. c (i + 1)) {0..<length ax} = 1 - c 0" 
@@ -1145,8 +1037,8 @@ using jkkhhhjl
 
   have "sumlist ( map (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = 
       sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
-    by (smt (z3) \<open>0 # [1..<length (a # ax)] = [0..<length (a # ax)]\<close> add.commute add_cancel_left_left diff_diff_left dqwd length_upt list.inject map_eq_conv' map_nth nth_upt zero_less_diff)
-
+using aghjk[of "\<lambda>i. (c i / (1 - c 0))" a ax]
+  by argo
   have "finite (set ax)" 
     by auto
   have "set ax \<subseteq> set Wsl" 
