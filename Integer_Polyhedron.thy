@@ -663,8 +663,8 @@ qed
 
     then have "convex_lincomb_list ?c' ?Wsl' x" 
       unfolding convex_lincomb_list_def  nonneg_lincomb_list_def lincomb_list_def
-using jkkhhhjl
-      by (metis (mono_tags, lifting) \<open>M.sumlist (map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia) [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])]) = x\<close> \<open>i < length Wsl \<and> c i \<noteq> 0\<close> \<open>set Wsl = Ws\<close> assms(3) cll length_pos_if_in_set nth_mem)
+      
+      by (metis (no_types, lifting) \<open>M.sumlist (map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia) [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])]) = x\<close> \<open>Ws = set (Wsl[0 := Wsl ! i, i := Wsl ! 0])\<close> \<open>i < length Wsl \<and> c i \<noteq> 0\<close> assms(3) cll length_list_update length_pos_if_in_set nth_mem sum_swap_is_one)
 
     then show ?thesis 
       by (metis \<open>Ws = set (Wsl[0 := Wsl ! i, i := Wsl ! 0])\<close> \<open>i < length Wsl \<and> c i \<noteq> 0\<close> fun_upd_other fun_upd_same that)
@@ -712,7 +712,7 @@ using jkkhhhjl
     by (simp add: Wc)
   have "set Wsl \<subseteq> carrier_vec n" 
     using \<open>set Wsl \<subseteq> carrier_vec n\<close> by auto
-  then have " \<forall>i<length Wsl. c i < 1" using bnter[of c Wsl x] using Wc assms(4-5) 
+  then have " \<forall>i<length Wsl. c i < 1" using convex_lincomb_less_1_coeff[of c Wsl x] using Wc assms(4-5) 
     using \<open>set Wsl \<subseteq> \<int>\<^sub>v\<close> by presburger
   then have "c 0 \<noteq> 1" 
     by (metis \<open>Wsl \<noteq> []\<close> length_greater_0_conv less_numeral_extra(4))
@@ -770,7 +770,7 @@ using jkkhhhjl
 
   have "sumlist ( map (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = 
       sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
-using aghjk[of "\<lambda>i. (c i / (1 - c 0))" a ax]
+using map_shift_by_one[of "\<lambda>i. (c i / (1 - c 0))" a ax]
   by argo
   have "finite (set ax)" 
     by auto
@@ -782,7 +782,7 @@ using aghjk[of "\<lambda>i. (c i / (1 - c 0))" a ax]
     using Wc \<open>set ax \<subseteq> set Wsl\<close> assms(4) by blast
   have "(\<forall> i < length Wsl. c i \<ge> 0)" 
     using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by presburger
-  have "(1 - c 0) > 0" using mvdryy
+  have "(1 - c 0) > 0" using nonneg_sum_range_each_le
     by (metis \<open>c 0 \<noteq> 1\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> atLeastLessThan_empty bot_nat_0.extremum_unique diff_ge_0_iff_ge empty_iff gr_zeroI not_one_le_zero order_le_imp_less_or_eq r_right_minus_eq sum_nonpos) 
   
   then have " \<forall>i<length ax. 0 \<le> c (i + 1) / (1 - c 0)"  
