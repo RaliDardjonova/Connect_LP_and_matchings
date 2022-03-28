@@ -282,18 +282,18 @@ lemma gidgf:
 lemma ouiou:
   assumes "set Wsl \<subseteq> carrier_vec n"
   shows "set (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl]) \<subseteq> carrier_vec n"
-  proof
-    fix z
-    assume "z \<in> set (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])"
-    then obtain j where "j <length Wsl \<and> z = c j \<cdot>\<^sub>v Wsl ! j" 
-      by auto
-    then show "z \<in> carrier_vec n" 
-      using assms(1) nth_mem 
-      using smult_carrier_vec by blast
+proof
+  fix z
+  assume "z \<in> set (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])"
+  then obtain j where "j <length Wsl \<and> z = c j \<cdot>\<^sub>v Wsl ! j" 
+    by auto
+  then show "z \<in> carrier_vec n" 
+    using assms(1) nth_mem 
+    using smult_carrier_vec by blast
 qed
 
 lemma ajytj:
-    assumes "set Wsl \<subseteq> carrier_vec n"
+  assumes "set Wsl \<subseteq> carrier_vec n"
   assumes "i < length Wsl"
   shows "(M.sumlist (map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia)
          [0..<length (Wsl[0 := Wsl ! i, i := Wsl ! 0])])) = 
@@ -304,9 +304,9 @@ proof -
   have 1: "(\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia)(0 := c i \<cdot>\<^sub>v Wsl ! i, i := c 0 \<cdot>\<^sub>v Wsl ! 0) = 
             (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia)" 
     using \<open>i < length Wsl\<close>  nth_mem 0 length_pos_if_in_set  by fastforce
-   show ?thesis 
+  show ?thesis 
     apply (insert sumlist_swap_upd_same[of "(map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])" 0 i]) 
-     apply (insert nmdo[of 0 Wsl i "(\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia)"] )
+    apply (insert nmdo[of 0 Wsl i "(\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia)"] )
     apply (simp only: assms ouiou[of Wsl c] 1 0 length_map less_nat_zero_code) 
     using assms(2) by fastforce
 qed
@@ -333,20 +333,27 @@ proof -
         not_less_zero sum.infinite zero_less_iff_neq_zero)
 qed
 
+lemma gegwe:
+  assumes "set L \<subseteq> carrier_vec n"
+  assumes "convex_lincomb c' (set L) x"
+  shows "x \<in> convex_hull_list L"
+proof -
+  have "convex_hull_list L = convex_hull (set L)" 
+    by (simp add: assms(1) finite_convex_hull_iff_convex_hull_list)
+  then show "x \<in> convex_hull_list L"  
+    using assms(2) convex_hull_def 
+    by blast
+qed
+
 lemma pojop:
   assumes "set L \<subseteq> carrier_vec n"
   assumes "convex_lincomb c' (set L) x"
   obtains c where "convex_lincomb_list c L x" 
-proof -
-  have "convex_hull_list L = convex_hull (set L)" 
-    by (simp add: assms(1) finite_convex_hull_iff_convex_hull_list)
-  then have "x \<in> convex_hull_list L"  
-    using assms(2) convex_hull_def 
-    by blast
-  then show ?thesis 
-    using gram_schmidt.convex_hull_list_def 
-    using that by auto
-qed
+  using gram_schmidt.convex_hull_list_def 
+  using that gegwe assms 
+  by blast
+
+
 
 lemma ergeg:
   fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
@@ -371,6 +378,70 @@ proof -
     by (metis i \<open>set Wsl = Ws\<close> assms(1) c fun_upd_other fun_upd_same that)
 qed
 
+lemma sum_except_one:
+  fixes f :: "nat \<Rightarrow> 'a"
+  assumes "sum f {0..<length (a#ax)} = 1"
+  assumes "f 0 \<noteq> 1" 
+  shows "(\<Sum>i = 0..<length ax. f (i + 1) / (1 - f 0)) = 1"
+proof -
+  let ?g = "(\<lambda>i. f (i + 1) / (1 - f 0))" 
+  have "length (a # ax) = 1 + length ax" 
+    by simp
+  then have "sum (\<lambda>i. f (i + 1)) {0..<length ax} = sum (\<lambda>i. f i) {1..<length (a # ax)}"
+    by (metis Nat.add_0_right  add.commute sum.shift_bounds_nat_ivl)
+  then have "(1/(1 - f 0)) * sum (\<lambda>i. f (i + 1)) {0..<length ax} =
+              (1/(1 - f 0)) * sum (\<lambda>i. f i) {1..<length (a # ax)}" by simp
+  have "sum ?g {0..<length ax} = (1/(1 - f 0)) * sum (\<lambda>i. f (i + 1)) {0..<length ax}"  
+    using mult_hom.hom_sum[of "(1/(1 - f 0))" "(\<lambda>i. f (i + 1))" "{0..<length ax}"]
+    by simp
+  then have "f 0 + sum f {1..<length (a#ax)} = sum f {0..<length (a#ax)}" 
+    by (metis \<open>length (a # ax) = 1 + length ax\<close> add.commute sum_range_divided_at_zero)
+  then have "f 0 + sum f {1..<length (a#ax)} = 1" 
+    by (metis  \<open>sum f {0..<length (a#ax)} = 1\<close>)
+  then have "sum (\<lambda>i. f (i + 1)) {0..<length ax} = 1 - f 0" 
+    using \<open>(\<Sum>i = 0..<length ax. f (i + 1)) = sum f {1..<length (a # ax)}\<close> by linarith 
+  then have "(1/(1 - f 0)) * (1 - f 0) =  1" using `f 0 \<noteq> 1` 
+    by (metis nonzero_eq_divide_eq r_right_minus_eq)
+  then show ?thesis 
+    using \<open>(\<Sum>i = 0..<length ax. f (i + 1) / (1 - f 0)) = 1 / (1 - f 0) * (\<Sum>i = 0..<length ax. f (i + 1))\<close>
+      \<open>(\<Sum>i = 0..<length ax. f (i + 1)) = 1 - f 0\<close> by presburger
+qed
+
+lemma sumlist_distr_zero:
+  assumes "m > 0"
+  shows "sumlist (map f [0..<m]) = f 0 + sumlist (map f [1..<m])" 
+  by (metis M.sumlist_Cons assms ff list.simps(9))
+
+lemma ioppnn:
+  assumes "c 0 \<noteq> 1"
+  assumes "set (a#ax) \<subseteq> carrier_vec n" 
+  shows " sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [0..<length (a#ax)]) =
+    c 0 \<cdot>\<^sub>v a + (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])"
+proof -
+  let ?f = "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i)"  
+  have "?f \<in> set [1..<length (a # ax)] \<rightarrow> carrier_vec n" 
+    using ouiou[of "a#ax" c] assms set_upt smult_closed subsetD by fastforce
+  then have " M.sumlist (map ?f [1..<length (a # ax)]) =
+    (1 - c 0) \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v ?f i) [1..<length (a # ax)])"
+    using sumlist_map_mult[of ?f " [1..<length (a # ax)]" "(1 - c 0)"] `c 0 \<noteq> 1` 
+    by linarith
+  moreover have "(\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v ?f i) =  (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i)"
+    using `c 0 \<noteq> 1` 
+    by fastforce  
+  moreover have "sumlist ( map ?f [1..<length (a # ax)]) = 
+    (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])" 
+    using `c 0 \<noteq> 1` 
+    using calculation(1) calculation(2) by presburger
+  moreover have "sumlist ( map (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = 
+      sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
+    using map_shift_by_one[of "\<lambda>i. (c i / (1 - c 0))" a ax]
+    by argo
+  ultimately show ?thesis 
+    using  sumlist_distr_zero[of "length (a#ax)" ?f] 
+    by simp
+qed
+
+
 lemma fwqfqwf:
   fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
   assumes "P \<subseteq> carrier_vec n"
@@ -382,53 +453,23 @@ lemma fwqfqwf:
   obtains y z l where "y \<in> P \<inter> \<int>\<^sub>v" "z \<in> P" "x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z" "l > 0 \<and> l \<le> 1"
 proof -
   have "Ws \<subseteq> carrier_vec n" using assms by blast
-
-    have "x \<in> convex_hull Ws" 
-      using assms convex_hull_def by blast
-
-    obtain Wsl c where Wc: "convex_lincomb_list c Wsl x \<and> c 0 \<noteq> 0 \<and> Ws = set Wsl"
-      using ergeg 
-      by (metis \<open>Ws \<subseteq> carrier_vec n\<close> assms(3) assms(4) assms(5) assms(6) inf.boundedE)
-
-    have "convex_hull Ws = convex_hull_list Wsl" 
-      using finite_convex_hull_iff_convex_hull_list 
-      using Wc 
-      using \<open>Ws \<subseteq> carrier_vec n\<close> by presburger 
-    have "x \<in> convex_hull Ws" 
-      using assms convex_hull_def by blast
-    then have "x \<in> convex_hull_list Wsl" 
-      by (simp add: \<open>convex_hull Ws = convex_hull_list Wsl\<close>)
-
-  
-    then have "lincomb_list c Wsl = x \<and> (\<forall> i < length Wsl. c i \<ge> 0) \<and> sum c {0..<length Wsl} = 1"
-      using convex_lincomb_list_def nonneg_lincomb_list_def Wc by blast
-    have "lincomb_list c Wsl = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) [0..<length Wsl])"
-      by (simp add: lincomb_list_def)
-    have "Ws \<noteq> {}" 
-      using \<open>x \<in> convex_hull Ws\<close> convex_hull_empty(2) by blast
-    have "Wsl \<noteq> []" 
-      using \<open>Ws \<noteq> {}\<close> Wc by blast
-    have "set Wsl \<subseteq> carrier_vec n" 
-      using \<open>Ws \<subseteq> carrier_vec n\<close> Wc by auto
-    have "sum c {0..<length Wsl} = 1" 
-      using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by blast
-
-    obtain a ax where "Wsl = a # ax" 
-      by (meson \<open>Wsl \<noteq> []\<close> neq_Nil_conv)
-
-  have "0 # [1..<length (a # ax)] = [0..<length (a # ax)]"
-            using ff 
-            by blast 
-  
- then have "map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [0..<length (a #ax)] = 
-       (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) 0 # map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]"
-   using List.list.map(2)[of "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i)" 0 "[1..<length (a # ax)]"] by argo
-  then have "sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [0..<length (a #ax)]) =
-       (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) 0 + sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])"
-    using M.sumlist_Cons by presburger
-  then have "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) 0 + sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) =
-      c 0 \<cdot>\<^sub>v a + sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])"
-    by force
+  have "x \<in> convex_hull Ws" 
+    using assms convex_hull_def by blast
+  obtain Wsl c where Wc: "convex_lincomb_list c Wsl x \<and> c 0 \<noteq> 0 \<and> Ws = set Wsl"
+    using ergeg 
+    by (metis \<open>Ws \<subseteq> carrier_vec n\<close> assms(3) assms(4) assms(5) assms(6) inf.boundedE)
+  then have "lincomb_list c Wsl = x \<and> (\<forall> i < length Wsl. c i \<ge> 0) \<and> sum c {0..<length Wsl} = 1"
+    using convex_lincomb_list_def nonneg_lincomb_list_def Wc by blast
+  have "Ws \<noteq> {}" 
+    using \<open>x \<in> convex_hull Ws\<close> convex_hull_empty(2) by blast
+  have "Wsl \<noteq> []" 
+    using \<open>Ws \<noteq> {}\<close> Wc by blast
+  have "set Wsl \<subseteq> carrier_vec n" 
+    using \<open>Ws \<subseteq> carrier_vec n\<close> Wc by auto
+  have "sum c {0..<length Wsl} = 1" 
+    using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by blast
+  obtain a ax where "Wsl = a # ax" 
+    by (meson \<open>Wsl \<noteq> []\<close> neq_Nil_conv)
   have "set Wsl \<subseteq> \<int>\<^sub>v" using assms(4) 
     by (simp add: Wc)
   have "set Wsl \<subseteq> carrier_vec n" 
@@ -437,64 +478,10 @@ proof -
     using \<open>set Wsl \<subseteq> \<int>\<^sub>v\<close> by presburger
   then have "c 0 \<noteq> 1" 
     by (metis \<open>Wsl \<noteq> []\<close> length_greater_0_conv less_numeral_extra(4))
+
   let ?f = "(\<lambda>i. c (i + 1) / (1 - c 0))" 
-  have "sum ?f {0..<length ax} = 1" 
-  proof -
-    have "length (a # ax) = 1 + length ax" 
-      by simp
-    then have "sum (\<lambda>i. c (i + 1)) {0..<length ax} = sum (\<lambda>i. c i) {1..<length (a # ax)}"
-      by (metis Nat.add_0_right  add.commute sum.shift_bounds_nat_ivl)
-    then have "(1/(1 - c 0)) * sum (\<lambda>i. c (i + 1)) {0..<length ax} =
-              (1/(1 - c 0)) * sum (\<lambda>i. c i) {1..<length (a # ax)}" by simp
-    have "sum ?f {0..<length ax} = (1/(1 - c 0)) * sum (\<lambda>i. c (i + 1)) {0..<length ax}" 
-      using mult_hom.hom_sum[of "(1/(1 - c 0))" "(\<lambda>i. c (i + 1))" "{0..<length ax}"]
-      by simp
-    then have "c 0 + sum c {1..<length Wsl} = sum c {0..<length Wsl}" 
-      by (metis \<open>Wsl = a # ax\<close> \<open>length (a # ax) = 1 + length ax\<close> add.commute sum_range_divided_at_zero)
-    then have "c 0 + sum c {1..<length (a#ax)} = 1" 
-      by (metis \<open>Wsl = a # ax\<close> \<open>sum c {0..<length Wsl} = 1\<close>)
-    then have "sum (\<lambda>i. c (i + 1)) {0..<length ax} = 1 - c 0" 
-      using \<open>(\<Sum>i = 0..<length ax. c (i + 1)) = sum c {1..<length (a # ax)}\<close> by linarith 
-    then have "(1/(1 - c 0)) * (1 - c 0) =  1" using `c 0 \<noteq> 1` 
-      by (metis nonzero_eq_divide_eq r_right_minus_eq)
-    then show ?thesis 
-      using \<open>(\<Sum>i = 0..<length ax. c (i + 1) / (1 - c 0)) = 1 / (1 - c 0) * (\<Sum>i = 0..<length ax. c (i + 1))\<close> \<open>(\<Sum>i = 0..<length ax. c (i + 1)) = 1 - c 0\<close> by presburger
-  qed
-
-
-  have "\<forall>i \<in>  set [1..<length (a # ax)].  c i \<cdot>\<^sub>v (a # ax) ! i \<in> carrier_vec n" 
-  proof 
-    fix i
-    assume "i \<in>  set [1..<length (a # ax)]" 
-    then have "i < length (a # ax)" 
-      by (metis atLeastLessThan_iff set_upt)
-    then have "(a # ax) ! i \<in> set (a # ax)" 
-      using nth_mem by blast
-    then show "c i \<cdot>\<^sub>v (a # ax) ! i \<in> carrier_vec n" 
-      using \<open>Wsl = a # ax\<close> \<open>set Wsl \<subseteq> carrier_vec n\<close> by blast
-  qed
-
-  then have "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) \<in> set [1..<length (a # ax)] \<rightarrow> carrier_vec n" 
-    by blast
-  then have " M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) =
-    (1 - c 0) \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v (c i \<cdot>\<^sub>v (a # ax) ! i)) [1..<length (a # ax)])"
-    using sumlist_map_mult[of "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i)" " [1..<length (a # ax)]" "(1 - c 0)"] `c 0 \<noteq> 1` 
-    by linarith
-  have "(\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v (c i \<cdot>\<^sub>v (a # ax) ! i)) =  (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i)"
-    using `c 0 \<noteq> 1` 
-    by fastforce  
-
-  then have "sumlist ( map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = 
-    (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])" 
-   
-   using \<open>M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = (1 - c 0) \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v (c i \<cdot>\<^sub>v (a # ax) ! i)) [1..<length (a # ax)])\<close> by presburger
-
-  have "sumlist ( map (\<lambda>i. (c i / (1 - c 0)) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = 
-      sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
-using map_shift_by_one[of "\<lambda>i. (c i / (1 - c 0))" a ax]
-  by argo
-  have "finite (set ax)" 
-    by auto
+  have "sum ?f {0..<length ax} = 1" using sum_except_one 
+    by (metis \<open>Wsl = a # ax\<close> \<open>c 0 \<noteq> 1\<close> \<open>sum c {0..<length Wsl} = 1\<close>)
   have "set ax \<subseteq> set Wsl" 
     using \<open>Wsl = a # ax\<close> by auto
   then have "set ax \<subseteq> carrier_vec n" using `set Wsl \<subseteq> carrier_vec n`  
@@ -505,31 +492,32 @@ using map_shift_by_one[of "\<lambda>i. (c i / (1 - c 0))" a ax]
     using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by presburger
   have "(1 - c 0) > 0" using nonneg_sum_range_each_le
     by (metis \<open>c 0 \<noteq> 1\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> atLeastLessThan_empty bot_nat_0.extremum_unique diff_ge_0_iff_ge empty_iff gr_zeroI not_one_le_zero order_le_imp_less_or_eq r_right_minus_eq sum_nonpos) 
-  
-  then have " \<forall>i<length ax. 0 \<le> c (i + 1) / (1 - c 0)"  
+
+  then have " \<forall>i<length ax. 0 \<le> ?f i"  
     by (simp add: \<open>Wsl = a # ax\<close> \<open>\<forall>i<length Wsl. 0 \<le> c i\<close>)
-  have 1:"sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax]) \<in> P" 
+  have 1:"sumlist (map (\<lambda>i. ?f i \<cdot>\<^sub>v ax ! i) [0..<length ax]) \<in> P" 
     using lincomb_in_integer_set[of ax P ?f] `sum ?f {0..<length ax} = 1`  
-    using \<open>\<forall>i<length ax. 0 \<le> c (i + 1) / (1 - c 0)\<close> \<open>set ax \<subseteq> P \<inter> \<int>\<^sub>v\<close> \<open>set ax \<subseteq> carrier_vec n\<close> assms(2)
+    using \<open>\<forall>i<length ax. 0 \<le> ?f i\<close> \<open>set ax \<subseteq> P \<inter> \<int>\<^sub>v\<close> \<open>set ax \<subseteq> carrier_vec n\<close> assms(2)
     unfolding lincomb_list_def 
     by blast
-  have 2:"x = c 0 \<cdot>\<^sub>v a + (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])" 
-    using \<open>M.sumlist (map (\<lambda>i. c i / (1 - c 0) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = M.sumlist (map (\<lambda>i. c (i + 1) / (1 - c 0) \<cdot>\<^sub>v ax ! i) [0..<length ax])\<close> \<open>M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [0..<length (a # ax)]) = c 0 \<cdot>\<^sub>v (a # ax) ! 0 + M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])\<close> \<open>M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = (1 - c 0) \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. c i / (1 - c 0) \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])\<close> \<open>Wsl = a # ax\<close> \<open>c 0 \<cdot>\<^sub>v (a # ax) ! 0 + M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)]) = c 0 \<cdot>\<^sub>v a + M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [1..<length (a # ax)])\<close> \<open>lincomb_list c Wsl = M.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v Wsl ! i) [0..<length Wsl])\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by presburger
+  have 2:"x = c 0 \<cdot>\<^sub>v a + (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])"
+    using ioppnn[of c a ax] 
+    using \<open>Wsl = a # ax\<close> \<open>c 0 \<noteq> 1\<close>
+      \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> \<open>set Wsl \<subseteq> carrier_vec n\<close>
+    by (auto simp: lincomb_list_def)
   have 3:"a \<in> P \<inter> \<int>\<^sub>v" 
     using \<open>Wsl = a # ax\<close> Wc assms(4) by force
   have 4:"c 0 \<ge> 0" 
     by (simp add: \<open>Wsl = a # ax\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close>)
   have 5:"c 0 \<le> 1" using member_le_sum[of 0 "{0..<length Wsl}" c] 
     using \<open>Wsl = a # ax\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by force
-  
+
   have "c 0 \<noteq> 0" 
     by (simp add: Wc)
   then show ?thesis using 1 2 3 4 5
     using that 
     by auto 
 qed
-
-
 
 end
 end
