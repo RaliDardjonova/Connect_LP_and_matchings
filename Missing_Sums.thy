@@ -353,31 +353,6 @@ lemma pojop:
   using that gegwe assms 
   by blast
 
-
-
-lemma ergeg:
-  fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
-  assumes "Ws \<subseteq> carrier_vec n"
-  assumes "Ws \<subseteq> \<int>\<^sub>v"
-  assumes "finite Ws"
-  assumes "x \<notin> \<int>\<^sub>v"
-  assumes "convex_lincomb c' Ws x"
-  obtains Wsl c where "convex_lincomb_list c Wsl x \<and> c 0 \<noteq> 0 \<and> Ws = set Wsl"
-proof -
-  have "Ws \<subseteq> carrier_vec n"
-    using assms by blast
-  obtain Wsl where "set Wsl =  Ws " using assms
-    by (meson finite_list) 
-  then obtain c where c:"convex_lincomb_list c Wsl x" 
-    using \<open>Ws \<subseteq> carrier_vec n\<close> assms(5) pojop by blast
-  then obtain i where i: "i < length Wsl \<and> c i \<noteq> 0" 
-    by (metis Ints_0 \<open>set Wsl = Ws\<close> assms(1) assms(2) assms(4) convex_lincom_int)
-  have "Ws = set (Wsl[0:= Wsl ! i, i:=Wsl ! 0])"
-    by (metis i \<open>set Wsl = Ws\<close> length_pos_if_in_set nth_mem set_swap)
-  then show ?thesis using opop[of c Wsl x i] 
-    by (metis i \<open>set Wsl = Ws\<close> assms(1) c fun_upd_other fun_upd_same that)
-qed
-
 lemma sum_except_one:
   fixes f :: "nat \<Rightarrow> 'a"
   assumes "sum f {0..<length (a#ax)} = 1"
@@ -441,57 +416,77 @@ proof -
     by simp
 qed
 
-
-lemma fwqfqwf:
+lemma erhh:
   fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
   assumes "P \<subseteq> carrier_vec n"
   assumes "P = integer_hull P"
-  assumes "finite Ws"
-  assumes "Ws \<subseteq> P \<inter> \<int>\<^sub>v"  
+  assumes"x \<in> P" 
   assumes "x \<notin> \<int>\<^sub>v"
-  assumes "convex_lincomb c' Ws x"
-  obtains y z l where "y \<in> P \<inter> \<int>\<^sub>v" "z \<in> P" "x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z" "l > 0 \<and> l \<le> 1"
+  obtains Wsl c where "convex_lincomb_list c Wsl x \<and> c 0 \<noteq> 0 \<and> (set Wsl) \<subseteq> P \<inter> \<int>\<^sub>v \<and> Wsl \<noteq> []"
 proof -
-  have "Ws \<subseteq> carrier_vec n" using assms by blast
+obtain Ws c' where Ws_c':"finite Ws" "Ws \<subseteq> P \<inter> \<int>\<^sub>v" "convex_lincomb c' Ws x"
+  using assms(2) unfolding integer_hull_def
+        by (smt (verit, ccfv_SIG) IntD1 \<open>x \<in> P\<close> gram_schmidt.convex_hull_def mem_Collect_eq)
+
+  have "Ws \<subseteq> carrier_vec n" 
+    by (meson Int_subset_iff Ws_c'(2) assms(1) dual_order.trans)
   have "x \<in> convex_hull Ws" 
-    using assms convex_hull_def by blast
-  obtain Wsl c where Wc: "convex_lincomb_list c Wsl x \<and> c 0 \<noteq> 0 \<and> Ws = set Wsl"
-    using ergeg 
-    by (metis \<open>Ws \<subseteq> carrier_vec n\<close> assms(3) assms(4) assms(5) assms(6) inf.boundedE)
-  then have "lincomb_list c Wsl = x \<and> (\<forall> i < length Wsl. c i \<ge> 0) \<and> sum c {0..<length Wsl} = 1"
-    using convex_lincomb_list_def nonneg_lincomb_list_def Wc by blast
-  have "Ws \<noteq> {}" 
+    using Ws_c' convex_hull_def by blast
+ 
+  obtain Wsl where "set Wsl =  Ws "
+    by (meson Ws_c'(1) finite_list)
+  then obtain c where c:"convex_lincomb_list c Wsl x" 
+    using \<open>Ws \<subseteq> carrier_vec n\<close> Ws_c' pojop by blast
+  then obtain i where i: "i < length Wsl \<and> c i \<noteq> 0" 
+    by (metis Ints_0 Ws_c'(2) \<open>Ws \<subseteq> carrier_vec n\<close> \<open>set Wsl = Ws\<close> assms(4) convex_lincom_int inf.boundedE)
+  have "Ws = set (Wsl[0:= Wsl ! i, i:=Wsl ! 0])"
+    by (metis i \<open>set Wsl = Ws\<close> length_pos_if_in_set nth_mem set_swap)
+ have "Ws \<noteq> {}" 
     using \<open>x \<in> convex_hull Ws\<close> convex_hull_empty(2) by blast
-  have "Wsl \<noteq> []" 
-    using \<open>Ws \<noteq> {}\<close> Wc by blast
-  have "set Wsl \<subseteq> carrier_vec n" 
-    using \<open>Ws \<subseteq> carrier_vec n\<close> Wc by auto
+ then have "Wsl \<noteq> []" 
+    using \<open>Ws \<noteq> {}\<close> 
+    using \<open>set Wsl = Ws\<close> by fastforce
+  then show ?thesis using opop[of c Wsl x i] Ws_c' 
+    by (metis \<open>Ws = set (Wsl[0 := Wsl ! i, i := Wsl ! 0])\<close> \<open>Ws \<subseteq> carrier_vec n\<close> \<open>set Wsl = Ws\<close> c fun_upd_other fun_upd_same i list_update_nonempty that)
+qed
+
+lemma elem_of_P_is_lin_comb:
+  fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
+  assumes "P \<subseteq> carrier_vec n"
+  assumes "P = integer_hull P"
+  assumes"x \<in> P" 
+  assumes "x \<notin> \<int>\<^sub>v"
+  obtains y z l where "y \<in> P \<inter> \<int>\<^sub>v" "z \<in> P" "x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z" "l > 0 \<and> l < 1"
+proof -
+  obtain Wsl c where Wc: "convex_lincomb_list c Wsl x \<and> c 0 \<noteq> 0 \<and> (set Wsl) \<subseteq> P \<inter> \<int>\<^sub>v \<and> Wsl \<noteq> []"
+    using erhh 
+    by (metis assms(1) assms(2) assms(3) assms(4))
+  then have lin_comb_x: 
+    "lincomb_list c Wsl = x \<and> (\<forall> i < length Wsl. c i \<ge> 0) \<and> sum c {0..<length Wsl} = 1"
+    using convex_lincomb_list_def nonneg_lincomb_list_def Wc by blast
   have "sum c {0..<length Wsl} = 1" 
-    using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by blast
+    using lin_comb_x by blast
   obtain a ax where "Wsl = a # ax" 
-    by (meson \<open>Wsl \<noteq> []\<close> neq_Nil_conv)
-  have "set Wsl \<subseteq> \<int>\<^sub>v" using assms(4) 
-    by (simp add: Wc)
-  have "set Wsl \<subseteq> carrier_vec n" 
-    using \<open>set Wsl \<subseteq> carrier_vec n\<close> by auto
-  then have " \<forall>i<length Wsl. c i < 1" using convex_lincomb_less_1_coeff[of c Wsl x] using Wc assms(4-5) 
-    using \<open>set Wsl \<subseteq> \<int>\<^sub>v\<close> by presburger
+    by (meson Wc neq_Nil_conv)
+  then have " \<forall>i<length Wsl. c i < 1"
+    using convex_lincomb_less_1_coeff[of c Wsl x] using Wc assms(1) 
+    using assms(4) by blast
   then have "c 0 \<noteq> 1" 
-    by (metis \<open>Wsl \<noteq> []\<close> length_greater_0_conv less_numeral_extra(4))
+    by (metis Wc length_greater_0_conv less_numeral_extra(4))
 
   let ?f = "(\<lambda>i. c (i + 1) / (1 - c 0))" 
   have "sum ?f {0..<length ax} = 1" using sum_except_one 
     by (metis \<open>Wsl = a # ax\<close> \<open>c 0 \<noteq> 1\<close> \<open>sum c {0..<length Wsl} = 1\<close>)
   have "set ax \<subseteq> set Wsl" 
     using \<open>Wsl = a # ax\<close> by auto
-  then have "set ax \<subseteq> carrier_vec n" using `set Wsl \<subseteq> carrier_vec n`  
+  then have "set ax \<subseteq> carrier_vec n" using assms(1) Wc
     by blast
   have " set ax \<subseteq> P \<inter> \<int>\<^sub>v" 
-    using Wc \<open>set ax \<subseteq> set Wsl\<close> assms(4) by blast
+    using Wc \<open>set ax \<subseteq> set Wsl\<close>   by blast
   have "(\<forall> i < length Wsl. c i \<ge> 0)" 
     using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by presburger
-  have "(1 - c 0) > 0" using nonneg_sum_range_each_le
-    by (metis \<open>c 0 \<noteq> 1\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> atLeastLessThan_empty bot_nat_0.extremum_unique diff_ge_0_iff_ge empty_iff gr_zeroI not_one_le_zero order_le_imp_less_or_eq r_right_minus_eq sum_nonpos) 
+  have "(1 - c 0) > 0" using nonneg_sum_range_each_le[of "length Wsl" c] 
+    by (meson Wc \<open>\<forall>i<length Wsl. c i < 1\<close> diff_gt_0_iff_gt gr_zeroI length_0_conv)
 
   then have " \<forall>i<length ax. 0 \<le> ?f i"  
     by (simp add: \<open>Wsl = a # ax\<close> \<open>\<forall>i<length Wsl. 0 \<le> c i\<close>)
@@ -500,23 +495,20 @@ proof -
     using \<open>\<forall>i<length ax. 0 \<le> ?f i\<close> \<open>set ax \<subseteq> P \<inter> \<int>\<^sub>v\<close> \<open>set ax \<subseteq> carrier_vec n\<close> assms(2)
     unfolding lincomb_list_def 
     by blast
-  have 2:"x = c 0 \<cdot>\<^sub>v a + (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. (c (i + 1) / (1 - c 0)) \<cdot>\<^sub>v ax ! i) [0..<length ax])"
+  have 2:"x = c 0 \<cdot>\<^sub>v a + (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. ?f i \<cdot>\<^sub>v ax ! i) [0..<length ax])"
     using ioppnn[of c a ax] 
     using \<open>Wsl = a # ax\<close> \<open>c 0 \<noteq> 1\<close>
-      \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> \<open>set Wsl \<subseteq> carrier_vec n\<close>
+      lin_comb_x assms(1) Wc
     by (auto simp: lincomb_list_def)
   have 3:"a \<in> P \<inter> \<int>\<^sub>v" 
-    using \<open>Wsl = a # ax\<close> Wc assms(4) by force
-  have 4:"c 0 \<ge> 0" 
-    by (simp add: \<open>Wsl = a # ax\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close>)
+    using \<open>Wsl = a # ax\<close> Wc  by force
+  have 4:"c 0 > 0" 
+    by (metis Wc \<open>\<forall>i<length Wsl. 0 \<le> c i\<close> length_greater_0_conv order_le_imp_less_or_eq)
   have 5:"c 0 \<le> 1" using member_le_sum[of 0 "{0..<length Wsl}" c] 
-    using \<open>Wsl = a # ax\<close> \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by force
-
-  have "c 0 \<noteq> 0" 
-    by (simp add: Wc)
+    using \<open>Wsl = a # ax\<close> lin_comb_x by force
   then show ?thesis using 1 2 3 4 5
     using that 
-    by auto 
+    using \<open>c 0 \<noteq> 1\<close> by force
 qed
 
 end
