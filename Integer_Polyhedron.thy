@@ -1,10 +1,7 @@
 theory Integer_Polyhedron
   imports Faces
-    Well_Quasi_Orders.Minimal_Elements
     Linear_Inequalities.Integer_Hull
-     Linear_Inequalities.Farkas_Lemma
     Missing_Sums 
-    "HOL.Rat"
 begin
 
 context gram_schmidt
@@ -40,7 +37,6 @@ lemma subsyst_with_max_ineq:
     "{x. A' *\<^sub>v x = b' \<and> x \<in> P} \<noteq> {}"
     "dim_vec b' = Max {dim_vec d| C d I. (C, d) = sub_system A b I \<and> 
                                                 {x. C *\<^sub>v x = d \<and> x \<in> P} \<noteq> {}}"
-
 proof-
   have "dim_vec b = nr" using b by auto
   let ?M = "{dim_vec d| C d I. (C, d) = sub_system A b I \<and> {x. C *\<^sub>v x = d \<and> x \<in> P} \<noteq> {}}"
@@ -106,7 +102,6 @@ proof -
   then show ?thesis 
     unfolding nths_def by argo
 qed
-
 
 
 lemma same_subsyst_I_intersect_rows:
@@ -589,9 +584,9 @@ proof -
     using \<open>\<alpha> \<in> carrier_vec n\<close> assms(1-3) in_mono by fastforce
 
   have "\<alpha> \<bullet> y \<le> \<beta>" 
-    using assms(2) assms(4) support_hyp_is_valid(1) valid_ineq_elim(1) by blast
+    using assms(2) assms(4) support_hyp_is_valid(1) valid_ineqE by blast
   have "\<alpha> \<bullet> z \<le> \<beta>" 
-    using assms(3) assms(4) support_hyp_is_valid(1) valid_ineq_elim(1) by blast 
+    using assms(3) assms(4) support_hyp_is_valid(1) valid_ineqE by blast 
   show "\<alpha> \<bullet> y = \<beta>" 
   proof(cases "\<alpha> \<bullet> z = \<beta>")
     case True
@@ -693,7 +688,7 @@ lemma int_hull_subset:
   by (metis A Int_subset_iff P_def b convex_def convex_hull_mono 
       integer_hull_def order_refl polyhedra_are_convex)
 
-lemma pugi:
+lemma not_in_int_hull_not_int:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
@@ -713,7 +708,7 @@ proof
 qed
 
 
-lemma pgrej:
+lemma exists_eq_in_P_for_outside_elem:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
@@ -737,7 +732,7 @@ proof(rule ccontr)
 qed
 
 
-lemma fgwegwe:
+lemma eq_in_P_has_max:
     fixes A :: "'a  mat"
   fixes b:: "'a vec" 
   assumes A: "A \<in> carrier_mat nr n"
@@ -754,347 +749,10 @@ proof -
     using assms(4) b by force
   then have "valid_ineq P (row A i) (b $ i)" unfolding valid_ineq_def 
     using A assms(4) row_carrier_vec by blast
-  then show ?thesis using face_non_empty1
-    using A Collect_cong P_def assms(5) b by auto
+  then show ?thesis 
+    using A P_def assms(5) b valid_ineq_dual(2) by auto
 qed
-
 
 end
 
-context gram_schmidt_floor
-begin
-
-definition floor\<^sub>v where
-  "floor\<^sub>v v = vec (dim_vec v) (\<lambda> i. floor (v $ i))"
-
-definition ceil\<^sub>v where
-  "ceil\<^sub>v v = vec (dim_vec v) (\<lambda> i. ceiling (v $ i))"
-
-lemma grg:
-  fixes x ::"'a" 
-  assumes "x \<notin> \<int>" 
-  shows "floor x + 1 = ceiling x" unfolding ceiling_def 
-proof -
-  have "\<lfloor>x\<rfloor> + 1 + \<lfloor>- x\<rfloor> = 0"
-  oops
-
-lemma floor_vec_plus_one:
-  fixes v:: "'a vec"
-  shows "floor\<^sub>v v + 1\<^sub>v (dim_vec v) = ceil\<^sub>v v"
-  unfolding floor\<^sub>v_def ceil\<^sub>v_def one_vec_def ceiling_def oops
-
- 
-lemma integer_hull_is_integer_hull:
-  assumes "P \<subseteq> carrier_vec n"
-  shows "integer_hull (integer_hull P) = integer_hull P" 
-  unfolding integer_hull_def 
-  by (smt (verit, del_insts) Int_iff assms convex_hull_mono convex_hulls_are_convex 
-gram_schmidt.convex_def set_in_convex_hull subset_antisym subset_eq)
-
-lemma gojeg:
-  fixes bound :: "'a " 
-  assumes A: "A \<in> carrier_mat nr nc" 
-    and c: "c \<in> carrier_vec nc"
-    and sat: "\<exists> x \<in> carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr" 
-    and bounded: "\<forall> x \<in> carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr \<longrightarrow> c \<bullet> x \<le> bound" 
-  shows "Maximum {c \<bullet> x | x. x \<in> carrier_vec nc \<and> A *\<^sub>v x \<le> 0\<^sub>v nr}
-       = Minimum {0\<^sub>v nr  \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = c}"
-    and "has_Maximum {c \<bullet> x | x. x \<in> carrier_vec nc \<and> A *\<^sub>v x \<le> 0\<^sub>v nr}" 
-    and "has_Minimum {0\<^sub>v nr \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = c}" 
-  using strong_duality_theorem_primal_sat_bounded_min_max[of A nr nc "0\<^sub>v nr" c bound] assms
-  using zero_carrier_vec  apply blast
-  using A \<open>\<lbrakk>A \<in> carrier_mat nr nc; 0\<^sub>v nr \<in> carrier_vec nr; c \<in> carrier_vec nc; \<exists>x\<in>carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr; \<forall>x\<in>carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr \<longrightarrow> c \<bullet> x \<le> bound\<rbrakk> \<Longrightarrow> has_Maximum {c \<bullet> x |x. x \<in> carrier_vec nc \<and> A *\<^sub>v x \<le> 0\<^sub>v nr}\<close> bounded c sat zero_carrier_vec apply blast
-  using A \<open>\<lbrakk>A \<in> carrier_mat nr nc; 0\<^sub>v nr \<in> carrier_vec nr; c \<in> carrier_vec nc; \<exists>x\<in>carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr; \<forall>x\<in>carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr \<longrightarrow> c \<bullet> x \<le> bound\<rbrakk> \<Longrightarrow> has_Minimum {0\<^sub>v nr \<bullet> y |y. 0\<^sub>v nr \<le> y \<and> A\<^sup>T *\<^sub>v y = c}\<close> bounded c sat zero_carrier_vec by blast
-
-lemma gojeg2:
-  fixes bound :: "'a " 
-  assumes A: "A \<in> carrier_mat nr nc" 
-    and c: "c \<in> carrier_vec nc"
-    and sat: "\<exists> x \<in> carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr" 
-    and bounded: "\<forall> x \<in> carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr \<longrightarrow> c \<bullet> x \<le> bound" 
-  shows "Maximum {c \<bullet> x | x. x \<in> carrier_vec nc \<and> A *\<^sub>v x \<le> 0\<^sub>v nr} = 0"
-proof -
-  have  "Maximum {c \<bullet> x | x. x \<in> carrier_vec nc \<and> A *\<^sub>v x \<le> 0\<^sub>v nr}
-       = Minimum {0\<^sub>v nr  \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = c}"
-    and "has_Maximum {c \<bullet> x | x. x \<in> carrier_vec nc \<and> A *\<^sub>v x \<le> 0\<^sub>v nr}" 
-    and "has_Minimum {0\<^sub>v nr \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = c}" 
-    using gojeg assms  apply  blast
-    using gojeg(2) assms  apply  blast
-    using gojeg(3) assms  by  blast
-  then obtain y where "y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = c \<and> 0\<^sub>v nr \<bullet> y = Minimum {0\<^sub>v nr  \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = c}"
-    using has_MinimumD(1) by fastforce
-  then have "y \<in> carrier_vec nr" 
-    by (metis carrier_dim_vec index_zero_vec(2) less_eq_vec_def)
-
-  then have "0\<^sub>v nr \<bullet> y = 0" unfolding scalar_prod_def 
-    by simp
-  then show ?thesis 
-    using \<open>0\<^sub>v nr \<le> y \<and> A\<^sup>T *\<^sub>v y = c \<and> 0\<^sub>v nr \<bullet> y = Minimum {0\<^sub>v nr \<bullet> y |y. 0\<^sub>v nr \<le> y \<and> A\<^sup>T *\<^sub>v y = c}\<close> \<open>Maximum {c \<bullet> x |x. x \<in> carrier_vec nc \<and> A *\<^sub>v x \<le> 0\<^sub>v nr} = Minimum {0\<^sub>v nr \<bullet> y |y. 0\<^sub>v nr \<le> y \<and> A\<^sup>T *\<^sub>v y = c}\<close> by presburger
-qed
-
-
-lemma utye:
-   fixes A :: "'a  mat"
-  fixes b:: "'a vec" 
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
-  assumes "P \<noteq> {}" 
-  assumes "has_Maximum {c \<bullet> x | x. x \<in> P}" 
-  assumes "x \<in> P \<and> c \<bullet> x = Maximum {c \<bullet> x | x. x \<in> P}"
-  obtains F here where "min_face P F \<and> x \<in> F" 
-  oops
-
-lemma fgweugugwe:
-   fixes A :: "'a  mat"
-  fixes b:: "'a vec" 
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
-  assumes "P \<noteq> {}"
-  assumes "integer_hull P = polyhedron C d"
-  assumes "j < dim_row C" 
-  assumes "dim_col C = n"
-  assumes "has_Maximum { row C j \<bullet> x | x. x \<in> polyhedron C d}"
-assumes "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> P} \<longrightarrow>
-   (\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v)"
-  shows "has_Maximum { row C j \<bullet> x | x. x \<in> P}"
-proof(rule ccontr)
-  assume "\<not> has_Maximum {row C j \<bullet> x |x. x \<in> P}" 
-  then have "\<not> (\<exists> x. x \<in> {row C j \<bullet> x |x. x \<in> P} \<and> (\<forall> y \<in> {row C j \<bullet> x |x. x \<in> P}. y \<le> x))" 
-    unfolding has_Maximum_def 
-    by blast
-  then have "\<forall>x \<in> {row C j \<bullet> x |x. x \<in> P}. \<not> (\<forall> y \<in> {row C j \<bullet> x |x. x \<in> P}. y \<le> x)" 
-    by blast
-  then have "\<forall>x \<in> {row C j \<bullet> x |x. x \<in> P}. (\<exists> y \<in> {row C j \<bullet> x |x. x \<in> P}. y > x)" 
-    by fastforce
-  then have "\<forall>x \<in> P. \<exists> y \<in> P. row C j \<bullet> y > row C j \<bullet> x" 
-    by auto
-  have "\<forall> v. \<exists> x \<in> P. row C j \<bullet> x \<ge> v"
-  proof(rule ccontr)
-    assume "\<not> (\<forall>v. \<exists>x\<in>P. v \<le> row C j \<bullet> x)"
-    then obtain Bnd where "\<forall> y \<in> P. row C j \<bullet> y < Bnd" 
-      by (meson less_le_not_le linorder_linear)
-    then have "\<forall> x \<in> carrier_vec n. A *\<^sub>v x \<le> b \<longrightarrow> row C j \<bullet> x \<le> Bnd"
-      unfolding P_def polyhedron_def 
-      using order_le_less by auto
-    then have "has_Maximum {row C j \<bullet> x | x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}"
-      using 
-        strong_duality_theorem_primal_sat_bounded_min_max[of A nr n b "row C j" Bnd] 
-      by (metis (no_types, lifting) A Collect_empty_eq P_def 
-            assms(4) assms(7) b polyhedron_def row_carrier)
-    then show False using `\<not> has_Maximum {row C j \<bullet> x |x. x \<in> P}`
-      unfolding P_def polyhedron_def 
-      by fastforce
-  qed
-  then have "\<forall>v. \<exists>x\<in>carrier_vec n. A *\<^sub>v x \<le> b \<and> v \<le> row C j \<bullet> x" 
-    unfolding P_def polyhedron_def 
-    by auto
-  then have "\<not> (\<exists> y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = row C j)" 
-        using unbounded_primal_solutions[of A nr n b "row C j"] A b 
-        using assms(7) row_carrier by blast
- then have "\<not>  (\<forall> y. y \<in> carrier_vec n \<longrightarrow> A *\<^sub>v y \<ge> 0\<^sub>v nr \<longrightarrow> y \<bullet> row C j \<ge> 0)"
-    using Farkas_Lemma[of "A\<^sup>T" nr "row C j"] using assms(7) row_carrier A
-    by force
-then obtain y where "y \<in> carrier_vec n \<and> A *\<^sub>v y \<ge> 0\<^sub>v nr \<and> y \<bullet> row C j < 0" 
-    using leI by blast
-
-  let ?y' = " (1/Max (abs ` (vec_set y))) \<cdot>\<^sub>v y" 
-  let ?app_rows = "mat_of_rows n [1\<^sub>v n, (-1\<^sub>v n)]"
-  let ?app_vec = "vec_of_list [of_int n, of_int n]"
-  let ?full_A = "- A @\<^sub>r ?app_rows"
-  let ?full_b = "0\<^sub>v nr @\<^sub>v ?app_vec"
-  let ?c = "row C j"
-  let ?P' = "polyhedron ?full_A ?full_b"
-
-
-  have "?full_A \<in> carrier_mat (nr+2) n" sorry
-  have "?full_b \<in> carrier_vec (nr+2)" sorry
-
-  have "?y' \<le> 1\<^sub>v n" sorry
-  have "?y' \<ge> - 1\<^sub>v n" sorry
-  have "(- 1\<^sub>v n) \<bullet> y \<le> of_int n" sorry
-  have "(1\<^sub>v n) \<bullet> y \<le> of_int n" sorry
-
-  have 1:"polyhedron ?full_A ?full_b \<noteq> {}" sorry
- have "\<exists> x \<in> carrier_vec n. ?full_A *\<^sub>v x \<le> ?full_b" sorry
-  have "\<exists> bnd. \<forall> x \<in> carrier_vec n. ?full_A *\<^sub>v x \<le> ?full_b \<longrightarrow> ?c \<bullet> x \<le> bnd" sorry
-  then have "has_Maximum {?c \<bullet> x | x. x \<in> carrier_vec n \<and> ?full_A *\<^sub>v x \<le> ?full_b}"
-    using strong_duality_theorem_primal_sat_bounded_min_max[of ?full_A "nr+2" n ?full_b ?c]
-    using \<open>- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n] \<in> carrier_mat (nr + 2) n\<close> \<open>0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)] \<in> carrier_vec (nr + 2)\<close> \<open>\<exists>x\<in>carrier_vec n. (- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n]) *\<^sub>v x \<le> 0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)]\<close> assms(7) row_carrier by blast
-
-  then obtain \<beta> where "\<beta> = Maximum {?c \<bullet> x | x. x \<in> carrier_vec n \<and> ?full_A *\<^sub>v x \<le> ?full_b}"
-    by auto
-  then have 2:"support_hyp ?P' ?c \<beta>" unfolding support_hyp_def  
-    by (smt (verit, best) Collect_cong \<open>has_Maximum {row C j \<bullet> x |x. x \<in> carrier_vec n \<and> (- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n]) *\<^sub>v x \<le> 0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)]}\<close> assms(7) mem_Collect_eq polyhedron_def row_carrier)
-  have "\<beta> > 0" sorry
-  let ?F = " ?P' \<inter> {x |x. ?c \<bullet> x = \<beta>}"
-  have "face ?P' ?F" unfolding face_def using 1 2 
-    by blast 
-  then obtain F where F_def:"min_face ?P' F \<and> F \<subseteq> ?F" 
-    by (meson \<open>- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n] \<in> carrier_mat (nr + 2) n\<close> \<open>0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)] \<in> carrier_vec (nr + 2)\<close> gram_schmidt.face_contains_min_face)
-
-  then obtain z where "z \<in> F" 
-    by (metis ex_in_conv face_non_empty gram_schmidt.min_face_elim(1))
-   obtain A' b' I where " F \<subseteq> ?P' \<and> F \<noteq> {} \<and>
-            F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'} \<and>
-                (A', b') = sub_system ?full_A ?full_b I" 
-     using F_def
-    by (smt (verit, best) \<open>- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n] \<in> carrier_mat (nr + 2) n\<close> \<open>0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)] \<in> carrier_vec (nr + 2)\<close> char_min_face)
-
-  then have "A' *\<^sub>v z = b'" 
-    using \<open>z \<in> F\<close> by force
-  have "A' \<in> \<int>\<^sub>m" sorry
-  have "b' \<in> \<int>\<^sub>v" sorry
-  obtain k z' where  " z' = k \<cdot>\<^sub>v z \<and> z' \<in> \<int>\<^sub>v" using `A' *\<^sub>v z = b'` `A' \<in> \<int>\<^sub>m` `b' \<in> \<int>\<^sub>v`
-    sorry
-  have "A *\<^sub>v z' \<le> 0\<^sub>v nr" sorry
-
-  obtain v where "v \<in> P \<and> v \<in> \<int>\<^sub>v" sorry
-  then have "v \<in> integer_hull P" sorry
-  have "\<forall> m. v + of_int m \<cdot>\<^sub>v z' \<in> P \<and> v + of_int m \<cdot>\<^sub>v z' \<in> \<int>\<^sub>v" sorry
-  then have "\<forall> m. v + of_int m \<cdot>\<^sub>v z' \<in> integer_hull P" sorry
-
-
-
-  oops
-
-  then have "valid_ineq ?P' ?c \<beta>" 
-    using support_hyp_is_valid(1) by blast
-
-
-
-
-
-  oops
-
-  then obtain F where "min_face (polyhedron ?full_A ?full_b) F" 
-    by (meson \<open>- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n] \<in> carrier_mat (nr + 2) n\<close> \<open>0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)] \<in> carrier_vec (nr + 2)\<close> obtain_min_face_polyhedron)
-  then obtain A' b' I where " F \<subseteq> ?P' \<and> F \<noteq> {} \<and>
-            F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'} \<and>
-                (A', b') = sub_system ?full_A ?full_b I" 
-    by (smt (verit, best) \<open>- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n] \<in> carrier_mat (nr + 2) n\<close> \<open>0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)] \<in> carrier_vec (nr + 2)\<close> char_min_face)
-
-    oops
-
- 
-      oops
-  then have "\<not>  (\<forall> y. y \<in> carrier_vec n \<longrightarrow> A *\<^sub>v y \<ge> 0\<^sub>v nr \<longrightarrow> y \<bullet> row C j \<ge> 0)"
-    using Farkas_Lemma[of "A\<^sup>T" nr "row C j"] using assms(7) row_carrier A
-    by force
-  then obtain y where "y \<in> carrier_vec n \<and> A *\<^sub>v y \<ge> 0\<^sub>v nr \<and> y \<bullet> row C j < 0" 
-    using leI by blast
-
-  have "\<not>  (\<forall> y. y \<in> carrier_vec n \<and> y \<in> \<int>\<^sub>v \<longrightarrow> A *\<^sub>v y \<ge> 0\<^sub>v nr \<longrightarrow> y \<bullet> row C j \<ge> 0)" 
-  proof
-    assume "\<forall>y. y \<in> carrier_vec n \<and> y \<in> \<int>\<^sub>v \<longrightarrow> 0\<^sub>v nr \<le> A *\<^sub>v y \<longrightarrow> 0 \<le> y \<bullet> row C j"
-
-
-    oops
-  then obtain y' where "y' \<in> carrier_vec n \<and> y' \<in> \<int>\<^sub>v \<and> A *\<^sub>v y' \<ge> 0\<^sub>v nr \<and> y' \<bullet> row C j < 0" 
-    using leI by blast
-  obtain m where "m \<in>  \<int>\<^sub>v \<and> m \<in> P" sorry
-  then have "m \<in> integer_hull P" sorry
-  
-
-
-    oops
-    by blast
-  then have "y \<in> \<int>\<^sub>v" sledgehammer
-  then have "row C j \<bullet> y \<ge> 0" unfolding mult_mat_vec_def 
-  oops
-
-
-lemma pugi:
-  fixes A :: "'a  mat"
-  fixes b:: "'a vec" 
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr"
-   and AI: "A \<in> \<int>\<^sub>m"
-  and bI: "b \<in> \<int>\<^sub>v"
-defines "P \<equiv> polyhedron A b"
-assumes "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> P} \<longrightarrow>
-   (\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v)"
-shows "P = integer_hull P" 
-proof(cases "P = {}")
-  case True
-  then show ?thesis 
-    by (metis A P_def b int_hull_subset subset_empty)
-next
-  case False
-
-  obtain C d nr' where C_d:"C \<in> carrier_mat nr' n \<and> d \<in> carrier_vec nr' \<and> integer_hull P = polyhedron C d"
-    using gram_schmidt_floor.integer_hull_of_polyhedron[of A nr n b P] assms 
-    by blast
-  have "\<exists> Bnd. Bnd =  Max (abs ` (elements_mat A \<union> vec_set b))" 
-    by blast
-  have "integer_hull P \<noteq> {}"
-  proof(rule ccontr)
-    assume "\<not> integer_hull P \<noteq> {}"
-    then have "convex_hull (P \<inter> \<int>\<^sub>v) = {}" unfolding integer_hull_def  
-      by argo
-    then have "P \<inter> \<int>\<^sub>v = {}" using set_in_convex_hull 
-      by (metis A Diff_empty P_def \<open>\<not> integer_hull P \<noteq> {}\<close> b disjoint_iff_not_equal pugi)
-    have "nr > 0"
-    proof(rule ccontr)
-      assume "\<not> 0 < nr"
-      then have "nr = 0" by auto
-      then have "\<forall> x. A *\<^sub>v x \<le> b" 
-        by (metis A b carrier_matD(1) carrier_vecD leq_for_all_index_then_eq less_nat_zero_code)
-      then have "P = carrier_vec n " unfolding P_def polyhedron_def 
-        by fast 
-      have "0\<^sub>v n \<in> \<int>\<^sub>v" 
-        using zero_vec_is_int by blast
-      then show False using `P \<inter> \<int>\<^sub>v = {}` 
-        using \<open>P = carrier_vec n\<close> by blast
-    qed
-
-    then obtain i where "i < nr" by auto
-    then have "has_Maximum { row A i \<bullet> x | x. x \<in> P}" using fgwegwe 
-      using A False P_def b by blast
-    then have "\<exists>x. x \<in> P \<and> row A i \<bullet> x = Maximum { row A i \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v" using assms(6)
-      by (meson A \<open>i < nr\<close> row_carrier_vec)
-    then show False 
-      using \<open>P \<inter> \<int>\<^sub>v = {}\<close> by blast
-  qed
-
-  show ?thesis
-  proof(rule ccontr)
-
-    assume"P\<noteq> integer_hull P"
-    then obtain y where y: "y \<in> P - integer_hull P" 
-      by (metis A Diff_iff P_def b int_hull_subset set_eq_subset subset_iff)
-    then have "y \<in> carrier_vec n" unfolding P_def polyhedron_def 
-      by blast
-    have " y \<notin> polyhedron C d" using C_d y 
-      by blast                                                 
-    then obtain j where "j<nr' \<and> row C j \<bullet> y > d $ j" using y pgrej[of C nr' d y] C_d  
-          `y \<in> carrier_vec n` 
-      by blast
-    let ?\<alpha> = "row C j"
-    let ?\<beta> = "d $ j"
-    have " has_Maximum { ?\<alpha> \<bullet> x | x. x \<in> polyhedron C d}" 
-using fgwegwe[of C nr' d j] `integer_hull P \<noteq> {}` 
-  using C_d \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> by blast
-    have "?\<alpha> \<in> carrier_vec n" 
-      by (meson C_d \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> row_carrier_vec)
-    have " has_Maximum { ?\<alpha> \<bullet> x | x. x \<in> P}" sorry
-    then obtain x where "x \<in> P \<and> ?\<alpha> \<bullet> x = Maximum { ?\<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v" 
-      using assms(6)  
-      by (meson \<open>row C j \<in> carrier_vec n\<close>) 
-    then have "?\<alpha> \<bullet> y \<le> ?\<alpha> \<bullet> x" 
-      using \<open>has_Maximum {row C j \<bullet> x |x. x \<in> P}\<close> has_MaximumD(2) y by fastforce
-    have "x \<in> integer_hull P" unfolding integer_hull_def 
-      by (metis (no_types, lifting) A Diff_iff P_def \<open>x \<in> P \<and> row C j \<bullet> x = Maximum {row C j \<bullet> x |x. x \<in> P} \<and> x \<in> \<int>\<^sub>v\<close> b integer_hull_def pugi)
-    then have "?\<alpha> \<bullet> x \<le> d $ j" sorry
-    then have "?\<alpha> \<bullet> y \<le> d $ j" 
-      using \<open>row C j \<bullet> y \<le> row C j \<bullet> x\<close> by linarith
-    then show False 
-      using \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> linorder_not_le by blast
-  qed
-qed
-
-
-
-end
 end

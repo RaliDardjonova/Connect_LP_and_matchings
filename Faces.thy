@@ -40,14 +40,7 @@ definition support_hyp where
 definition valid_ineq where
   "valid_ineq P \<alpha> \<beta> \<equiv> (\<forall>x \<in> P. \<alpha> \<bullet> x \<le> \<beta>) \<and> \<alpha> \<in> carrier_vec n" 
 
-lemma support_hyp_elim[elim]:
-  assumes "support_hyp P \<alpha> \<beta>"
-  shows "\<beta> = Maximum { \<alpha> \<bullet> x | x. x \<in> P}"
-        "has_Maximum { \<alpha> \<bullet> x | x. x \<in> P}"
-        "\<alpha> \<in> carrier_vec n" 
-  using assms
-  unfolding support_hyp_def
-  by auto
+
 
 lemma suport_hypE:
   "support_hyp P \<alpha> \<beta> \<Longrightarrow>
@@ -57,7 +50,7 @@ lemma suport_hypE:
    \<Longrightarrow> R"
   by(auto simp: support_hyp_def)
 
-lemma support_hyp_intro[intro]:
+lemma support_hypI[intro]:
   assumes "has_Maximum { \<alpha> \<bullet> x | x. x \<in> P}"
   assumes "\<beta> = Maximum { \<alpha> \<bullet> x | x. x \<in> P}"
   assumes "\<alpha> \<in> carrier_vec n" 
@@ -67,11 +60,11 @@ lemma support_hyp_intro[intro]:
   by auto
 
 
-lemma valid_ineq_elim[elim]:
-  assumes "valid_ineq P \<alpha> \<beta>"
-  shows "\<forall>x \<in> P. \<alpha> \<bullet> x \<le> \<beta>"
-        "\<alpha> \<in> carrier_vec n" 
-  using assms
+lemma valid_ineqE[elim]:
+"valid_ineq P \<alpha> \<beta> \<Longrightarrow>
+   (\<lbrakk>\<forall>x \<in> P. \<alpha> \<bullet> x \<le> \<beta>;
+   \<alpha> \<in> carrier_vec n\<rbrakk> \<Longrightarrow> R)
+   \<Longrightarrow> R"
   unfolding valid_ineq_def
   by auto
 
@@ -99,12 +92,17 @@ proof
     by blast
   then have " \<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}"
     by auto
-  then show "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P}" 
-    by (smt (verit, ccfv_SIG) assms(1) eqMaximumI mem_Collect_eq valid_ineq_elim(1))
-  show "has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}" 
-    using \<open>\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}\<close> assms(1) has_Maximum_def valid_ineq_elim by fast
+ show "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P}" 
+ using assms(1)
+  apply(elim valid_ineqE)
+  using eqMaximumI[of \<beta> "{\<alpha> \<bullet> x |x. x \<in> P}"] mem_Collect_eq `\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}`
+  by blast
+  show "has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}"
+    using assms(1)
+    apply(elim valid_ineqE)
+    using \<open>\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}\<close> has_Maximum_def by auto
   show "\<alpha> \<in> carrier_vec n" 
-    using assms(1) valid_ineq_elim(2) by blast
+    using assms(1) valid_ineqE by blast
 qed
 
 lemma support_hyp_is_valid:
@@ -112,10 +110,11 @@ lemma support_hyp_is_valid:
   shows  "valid_ineq P \<alpha> \<beta>" (is ?g1)
      and "{x. \<alpha> \<bullet> x = \<beta>} \<inter> P \<noteq> {}" (is ?g2)
 proof-
-  have \<beta>_max: "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P}" "has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}" using assms by force+
+  have \<beta>_max: "\<beta> = Maximum {\<alpha> \<bullet> x |x. x \<in> P}" "has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}" 
+    using assms suport_hypE by blast+
   then show ?g1
     using \<open>support_hyp P \<alpha> \<beta>\<close>
-    by (auto elim: suport_hypE dest: has_MaximumD(2) intro: valid_ineq_intro)
+    by (auto elim: suport_hypE dest: has_MaximumD(2))
   have "\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}" 
     using \<beta>_max has_MaximumD(1) by blast
   then show "{x. \<alpha> \<bullet> x = \<beta>} \<inter> P \<noteq> {}" 
@@ -125,13 +124,14 @@ qed
 definition face :: "'a vec set \<Rightarrow> 'a vec set \<Rightarrow> bool" where
   "face P F \<equiv> P \<noteq> {} \<and> (\<exists> \<alpha> \<beta>. F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta> )"
 
-lemma face_elim[elim]:
-  assumes "face P F"
-  shows "P \<noteq> {}"
-    and "(\<exists> \<alpha> \<beta>. F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta> )"
-  using assms unfolding face_def by auto
+lemma faceE[elim]:
+"face P F \<Longrightarrow>
+   (\<lbrakk>P \<noteq> {};
+   (\<exists> \<alpha> \<beta>. F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> support_hyp P \<alpha> \<beta> )\<rbrakk> \<Longrightarrow> R)
+   \<Longrightarrow> R"
+ unfolding face_def by auto
 
-lemma face_intro[intro]:
+lemma faceI[intro]:
   assumes "P \<noteq> {}"  
   assumes "F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>}"
   assumes "support_hyp P \<alpha> \<beta>" 
@@ -140,13 +140,16 @@ lemma face_intro[intro]:
   using assms 
   by auto
 
-lemma face_elim2[elim]:
-  assumes "face P F"
-  shows  "(\<exists> \<alpha> \<beta>. F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> valid_ineq P \<alpha> \<beta> \<and> F \<noteq> {})"
-  using support_hyp_is_valid
-  by (smt (verit, del_insts) assms disjoint_iff_not_equal face_elim(2) mem_Collect_eq)
+lemma faceE':
+"face P F \<Longrightarrow>
+   (\<lbrakk>(\<exists> \<alpha> \<beta>. F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> valid_ineq P \<alpha> \<beta> \<and> F \<noteq> {})\<rbrakk> \<Longrightarrow> R)
+   \<Longrightarrow> R"
+  apply (elim faceE)
+  using support_hyp_is_valid 
+  by (metis  inf.commute)
 
-lemma face_intro2[intro]:
+
+lemma face_intro'[intro]:
   assumes "valid_ineq P \<alpha> \<beta>"
   assumes "F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>}"
   assumes "F \<noteq> {}"
@@ -158,7 +161,7 @@ lemma face_intro2[intro]:
 lemma face_non_empty:
   assumes "face P F"
   shows "F \<noteq> {}" 
-  using face_elim2  
+  using faceE'  
   using assms by blast
 
 lemma face_subset_polyhedron:
@@ -177,7 +180,9 @@ proof -
   then show "\<beta> = Maximum ?Ineq" 
     by (smt (verit, best) assms(2) eqMaximumI valid_ineq_def mem_Collect_eq)
   show "has_Maximum ?Ineq"
-    using \<open>\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}\<close> assms(2) has_Maximum_def valid_ineq_elim(1) by fastforce
+    unfolding has_Maximum_def
+    using assms(2) \<open>\<beta> \<in> {\<alpha> \<bullet> x |x. x \<in> P}\<close>
+    by(auto simp: valid_ineqE)
 qed
 
 lemma face_primal_bounded:
@@ -190,7 +195,7 @@ lemma face_primal_bounded:
   by simp
 
 
-lemma face_non_empty1:
+lemma valid_ineq_dual:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
@@ -202,12 +207,11 @@ lemma face_non_empty1:
     and "has_Minimum {b \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha>}" 
 proof -
   have "\<alpha> \<in> carrier_vec n"  
-    using assms(4) valid_ineq_elim(2) by blast
+    using assms(4) valid_ineqE by blast
   have sat: "\<exists> x \<in> carrier_vec n. A *\<^sub>v x \<le> b" 
     using assms(3) assms(5) unfolding polyhedron_def by auto
   have bounded: "\<forall> x \<in> carrier_vec n. A *\<^sub>v x \<le> b \<longrightarrow> \<alpha> \<bullet> x \<le> \<beta>" 
     using P_def assms(4) face_primal_bounded by blast
-
   show "Maximum {\<alpha> \<bullet> x | x. x \<in> P} = Minimum {b \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha>}"
     "has_Maximum {\<alpha> \<bullet> x | x. x \<in> P}" "has_Minimum {b \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha>}"
     using strong_duality_theorem_primal_sat_bounded_min_max[of A nr n b \<alpha> \<beta>]
@@ -215,7 +219,7 @@ proof -
     by (auto simp: P_def polyhedron_def)
 qed
 
-lemma face_non_empty2:
+lemma valid_ineq_dual_min:
  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
  assumes A: "A \<in> carrier_mat nr n"
  assumes b: "b \<in> carrier_vec nr"
@@ -227,14 +231,11 @@ lemma face_non_empty2:
 proof -
   have "P \<noteq> {}" using assms(5) by blast 
   show "has_Minimum {b \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha>}" 
-  using face_non_empty1[of A nr b \<alpha> \<beta>] `P \<noteq> {}` 
+  using valid_ineq_dual(3)[of A nr b \<alpha> \<beta>] `P \<noteq> {}` 
     using A P_def assms(4) b by fastforce
   show "\<beta> = Minimum {b \<bullet> y | y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = \<alpha>}"
-     using face_non_empty1(1)[of A nr b \<alpha> \<beta>]  
-     using face_is_Max'(1)[of \<alpha> \<beta> P]
-     unfolding P_def
-     using A P_def assms(4) b  `P \<noteq> {}` 
-     by (smt (verit) Collect_cong assms(5) mem_Collect_eq polyhedron_def)
+     using valid_ineq_dual(1)[of A nr b \<alpha> \<beta>] face_is_Max'(1)[of \<alpha> \<beta> P]
+     using A P_def \<open>P \<noteq> {}\<close>  assms(4) assms(5) b by fastforce
  qed
 
 lemma if_sum_0_then_all_0:
@@ -338,11 +339,13 @@ lemma char_face1:
  obtains A' b' I where "((A', b') = sub_system A b I)" "F = {x. A' *\<^sub>v x = b' \<and> x \<in> P}"
 proof -
   obtain \<alpha> \<beta> where face:" F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> valid_ineq P \<alpha> \<beta> \<and> F \<noteq> {}" 
-    using assms(4) face_elim2 by presburger
+    using assms(4)
+    apply (elim faceE') 
+  by presburger
   then have "{x. \<alpha> \<bullet> x = \<beta> \<and> x \<in> polyhedron A b} \<noteq> {}" 
     using P_def face by fastforce
   then obtain y' where y': "y' \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y' = \<alpha> \<and> b \<bullet> y' = \<beta>" 
-    using face_non_empty2[of A nr b \<alpha> \<beta>]  
+    using valid_ineq_dual_min[of A nr b \<alpha> \<beta>]  
     by (smt (verit, best) A P_def b face has_MinimumD(1) mem_Collect_eq)
 
   let ?A' = "fst (sub_system A b {i. y' $ i > 0 \<and> i < nr})" 
@@ -431,7 +434,7 @@ proof -
     
     by (metis (no_types, lifting) P_def \<open>A' \<in> carrier_mat (dim_vec b') n\<close> \<open>\<forall>x\<in>carrier_vec n. (A'\<^sup>T *\<^sub>v 1\<^sub>v (dim_vec b')) \<bullet> x = 1\<^sub>v (dim_vec b') \<bullet> (A' *\<^sub>v x)\<close> gram_schmidt.polyhedron_def mem_Collect_eq mult_mat_vec_carrier one_carrier_vec transpose_carrier_mat)
 
-  then show "face P F" using face_intro2[of P ?\<alpha> ?\<beta> F] assms(5-6)
+  then show "face P F" using face_intro'[of P ?\<alpha> ?\<beta> F] assms(5-6)
       `{x. A' *\<^sub>v x = b' \<and> x \<in> P} = {x. ?\<alpha> \<bullet> x = ?\<beta> \<and> x \<in> P}` by auto 
 qed
 
@@ -906,11 +909,11 @@ proof -
   have "F \<subseteq> P" using assms(1) 
     by (simp add: face_subset_polyhedron)
   obtain \<alpha> \<beta> where "valid_ineq P \<alpha> \<beta> \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> F \<noteq> {}"
-    using assms(1) face_elim2  
-    by meson
+    using assms(1) 
+    by (blast elim: faceE') 
  obtain \<gamma> \<delta> where "valid_ineq P \<gamma> \<delta> \<and> F' = P \<inter> {x |x. \<gamma> \<bullet> x = \<delta>} \<and> F' \<noteq> {}"
-    using assms(2) face_elim2  
-    by meson
+   using assms(2)
+   by (blast elim: faceE') 
   have "F' = F' \<inter> {x |x. \<alpha> \<bullet> x = \<beta>}" 
     using \<open>valid_ineq P \<alpha> \<beta> \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>} \<and> F \<noteq> {}\<close> assms(3) by blast
   then have "F' = P \<inter> {x |x. \<gamma> \<bullet> x = \<delta>} \<inter> {x |x. \<alpha> \<bullet> x = \<beta>}" 
@@ -950,7 +953,8 @@ proof
       by (meson \<open>face P F\<close> subset_is_face psubset_imp_subset)
     obtain C d where "F = polyhedron C d" "C = (A' @\<^sub>r (-A'))" "d = (b' @\<^sub>v (-b'))"
       using P_def \<open>face P F\<close> face_is_polyhedron' 
-      using A assms(4) assms(5) b by blast
+      using A assms(4) assms(5) b 
+      by algebra
     then have "face (polyhedron C d) F'" using `face F F'` 
       by presburger
     have "dim_row C = dim_vec d"

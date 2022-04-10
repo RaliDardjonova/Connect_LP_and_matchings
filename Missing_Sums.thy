@@ -275,7 +275,7 @@ proof -
     by auto
 qed
 
-lemma gidgf:
+lemma length_upt_same:
   shows "length (xs[0 := xs ! i, i := xs ! 0]) = length xs"
   by auto
 
@@ -292,7 +292,7 @@ proof
     using smult_carrier_vec by blast
 qed
 
-lemma ajytj:
+lemma sumlist_upt_same:
   assumes "set Wsl \<subseteq> carrier_vec n"
   assumes "i < length Wsl"
   shows "(M.sumlist (map (\<lambda>ia. (c(0 := c i, i := c 0)) ia \<cdot>\<^sub>v Wsl[0 := Wsl ! i, i := Wsl ! 0] ! ia)
@@ -324,9 +324,9 @@ proof -
     using cll unfolding lincomb_list_def by auto
   show ?thesis
     unfolding convex_lincomb_list_def  nonneg_lincomb_list_def lincomb_list_def
-    apply(simp only: gidgf)
+    apply(simp only: length_upt_same)
     apply(intro conjI)  
-    using ajytj[of Wsl i c] apply (simp add: x_sumlist assms(2) assms(3))
+    using sumlist_upt_same[of Wsl i c] apply (simp add: x_sumlist assms(2) assms(3))
     using swap_zero_fun_nonneg[of i Wsl c] assms(3) cll  apply presburger
     using sum_of_swap_fun_eq[of "{0..<length Wsl}" 0 i c] 
     by (metis assms(3) atLeastLessThan_iff cll linorder_le_less_linear 
@@ -416,7 +416,7 @@ proof -
     by simp
 qed
 
-lemma erhh:
+lemma elem_int_hull_lincomb_list:
   fixes x :: "'a :: trivial_conjugatable_linordered_field vec"
   assumes "P \<subseteq> carrier_vec n"
   assumes "P = integer_hull P"
@@ -459,8 +459,8 @@ lemma elem_of_P_is_lin_comb:
   obtains y z l where "y \<in> P \<inter> \<int>\<^sub>v" "z \<in> P" "x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z" "l > 0 \<and> l < 1"
 proof -
   obtain Wsl c where Wc: "convex_lincomb_list c Wsl x \<and> c 0 \<noteq> 0 \<and> (set Wsl) \<subseteq> P \<inter> \<int>\<^sub>v \<and> Wsl \<noteq> []"
-    using erhh 
-    by (metis assms(1) assms(2) assms(3) assms(4))
+    using elem_int_hull_lincomb_list 
+    by (metis assms)
   then have lin_comb_x: 
     "lincomb_list c Wsl = x \<and> (\<forall> i < length Wsl. c i \<ge> 0) \<and> sum c {0..<length Wsl} = 1"
     using convex_lincomb_list_def nonneg_lincomb_list_def Wc by blast
@@ -510,6 +510,15 @@ proof -
     using that 
     using \<open>c 0 \<noteq> 1\<close> by force
 qed
+
+
+
+lemma lincomb_then_lincomb_list:
+  assumes "set L \<subseteq> carrier_vec n"
+  assumes "x = lincomb c' (set L)"
+  obtains c where "x = lincomb_list c L" 
+  using assms(1) assms(2) lincomb_as_lincomb_list by blast
+
 
 end
 end
