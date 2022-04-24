@@ -519,6 +519,13 @@ lemma lincomb_then_lincomb_list:
   obtains c where "x = lincomb_list c L" 
   using assms(1) assms(2) lincomb_as_lincomb_list by blast
 
+lemma sum_only_non_zero:
+  assumes "finite S"
+  assumes "I \<subseteq> S" 
+  assumes "\<forall>i \<in> S - I. f i = 0"
+  shows "sum f S = sum f I" 
+  oops
+
 
 end
 end

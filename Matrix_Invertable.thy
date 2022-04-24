@@ -1,7 +1,6 @@
 theory Matrix_Invertable
   imports Jordan_Normal_Form.Determinant
   Smith_Normal_Form.SNF_Missing_Lemmas
-  Jordan_Normal_Form.Matrix
 begin
 
 
@@ -30,10 +29,6 @@ next
   assms 
   by fast 
 qed
-
-
-
-
 
 proposition  cramer1:
   fixes A::"'a::field mat"

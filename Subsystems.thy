@@ -141,7 +141,7 @@ lemma exist_index_in_A:
   assumes "dim_row A = dim_vec b"
   assumes "j < dim_vec (snd (sub_system A b I))"
   shows "\<exists> i < dim_vec b. i \<in> I \<and> row (fst (sub_system A b I)) j = row A i 
-          \<and> (snd (sub_system A b I)) $ j = b $ i"
+          \<and> (snd (sub_system A b I)) $ j = b $ i \<and> i = pick I j"
 proof -
   have "(pick I j) < dim_vec b" 
     by (metis assms(2)  dim_subsyst_vec pick_le)
@@ -348,6 +348,59 @@ proof -
     by argo
 qed
 
+lemma remove_index_remove_row:
+  assumes "dim_row A = dim_vec b" 
+  assumes "i \<in> I"
+  assumes "i < dim_vec b"
+  assumes "(A', b') = sub_system A b I" 
+  assumes "(C, d) = sub_system A b (I - {i})"
+  assumes "row A i \<notin> set (rows C)" 
+  shows "set (rows C) = set (rows A') - {row A i}" 
+proof(safe) 
+  {
+    fix r
+    assume "r \<in> set (rows C)" 
+    then obtain j' where j': "j' < dim_row C \<and> row C j' = r" 
+      by (metis in_set_conv_nth length_rows nth_rows)
+    obtain i' where i:"i' < dim_row A \<and> i' \<in> (I - {i}) \<and> row A i' = row C j' \<and> d $ j' = b $ i'" 
+        using exist_index_in_A[of A b j' "I - {i}"] 
+       dims_subsyst_same' fst_conv j' snd_conv 
+        by (metis assms(1) assms(5))
+      then obtain j where j: "j < dim_row A' \<and> row A' j = row A i'" 
+        using exist_index_in_A'[of A b i' I] 
+        by (metis Diff_iff assms(1) assms(4) dims_subsyst_same fst_conv)
+    then show "r \<in> set (rows A')" 
+      by (metis i in_set_conv_nth j' length_rows nth_rows)
+  }
+  show "\<And>x. row A i \<in> set (rows C) \<Longrightarrow> False" using assms(6) by auto
+
+  fix r
+  assume "r \<in> set (rows A')" 
+  assume "r \<notin> set (rows C)"
+
+  then obtain j' where j': "j' < dim_row A' \<and> row A' j' = r" using `r \<in> set (rows A')`
+      by (metis in_set_conv_nth length_rows nth_rows)
+    obtain i' where i:"i' < dim_row A \<and> i' \<in> I \<and> row A i' = row A' j' \<and> b' $ j' = b $ i'" 
+        using exist_index_in_A[of A b j' "I"] 
+       dims_subsyst_same' fst_conv j' snd_conv 
+        by (metis assms(1) assms(4))
+      show "r = row A i" 
+      proof(cases "i' \<in> (I - {i})")
+        case True
+         then obtain j where j: "j < dim_row C \<and> row C j = row A i'" 
+        using exist_index_in_A'[of A b i' "I - {i}"] 
+        by (metis assms(1) assms(5) dims_subsyst_same fst_conv i) 
+        then show ?thesis 
+          by (metis \<open>r \<notin> set (rows C)\<close> i in_set_conv_nth j' length_rows nth_rows)
+      next
+        case False
+        then have "i' = i" 
+          using i by blast
+        then show ?thesis 
+          using i j' by presburger
+      qed
+    qed
+
 lemma add_index_sub_system_dims:
   assumes "i \<notin> I"
   assumes "i < dim_vec b"
@@ -369,6 +422,7 @@ proof -
   then show ?thesis 
     using \<open>dim_vec b' = card {i. i < dim_vec b \<and> i \<in> I}\<close> \<open>dim_vec b'' = card {j. j < dim_vec b \<and> j \<in> I \<union> {i}}\<close> by presburger
 qed
+
 lemma remove_index_sub_system_dims:
   assumes "i \<in> I"
   assumes "i < dim_vec b"
@@ -382,6 +436,8 @@ proof -
     using add_index_sub_system_dims[of  i   "I - {i}" b A'' b'' A A' b'] assms(1-4)
     by argo
 qed  
+
+
 
 lemma linear_comb_holds_eq:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
@@ -450,5 +506,8 @@ proof -
       
     by (metis add_smult_distrib_vec assms(8) le_add_diff_inverse one_smult_vec)
 qed
+
+
+
 
 end
