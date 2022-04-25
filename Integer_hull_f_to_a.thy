@@ -394,10 +394,6 @@ qed
 qed
 
 
-
-
-
-
 lemma bounded_min_faces_are_vertex:
    fixes A :: "'a  mat"
   fixes bound:: "'a" 
@@ -495,7 +491,222 @@ next
     by (metis \<open>F \<noteq> {}\<close> is_singletonI' is_singleton_altdef)
 qed
 
+thm "lin_depE"
 
+lemma (in vec_space) lin_depE1:
+assumes "A \<in> carrier_mat n n"
+assumes "lin_dep (set (cols A))"
+assumes "distinct (cols A)"
+obtains v where "v \<in> carrier_vec n" "v \<noteq> 0\<^sub>v n" "A *\<^sub>v v = 0\<^sub>v n"
+  using lin_depE assms 
+  by blast
+
+lemma (in vec_space) lin_dep_cols_iff_rows:
+  assumes "A \<in> carrier_mat n n"
+  assumes "distinct (cols A)"
+  assumes "distinct (rows A)"
+  shows "lin_dep (set (rows A)) = lin_dep (set (cols A))"
+  by (metis assms cols_transpose det_rank_iff det_transpose idom_vec.lin_dep_cols_imp_det_0 transpose_carrier_mat vec_space.lin_indpt_full_rank)
+
+
+lemma cvbr:
+ fixes A :: "'a  mat"
+ assumes "A \<in> carrier_mat nr n"
+ assumes "i < n"
+ shows "A *\<^sub>v unit_vec n i = col A i" 
+proof
+  show "dim_vec (A *\<^sub>v unit_vec n i) = dim_vec (col A i)" 
+    by (metis dim_col dim_mult_mat_vec)
+  fix j
+  assume "j < dim_vec (col A i)"
+  have "(A *\<^sub>v unit_vec n i) $ j = row A j \<bullet> unit_vec n i" 
+    by (metis \<open>j < dim_vec (col A i)\<close> dim_col index_mult_mat_vec)
+  have " row A j \<bullet> unit_vec n i = row A j $ i" 
+    using assms(2) scalar_prod_right_unit by blast
+  have "row A j $ i = col A i $ j" 
+    by (metis \<open>j < dim_vec (col A i)\<close> assms(1) assms(2) carrier_matD(2) dim_col index_col index_row(1))
+  show "(A *\<^sub>v unit_vec n i) $ j = col A i $ j" 
+    using \<open>(A *\<^sub>v unit_vec n i) $ j = row A j \<bullet> unit_vec n i\<close> \<open>row A j $ i = col A i $ j\<close> \<open>row A j \<bullet> unit_vec n i = row A j $ i\<close> by presburger
+qed
+
+lemma gfgd:
+ fixes A :: "'a  mat"
+ assumes "A \<in> carrier_mat nr1 n"
+ assumes "B \<in> carrier_mat nr2 n"
+ assumes "distinct (cols A)"
+ shows "distinct (cols (A @\<^sub>r B))"
+proof -
+  have "dim_row (A @\<^sub>r B) = nr1 + nr2" 
+    using assms(1) assms(2) carrier_matD(1) by blast
+   have "dim_col (A @\<^sub>r B) = n" 
+    using assms(1) assms(2) carrier_matD(2) by blast
+
+  have "(submatrix (A @\<^sub>r B) {0..<nr1} UNIV) = A"
+  proof
+    have "{i. i<dim_row (A @\<^sub>r B) \<and> i\<in> {0..<nr1}} = {0..<nr1}" 
+      using `dim_row (A @\<^sub>r B) = nr1 + nr2` 
+      by fastforce 
+    then have "(card {i. i<dim_row (A @\<^sub>r B) \<and> i\<in> {0..<nr1}}) =  nr1" 
+      by auto  
+ 
+    show "dim_row (submatrix (A @\<^sub>r B) {0..<nr1} UNIV) = dim_row A" 
+      using dim_submatrix[of "(A @\<^sub>r B)" "{0..<nr1}"]  
+          `(card {i. i<dim_row (A @\<^sub>r B) \<and> i\<in> {0..<nr1}}) = nr1` assms(1) 
+      by (metis carrier_matD(1))
+
+    show "dim_col (submatrix (A @\<^sub>r B) {0..<nr1} UNIV) = dim_col A"  
+      using dim_submatrix(2)[of "(A @\<^sub>r B)" "{0..<nr1}" UNIV]  
+      by (metis \<open>dim_col (A @\<^sub>r B) = n\<close>  assms(1) carrier_matD(2) dim_col_subsyst_mat sub_system_fst)
+  
+    fix i j
+    assume "i < dim_row A"
+    assume "j < dim_col A"
+    show " submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) = A $$ (i, j)"
+    proof -
+      have "i < nr1" using `i < dim_row A` 
+        using assms(1) by blast
+      then have "{a\<in>{0..<nr1}. a < i} = {0..<i}" 
+        by auto
+      then have "card {a\<in>{0..<nr1}. a < i} = i" 
+        by simp
+      have "submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (card {a\<in>{0..<nr1}. a < i}, card {a\<in>UNIV. a < j}) =
+       (A @\<^sub>r B) $$ (i, j)" 
+        using submatrix_index_card[of i "A @\<^sub>r B" j "{0..<nr1}" UNIV] 
+        by (metis UNIV_I \<open>dim_col (A @\<^sub>r B) = n\<close> \<open>dim_row (A @\<^sub>r B) = nr1 + nr2\<close> \<open>i < dim_row A\<close> \<open>j < dim_col A\<close> assms(1) atLeastLessThan_iff carrier_matD(1) carrier_matD(2) trans_less_add1 zero_le)
+
+      then have "submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) =  (A @\<^sub>r B) $$ (i, j)" 
+        using \<open>card {a \<in> {0..<nr1}. a < i} = i\<close> by force
+      have " (A @\<^sub>r B) $$ (i, j) =  A $$ (i, j)" 
+        by (metis (mono_tags, lifting) \<open>dim_col (A @\<^sub>r B) = n\<close> \<open>dim_row (A @\<^sub>r B) = nr1 + nr2\<close> \<open>i < dim_row A\<close> \<open>j < dim_col A\<close> append_rows_index_same assms(1) assms(2) carrier_matD(1) carrier_matD(2) index_row(1) trans_less_add1)
+      then show "submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) = A $$ (i, j)" 
+        using \<open>submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) = (A @\<^sub>r B) $$ (i, j)\<close> by presburger
+    qed
+  qed
+  then show ?thesis using distinct_cols_submatrix_UNIV 
+    by (metis assms(3))
+qed
+
+lemma append_rows_eq: assumes A: "A \<in> carrier_mat nr1 nc" 
+  and B: "B \<in> carrier_mat nr2 nc" 
+  and a: "a \<in> carrier_vec nr1" 
+  and v: "v \<in> carrier_vec nc"
+shows "(A @\<^sub>r B) *\<^sub>v v = (a @\<^sub>v b) \<longleftrightarrow> A *\<^sub>v v = a \<and> B *\<^sub>v v = b" 
+  unfolding mat_mult_append[OF A B v]
+  by (rule append_vec_eq[OF _ a], insert A v, auto)
+
+lemma  lin_depE1assd:
+ fixes A :: "'a  mat"
+ assumes "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+  assumes "\<exists>! x \<in> carrier_vec n. A *\<^sub>v x = b"
+  assumes "lin_indpt (set (rows A))"
+  assumes "distinct (rows A)"
+  assumes "nr > 0"
+  shows "nr = n" 
+proof -
+  have "distinct (cols A)"
+  proof(rule ccontr)
+    assume "\<not> distinct (cols A)" 
+    then obtain i j where "i < length (cols  A) \<and> j < length (cols  A) \<and> i \<noteq> j \<and> cols A ! i = cols A ! j" 
+      using distinct_conv_nth by blast
+    then have "i < n \<and> j < n \<and> i \<noteq> j \<and> col A  i = col A j" 
+      by (metis assms(1) carrier_matD(2) cols_length cols_nth)
+    obtain x where "x \<in> carrier_vec n \<and> A *\<^sub>v x = b" using assms(3) by auto
+
+    let ?y = "x + (unit_vec n i) - (unit_vec n j)"
+    have "?y \<in> carrier_vec n" 
+      by (simp add: \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close>)
+    have " A *\<^sub>v ?y= b"
+    proof -
+      have "A *\<^sub>v (x + unit_vec n i - unit_vec n j) = A *\<^sub>v x + A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j" 
+        by (smt (verit) M.add.m_closed \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(1) mult_add_distrib_mat_vec mult_minus_distrib_mat_vec unit_vec_carrier)
+      have "A *\<^sub>v unit_vec n i = col A i" using cvbr 
+        using \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> assms(1) by blast
+      have "A *\<^sub>v unit_vec n j = col A j" using cvbr 
+        using \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> assms(1) by blast
+      have "A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j = 0\<^sub>v nr" 
+        by (metis \<open>A *\<^sub>v unit_vec n i = col A i\<close> \<open>A *\<^sub>v unit_vec n j = col A j\<close> \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> assms(1) col_carrier_vec minus_cancel_vec)
+      show "A *\<^sub>v ?y= b" 
+        by (metis \<open>A *\<^sub>v (x + unit_vec n i - unit_vec n j) = A *\<^sub>v x + A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j\<close> \<open>A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j = 0\<^sub>v nr\<close> \<open>A *\<^sub>v unit_vec n i = col A i\<close> \<open>A *\<^sub>v unit_vec n j = col A j\<close> \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> add_diff_eq_vec assms(1) b col_carrier_vec right_zero_vec)
+    qed
+    have "x \<noteq> ?y"
+    proof(rule ccontr)
+      assume "\<not> (x \<noteq> ?y)"
+      then have "x = ?y" by auto
+      then have "x $ i = ?y $ i" 
+        by force
+      have "?y $ i = x $ i + unit_vec n i $ i - unit_vec n j $ i" 
+        by (simp add: \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close>)
+      then have "unit_vec n i $ i - unit_vec n j $ i = 0" 
+        using \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> \<open>x = x + unit_vec n i - unit_vec n j\<close> by auto
+      then show False 
+        using \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> index_unit_vec(1) by fastforce
+    qed
+    then show False 
+      using \<open>A *\<^sub>v (x + unit_vec n i - unit_vec n j) = b\<close> \<open>x + unit_vec n i - unit_vec n j \<in> carrier_vec n\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(3) by blast
+  qed
+  have "rank A\<^sup>T = nr" 
+    by (simp add: assms(1) assms(4) assms(5) vec_space.lin_indpt_full_rank)
+  have "set (rows A) \<subseteq> carrier_vec n" 
+    using assms(1) set_rows_carrier by blast
+  then have "(set (cols A\<^sup>T)) \<subseteq> carrier_vec n" 
+    by simp 
+  then have "dim_span (set (cols A\<^sup>T)) \<le> n" using dim_span_le_n 
+    by blast
+  have "rank A\<^sup>T = dim_span (set (cols A\<^sup>T))" 
+    by (metis \<open>rank A\<^sup>T = nr\<close> \<open>set (cols A\<^sup>T) \<subseteq> carrier_vec n\<close> assms(1) assms(4) assms(5) carrier_matD(1) cols_length cols_transpose distinct_card index_transpose_mat(3) same_span_imp_card_eq_dim_span)
+  then have "nr \<le> n" 
+    using \<open>dim_span (set (cols A\<^sup>T)) \<le> n\<close> \<open>rank A\<^sup>T = nr\<close> by presburger
+
+
+  show "nr = n"
+  proof(cases "nr < n")
+    case True
+then show ?thesis 
+proof -
+  let ?fullb = "b @\<^sub>v (vec n (\<lambda> k. (of_int k + 2) * b $ 0 ))"
+
+  let ?rows = "map (\<lambda> k. (of_int k + 2) \<cdot>\<^sub>v row A 0) [0..<n-nr]"
+  let ?app_rows = "mat_of_rows n ?rows"
+  let ?fullA = "A @\<^sub>r ?app_rows" 
+  have "?fullA \<in> carrier_mat n n" sorry
+  have "distinct (rows ?fullA)" sorry
+  have "distinct (cols ?fullA)" 
+    by (metis \<open>distinct (cols A)\<close> assms(1) gfgd mat_carrier mat_of_rows_def)
+  have "lin_dep (set (rows ?fullA))" sorry
+  then have "lin_dep (set (cols ?fullA))" using lin_dep_cols_iff_rows[of ?fullA] 
+    using \<open>A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) \<in> carrier_mat n n\<close> \<open>distinct (cols (A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))))\<close> \<open>distinct (rows (A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))))\<close> by fastforce
+
+  obtain v where "v \<in> carrier_vec n" "v \<noteq> 0\<^sub>v n" "?fullA *\<^sub>v v = 0\<^sub>v n" 
+    using lin_depE1[of ?fullA] 
+    using \<open>A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) \<in> carrier_mat n n\<close> \<open>distinct (cols (A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))))\<close> \<open>lin_dep (set (cols (A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])))))\<close> by blast
+  then have "(A @\<^sub>r ?app_rows) *\<^sub>v v = A *\<^sub>v v @\<^sub>v ?app_rows *\<^sub>v v"
+    by (metis assms(1) mat_carrier mat_mult_append mat_of_rows_def)
+  have "A *\<^sub>v v = 0\<^sub>v nr" using append_rows_eq 
+    by (smt (verit, ccfv_SIG) \<open>(A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) *\<^sub>v v = 0\<^sub>v n\<close> \<open>(A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) *\<^sub>v v = A *\<^sub>v v @\<^sub>v mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) *\<^sub>v v\<close> \<open>A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) \<in> carrier_mat n n\<close> \<open>v \<in> carrier_vec n\<close> assms(1) mat_carrier mat_of_rows_def minus_cancel_vec mult_mat_vec_carrier mult_minus_distrib_mat_vec)
+ 
+  obtain x where "x \<in> carrier_vec n \<and> A *\<^sub>v x = b" using assms(3) by auto
+  have "x + v \<noteq> x" 
+    by (simp add: \<open>v \<in> carrier_vec n\<close> \<open>v \<noteq> 0\<^sub>v n\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close>)
+  have "A *\<^sub>v (x + v) = b"
+  proof -
+    have "A *\<^sub>v (x + v) = A *\<^sub>v x + A *\<^sub>v v" 
+      using \<open>v \<in> carrier_vec n\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(1) mult_add_distrib_mat_vec by blast
+    then show ?thesis 
+      by (simp add: \<open>A *\<^sub>v v = 0\<^sub>v nr\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> b)
+  qed
+  then have False 
+    by (metis M.add.m_closed \<open>v \<in> carrier_vec n\<close> \<open>x + v \<noteq> x\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(3))
+  then show ?thesis 
+    by simp
+qed
+  next
+    case False
+    then show ?thesis 
+      by (simp add: \<open>nr \<le> n\<close> nless_le)
+  qed
+
+qed
 
 lemma fgweugugwe:
    fixes A :: "'a  mat"
