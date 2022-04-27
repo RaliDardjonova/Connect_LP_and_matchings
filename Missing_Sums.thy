@@ -156,6 +156,14 @@ lemma sum_int_is_int:
   shows "a + b \<in> \<int>\<^sub>v" 
   using assms unfolding Ints_vec_def by force
 
+lemma diff_int_is_int:
+  assumes "a \<in> carrier_vec n"
+  assumes "b \<in> carrier_vec n"
+  assumes "a \<in> \<int>\<^sub>v"
+  assumes "b \<in> \<int>\<^sub>v"
+  shows "a - b \<in> \<int>\<^sub>v" 
+  using assms unfolding Ints_vec_def by force
+
 lemma sumlist_map_append:
   assumes "f : {0..<Suc m} \<rightarrow> carrier_vec n"
   shows "sumlist (map f [0..<Suc m]) = sumlist (map f [0..<m]) + f m"

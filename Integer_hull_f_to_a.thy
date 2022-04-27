@@ -1021,7 +1021,87 @@ fixes x y:: "'a vec"
   assumes "y \<le> b"
   shows "x + y \<le> a + b" 
   by (metis assms(3) assms(4) assms(5) assms(6) carrier_vecD vec_add_mono)
+
+
+
+
+lemma vgegewg:
+fixes S :: "'a vec set"
+  assumes "S \<subseteq> carrier_vec n" 
+  assumes "\<forall> x \<in> S. \<forall> i < n.  x $ i \<le> 1"
+  assumes "\<forall> x \<in> S. \<forall> i < n.  x $ i \<ge> - 1"
+  assumes "n > 0"
+  assumes "c \<in> carrier_vec n"
+  shows "\<exists> bnd. \<forall> x \<in>S. c \<bullet> x \<le> bnd" 
+proof -
+ have "\<forall> x \<in>S.  c \<bullet> x \<le> of_int n * Max (abs ` (vec_set c))" 
+  proof 
+    fix x
+    assume "x \<in> S"
+    have 1:"x \<in> carrier_vec n" using `x \<in> S` 
+      using assms(1) by blast
+    have 2:"\<forall> i < n.  x $ i \<le> 1" 
+      using \<open>x \<in> S\<close> assms(2) by blast 
+     have 3:"\<forall> i < n.  x $ i \<ge> -1" 
+       using \<open>x \<in> S\<close> assms(3) by blast 
+
+ have "set\<^sub>v c \<noteq> {}" using `n > 0` 
+    by (metis carrier_vecD equals0D  vec_setI assms(5))
+  have "Max (abs ` (vec_set c)) \<ge> 0" 
+    by (metis (mono_tags, lifting) Max_in \<open>set\<^sub>v c \<noteq> {}\<close> abs_ge_zero finite_imageI finite_vec_set imageE image_is_empty)
+  
+
+     have "c \<bullet> 1\<^sub>v n = sum (\<lambda> i. c $ i) {0..<n}" 
+       using assms(5) scalar_prod_right_one by blast
+     have "\<forall> i < n. c $ i * x $ i \<le> abs (c $ i)" 
+     proof(safe)
+       fix i
+       assume "i< n"
+       show "c $ i * x $ i \<le> \<bar>c $ i\<bar>"
+       proof(cases "x $ i = 0")
+         case True
+         then show ?thesis 
+           by simp
+       next
+         case False
+         then show ?thesis
+         proof(cases "c $ i > 0")
+           case True
+           have "x $ i \<le> 1" 
+             by (simp add: "2" \<open>i < n\<close>)
+           then have "c $ i * x $ i \<le> c $ i" 
+             by (simp add: True)
+           then show ?thesis 
+             by linarith
+         next
+           case False
+           have "x $ i \<ge> - 1" 
+             by (simp add: "3" \<open>i < n\<close>)
+            then have "c $ i * x $ i \<le> - c $ i" using False 
+              by (metis mult_le_cancel_left mult_minus1_right)
+           then show ?thesis by linarith
+         qed
+       qed
+     qed
+
     
+    then have "\<forall> i < n. c $ i * x $ i \<le> Max (abs ` (vec_set c))" 
+      by (smt (verit) Max_ge assms(5) carrier_vecD dual_order.order_iff_strict finite_imageI finite_vec_set image_eqI order_less_le_trans vec_setI)
+   
+    then have "(\<And>i. i \<in> {0..<n} \<Longrightarrow> c $ i * x $ i \<le> Max (abs ` set\<^sub>v c))" by auto
+    then have "sum (\<lambda> i. c $ i * x $ i ) {0..<n} \<le> of_int n * Max (abs ` (vec_set c))"
+      using sum_bounded_above[of "{0..<n}" "(\<lambda> i. c $ i * x $ i )" "Max (abs ` (vec_set c))"]
+      by fastforce
+    then have " c \<bullet> x \<le> of_int n * Max (abs ` (vec_set c))" 
+      unfolding scalar_prod_def  
+      using "1" carrier_vecD by blast
+    then show " c \<bullet> x \<le> of_int (int n) * Max (abs ` set\<^sub>v c)"
+      by blast
+  qed
+  then show " \<exists>bnd. \<forall>x\<in>S. c \<bullet> x \<le> bnd" by auto
+qed
+
+
 
 lemma fgweugugwe:
   fixes A :: "'a  mat"
@@ -1082,50 +1162,55 @@ proof(rule ccontr)
     by force
   then obtain y where y: "y \<in> carrier_vec n \<and> A *\<^sub>v y \<ge> 0\<^sub>v nr \<and> y \<bullet> row C j < 0" 
     using leI by blast
+  have "(-y) \<bullet> row C j > 0"
+    by (simp add: assms(7) y)
+  have "A *\<^sub>v (-y) \<le> 0\<^sub>v nr" 
+    by (smt (verit, ccfv_SIG) A carrier_matD(1) class_ring.minus_zero dim_mult_mat_vec gram_schmidt_floor.minus_mult_minus_one index_uminus_vec(1) index_zero_vec(1) less_eq_vec_def mult_mat_vec neg_le_iff_le y)
 
-  have "y \<noteq> 0\<^sub>v n"
+  then obtain y' where y': "y' \<in> carrier_vec n \<and> A *\<^sub>v y' \<le> 0\<^sub>v nr \<and> y' \<bullet> row C j > 0" 
+    using \<open>0 < - y \<bullet> row C j\<close> uminus_carrier_vec y by blast
+  have "y' \<noteq> 0\<^sub>v n"
   proof
-    assume "y = 0\<^sub>v n"
-    then have "y \<bullet> row C j = 0" 
+    assume "y' = 0\<^sub>v n"
+    then have "y' \<bullet> row C j = 0" 
       using assms(7) row_carrier scalar_prod_left_zero by blast
-    then show False using y 
+    then show False using y' 
       by linarith
   qed
   have "n \<noteq> 0"
   proof
     assume "n=0"
-    then have "y = 0\<^sub>v 0" 
-      using carrier_vecD vec_of_dim_0 y by blast
-    then show False using `y \<noteq> 0\<^sub>v n` 
+    then have "y' = 0\<^sub>v 0" 
+      using carrier_vecD vec_of_dim_0 y' by blast
+    then show False using `y' \<noteq> 0\<^sub>v n` 
       using \<open>n = 0\<close> by blast
   qed
-  then have "set\<^sub>v y \<noteq> {}" 
-    by (metis carrier_vecD equals0D not_gr_zero vec_setI y)
-  have "Max (abs ` (vec_set y)) > 0"
+  then have "set\<^sub>v y' \<noteq> {}" 
+    by (metis carrier_vecD equals0D not_gr_zero vec_setI y')
+  have "Max (abs ` (vec_set y')) > 0"
   proof(rule ccontr)
-    assume "\<not> 0 < Max (abs ` set\<^sub>v y)"
-    have "\<forall> y' \<in> (abs ` set\<^sub>v y). y' \<ge> 0" 
+    assume "\<not> 0 < Max (abs ` set\<^sub>v y')"
+    have "\<forall> y \<in> (abs ` set\<^sub>v y'). y \<ge> 0" 
       by fastforce
-    have "finite (abs ` set\<^sub>v y)" 
+    have "finite (abs ` set\<^sub>v y')" 
       by fastforce
-    have "(abs ` set\<^sub>v y) \<noteq> {}" 
-      using \<open>set\<^sub>v y \<noteq> {}\<close> by blast
-    then have " Max (abs ` set\<^sub>v y) \<ge> 0" 
-      by (meson Max_in \<open>\<forall>y'\<in>abs ` set\<^sub>v y. 0 \<le> y'\<close> \<open>finite (abs ` set\<^sub>v y)\<close>)
-    then have "Max (abs ` (vec_set y)) = 0" 
-      using \<open>\<not> 0 < Max (abs ` set\<^sub>v y)\<close> by linarith
-    then have "\<forall> y' \<in> (abs ` set\<^sub>v y). y' = 0" 
-      by (metis Max_ge \<open>\<forall>y'\<in>abs ` set\<^sub>v y. 0 \<le> y'\<close> \<open>finite (abs ` set\<^sub>v y)\<close> order_antisym_conv)
-    then have "\<forall>y' \<in> set\<^sub>v y. y' = 0" 
+    have "(abs ` set\<^sub>v y') \<noteq> {}" 
+      using \<open>set\<^sub>v y' \<noteq> {}\<close> by blast
+    then have " Max (abs ` set\<^sub>v y') \<ge> 0" 
+      by (meson Max_in \<open>\<forall>y\<in>abs ` set\<^sub>v y'. 0 \<le> y\<close> \<open>finite (abs ` set\<^sub>v y')\<close>)
+    then have "Max (abs ` (vec_set y')) = 0" 
+      using \<open>\<not> 0 < Max (abs ` set\<^sub>v y')\<close> by linarith
+    then have "\<forall> y' \<in> (abs ` set\<^sub>v y'). y' = 0" 
+      by (metis Max_ge \<open>\<forall>y'\<in>abs ` set\<^sub>v y'. 0 \<le> y'\<close> \<open>finite (abs ` set\<^sub>v y')\<close> order_antisym_conv)
+    then have "\<forall>y' \<in> set\<^sub>v y'. y' = 0" 
       by auto
-    then have "y = 0\<^sub>v n" unfolding zero_vec_def 
-      by (metis M.zero_closed \<open>y \<noteq> 0\<^sub>v n\<close> carrier_vecD eq_vecI index_zero_vec(1) vec_setI y)
+    then have "y' = 0\<^sub>v n" unfolding zero_vec_def 
+      by (metis M.zero_closed \<open>y' \<noteq> 0\<^sub>v n\<close> carrier_vecD eq_vecI index_zero_vec(1) vec_setI y')
     then show False 
-      using \<open>y \<noteq> 0\<^sub>v n\<close> by auto
+      using \<open>y' \<noteq> 0\<^sub>v n\<close> by auto
   qed
-
-   let ?y' = " (1/Max (abs ` (vec_set y))) \<cdot>\<^sub>v (- y)" 
-  let ?fullA = "- A @\<^sub>r (1\<^sub>m n) @\<^sub>r (- 1\<^sub>m n)"
+   let ?y' = " (1/Max (abs ` (vec_set y'))) \<cdot>\<^sub>v  y'" 
+  let ?fullA = "A @\<^sub>r (1\<^sub>m n) @\<^sub>r (- 1\<^sub>m n)"
   let ?fullb = "0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n" 
   let ?c = "row C j"
   let ?P' = "polyhedron ?fullA ?fullb"
@@ -1134,14 +1219,128 @@ proof(rule ccontr)
     by (metis A carrier_append_rows mult_2 one_carrier_mat uminus_carrier_iff_mat)
   have 3:"?fullb \<in> carrier_vec (nr+2*n)" 
     by (simp add: mult_2)
-  have "?y' \<in> ?P'" sorry
+  have "?y' \<in> ?P'" 
+  proof -
+    have "A *\<^sub>v y' \<le> 0\<^sub>v nr" using y' by auto
+    then have "(1/Max (abs ` (vec_set y'))) \<cdot>\<^sub>v (A *\<^sub>v y') \<le> 0\<^sub>v nr" using \<open>Max (abs ` (vec_set y')) > 0\<close> 
+      by (meson divide_nonneg_pos smult_nneg_npos_vec zero_less_one_class.zero_le_one)
+    then have "A *\<^sub>v ?y' \<le> 0\<^sub>v nr" 
+      by (metis A mult_mat_vec y')
+ 
+  have "\<forall> i < n. row (1\<^sub>m n) i \<bullet> ?y' \<le> 1" 
+  proof(safe)
+    fix i
+    assume "i< n" 
+    have " row (1\<^sub>m n) i = unit_vec n i" 
+      using \<open>i < n\<close> row_one by blast
+    have "unit_vec n i \<bullet> ?y' = ?y' $ i" 
+      by (meson \<open>i < n\<close> scalar_prod_left_unit smult_closed y')
+    have "y' $ i \<le>  Max (abs ` set\<^sub>v y')" 
+      by (metis (mono_tags, lifting) Max_ge \<open>0 < Max (abs ` set\<^sub>v y')\<close> \<open>i < n\<close> abs_of_pos carrier_vecD finite_imageI finite_vec_set image_eqI linorder_le_less_linear order.asym order_less_le_trans vec_setI y')
+    then have "(1 / Max (abs ` set\<^sub>v y')) * (y' $ i) \<le> 1" 
+      by (metis \<open>0 < Max (abs ` set\<^sub>v y')\<close> divide_pos_pos mult_le_cancel_left_pos nonzero_eq_divide_eq order_less_irrefl zero_less_one_class.zero_less_one)
+
+    have "(1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y') $ i \<le> 1" 
+      by (metis \<open>1 / Max (abs ` set\<^sub>v y') * y' $ i \<le> 1\<close> \<open>i < n\<close> carrier_vecD index_smult_vec(1) y')
+    then show "row (1\<^sub>m n) i \<bullet> ?y' \<le> 1" 
+      by (simp add: \<open>row (1\<^sub>m n) i = unit_vec n i\<close> \<open>unit_vec n i \<bullet> (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y') = (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y') $ i\<close>)
+  qed
+    
+  then have "1\<^sub>m n *\<^sub>v ?y' \<le> 1\<^sub>v n" 
+    unfolding mult_mat_vec_def 
+    by (simp add: less_eq_vec_def)
+
+ have "\<forall> i < n. row (- 1\<^sub>m n) i \<bullet> ?y' \<le> 1" 
+  proof(safe)
+    fix i
+    assume "i< n" 
+    have " row (- 1\<^sub>m n) i =  - unit_vec n i" 
+      using \<open>i < n\<close> row_one 
+      by simp 
+    have "- unit_vec n i \<bullet> ?y' = - ?y' $ i" 
+      by (metis \<open>i < n\<close> scalar_prod_left_unit smult_closed uminus_scalar_prod unit_vec_carrier y')
+    have "- y' $ i \<le>  Max (abs ` set\<^sub>v y')" 
+      by (metis Max_ge \<open>i < n\<close> abs_le_D2 carrier_vecD finite_imageI finite_vec_set image_eqI vec_setI y') 
+    then have "(1 / Max (abs ` set\<^sub>v y')) * (- y' $ i) \<le> 1" 
+      by (metis \<open>0 < Max (abs ` set\<^sub>v y')\<close> divide_pos_pos mult_le_cancel_left_pos nonzero_eq_divide_eq order_less_irrefl zero_less_one_class.zero_less_one)
+
+    have " - (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y') $ i \<le> 1" 
+      by (metis \<open>1 / Max (abs ` set\<^sub>v y') * - y' $ i \<le> 1\<close> \<open>i < n\<close> carrier_vecD index_smult_vec(1) mult_minus_right y')
+    then show "row (- 1\<^sub>m n) i \<bullet> ?y' \<le> 1" 
+      by (simp add: \<open>row (- 1\<^sub>m n) i = - unit_vec n i\<close> \<open>- unit_vec n i \<bullet> (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y') = - (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y') $ i\<close>)
+  qed
+    
+  then have "- 1\<^sub>m n *\<^sub>v ?y' \<le> 1\<^sub>v n" 
+    unfolding mult_mat_vec_def 
+    by (simp add: less_eq_vec_def)
+  have "(1\<^sub>m n @\<^sub>r - 1\<^sub>m n)  *\<^sub>v ?y' \<le>  ( 1\<^sub>v n @\<^sub>v 1\<^sub>v n)"
+ using `- 1\<^sub>m n *\<^sub>v ?y' \<le> 1\<^sub>v n` `1\<^sub>m n *\<^sub>v ?y' \<le> 1\<^sub>v n` 
+    append_rows_le 
+  by (metis carrier_matI index_one_mat(2) index_one_mat(3) index_uminus_mat(3) one_carrier_vec smult_closed y')
+  then have "(A @\<^sub>r 1\<^sub>m n @\<^sub>r - 1\<^sub>m n) *\<^sub>v ?y' \<le>  (0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n)" 
+    using `- 1\<^sub>m n *\<^sub>v ?y' \<le> 1\<^sub>v n` 
+    append_rows_le[of "A" nr n "1\<^sub>m n @\<^sub>r - 1\<^sub>m n" "2*n" "0\<^sub>v nr" ?y' "1\<^sub>v n @\<^sub>v 1\<^sub>v n"] 
+    by (metis A \<open> A *\<^sub>v (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y') \<le> 0\<^sub>v nr\<close> carrier_append_rows mult.commute mult_2_right one_carrier_mat smult_closed uminus_carrier_iff_mat y' zero_carrier_vec)
+
+  then show "?y' \<in> ?P'" unfolding polyhedron_def 
+    using y' by blast
+qed
+
   then have 1:"?P' \<noteq> {}" by auto
   have "\<exists> x \<in> carrier_vec n. ?fullA *\<^sub>v x \<le> ?fullb" using `?y' \<in> ?P'`
     unfolding polyhedron_def by auto
-  have  "\<forall> x \<in> ?P'. \<forall> i < n.  x $ i \<le> 1" sorry
+  have  "\<forall> x \<in> ?P'. \<forall> i < n.  x $ i \<le> 1"
+  proof
+    fix x
+    assume "x \<in> ?P'"
+    have "x \<in> carrier_vec n" 
+        using `x \<in> ?P'` unfolding polyhedron_def by auto
+    have "(A @\<^sub>r 1\<^sub>m n @\<^sub>r - 1\<^sub>m n) *\<^sub>v x \<le>  (0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n)" 
+       using `x \<in> ?P'` unfolding polyhedron_def by auto
+    then have "(1\<^sub>m n @\<^sub>r - 1\<^sub>m n)  *\<^sub>v x \<le>  ( 1\<^sub>v n @\<^sub>v 1\<^sub>v n)" 
+      using  append_rows_le[of "A" nr n "1\<^sub>m n @\<^sub>r - 1\<^sub>m n" "2*n" "0\<^sub>v nr" x "1\<^sub>v n @\<^sub>v 1\<^sub>v n"] 
+      by (metis A \<open>x \<in> carrier_vec n\<close> carrier_append_rows mult_2 one_carrier_mat uminus_carrier_mat zero_carrier_vec)
+    then have "1\<^sub>m n *\<^sub>v x \<le> 1\<^sub>v n" 
+       using  append_rows_le[of "1\<^sub>m n" n n "- 1\<^sub>m n" n "1\<^sub>v n" x "1\<^sub>v n"] 
+       by (simp add: \<open>x \<in> carrier_vec n\<close>) 
+     then have "\<forall> i < n. row (1\<^sub>m n) i \<bullet> x \<le> 1" unfolding mult_mat_vec_def 
+       by (simp add: less_eq_vec_def)
+     then show " \<forall> i < n.  x $ i \<le> 1" 
+       by (simp add: \<open>x \<in> carrier_vec n\<close>)
+   qed
 
-  then have "\<exists> bnd. \<forall> x \<in> carrier_vec n. ?fullA *\<^sub>v x \<le> ?fullb \<longrightarrow> ?c \<bullet> x \<le> bnd" 
-    unfolding polyhedron_def sorry
+ have  "\<forall> x \<in> ?P'. \<forall> i < n.  x $ i \<ge> - 1"
+  proof
+    fix x
+    assume "x \<in> ?P'"
+    have "x \<in> carrier_vec n" 
+        using `x \<in> ?P'` unfolding polyhedron_def by auto
+    have "(A @\<^sub>r 1\<^sub>m n @\<^sub>r - 1\<^sub>m n) *\<^sub>v x \<le>  (0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n)" 
+       using `x \<in> ?P'` unfolding polyhedron_def by auto
+    then have "(1\<^sub>m n @\<^sub>r - 1\<^sub>m n)  *\<^sub>v x \<le>  ( 1\<^sub>v n @\<^sub>v 1\<^sub>v n)" 
+      using  append_rows_le[of "A" nr n "1\<^sub>m n @\<^sub>r - 1\<^sub>m n" "2*n" "0\<^sub>v nr" x "1\<^sub>v n @\<^sub>v 1\<^sub>v n"] 
+      by (metis A \<open>x \<in> carrier_vec n\<close> carrier_append_rows mult_2 one_carrier_mat uminus_carrier_mat zero_carrier_vec)
+    then have " -  1\<^sub>m n *\<^sub>v x \<le> 1\<^sub>v n" 
+       using  append_rows_le[of "1\<^sub>m n" n n "- 1\<^sub>m n" n "1\<^sub>v n" x "1\<^sub>v n"] 
+       by (simp add: \<open>x \<in> carrier_vec n\<close>) 
+     then have "\<forall> i < n. row (- 1\<^sub>m n) i \<bullet> x \<le> 1" unfolding mult_mat_vec_def 
+       by (simp add: less_eq_vec_def)
+     then have "\<forall> i < n. - unit_vec n i \<bullet> x \<le> 1" 
+       by simp
+    then have "\<forall> i < n. - x $ i \<le> 1" 
+      by (metis \<open>x \<in> carrier_vec n\<close> carrier_vecD index_unit_vec(3) scalar_prod_left_unit scalar_prod_uminus_left)
+    
+     then show " \<forall> i < n.  x $ i \<ge> - 1" 
+       by (simp add: \<open>x \<in> carrier_vec n\<close>)
+   qed
+   have "?P' \<subseteq> carrier_vec n"  unfolding polyhedron_def  by auto  
+   have "?c \<in> carrier_vec n" 
+     using assms(7) row_carrier by blast
+   have "\<exists> bnd. \<forall> x \<in> carrier_vec n. ?fullA *\<^sub>v x \<le> ?fullb \<longrightarrow> ?c \<bullet> x \<le> bnd" 
+     using vgegewg[of ?P' ?c] 
+     apply (auto simp:  `\<forall> x \<in> ?P'. \<forall> i < n.  x $ i \<le> 1` `\<forall> x \<in> ?P'. \<forall> i < n.  x $ i \<ge> - 1` `n\<noteq>0` `?P' \<subseteq> carrier_vec n` `?c \<in> carrier_vec n`) 
+    unfolding polyhedron_def 
+    using \<open>n \<noteq> 0\<close> by auto
    then have 4:"has_Maximum {?c \<bullet> x | x. x \<in> carrier_vec n \<and> ?fullA *\<^sub>v x \<le> ?fullb}"
     using strong_duality_theorem_primal_sat_bounded_min_max[of ?fullA "nr+2*n" n ?fullb ?c]
     using 2 3 assms(7) row_carrier `\<exists> x \<in> carrier_vec n. ?fullA *\<^sub>v x \<le> ?fullb` 
@@ -1191,52 +1390,55 @@ proof(rule ccontr)
     by (metis \<open>A' \<in> carrier_mat (dim_row A') n\<close> \<open>dim_row A' = n\<close> det_rank_iff det_transpose transpose_carrier_mat)
 
 
-  have "A' *\<^sub>v z = b \<longleftrightarrow> z = vec n (\<lambda> k. det (replace_col A' b k) / det A')" sorry
+  have "A' *\<^sub>v z = b' \<longleftrightarrow> z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')" sorry
+  then have " z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')" 
+    using A'_b'(1) \<open>z \<in> F\<close> by force
 
   have "det A \<in> \<int>" using Ints_det AI 
     using Ints_mat_def by blast
-
-  let ?z' = "- abs(det A') \<cdot>\<^sub>v z" 
-  have "?z' \<in> \<int>\<^sub>v" sorry
+  have "\<forall> k < n. det (replace_col A' b k) \<in> \<int>" sorry
+  let ?z' = "abs(det A') \<cdot>\<^sub>v z" 
+  have "?z' \<in> \<int>\<^sub>v"
+  proof -
+    have "?z' =  vec n (\<lambda> k. \<bar>det A'\<bar> * det (replace_col A' b k) / det A')" 
+      unfolding smult_vec_def using `z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')` 
+      oops
 
    
 
    
-    have "?c \<bullet> ?y' =  (- 1 / Max (abs ` set\<^sub>v y)) * (?c \<bullet>  y)" 
-      using y assms(7) row_carrier scalar_prod_smult_distrib 
+    have "?c \<bullet> ?y' =  (1 / Max (abs ` set\<^sub>v y')) * (?c \<bullet>  y')" 
+      using y' assms(7) row_carrier scalar_prod_smult_distrib 
       by force
-    have "(1 / Max (abs ` set\<^sub>v y)) > 0" 
-      using \<open>0 < Max (abs ` set\<^sub>v y)\<close> zero_less_divide_1_iff by blast
-    then have "?c \<bullet> ?y' > 0" using y 
-      by (metis (no_types, lifting) "4" \<open>0 < Max (abs ` set\<^sub>v y)\<close> \<open>row C j \<bullet> (1 / Max (abs ` set\<^sub>v y) \<cdot>\<^sub>v - y) = - 1 / Max (abs ` set\<^sub>v y) * (row C j \<bullet> y)\<close>  comm_scalar_prod divide_cancel_left gram_schmidt.support_hyp_def le_minus_one_simps(3) le_numeral_extra(3) linorder_not_le  nonzero_mult_div_cancel_right zero_le_divide_iff)
-    have "\<beta> \<ge> ?c \<bullet> ?y'" using `?y' \<in> ?P'` unfolding polyhedron_def  
+    have "(1 / Max (abs ` set\<^sub>v y')) > 0" 
+      using \<open>0 < Max (abs ` set\<^sub>v y')\<close> zero_less_divide_1_iff by blast
+    then have "?c \<bullet> ?y' > 0" using y' 
+      by (metis "4" \<open>row C j \<bullet> (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y') = 1 / Max (abs ` set\<^sub>v y') * (row C j \<bullet> y')\<close> comm_scalar_prod gram_schmidt.support_hyp_def linordered_semiring_strict_class.mult_pos_pos)
+
+  
+
+    
+    have "\<beta> \<ge> ?c \<bullet> ?y'" using `?y' \<in> ?P'` unfolding polyhedron_def
         using beta 
-        using "4" \<open>1 / Max (abs ` set\<^sub>v y) \<cdot>\<^sub>v - y \<in> polyhedron (- A @\<^sub>r 1\<^sub>m n @\<^sub>r - 1\<^sub>m n) (0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n)\<close> gram_schmidt.support_hyp_is_valid(1) by blast
+        using "4" \<open>?y' \<in> ?P'\<close> gram_schmidt.support_hyp_is_valid(1) by blast
       then have "\<beta> > 0" 
-        using \<open>0 < row C j \<bullet> (1 / Max (abs ` set\<^sub>v y) \<cdot>\<^sub>v - y)\<close> order_less_le_trans by blast
+        using \<open>0 < row C j \<bullet> (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y')\<close> by linarith
        have "z \<in> carrier_vec n" 
         using A'_b'(1) \<open>z \<in> F\<close>  by force
       have "z \<in> ?F" 
         using F_def \<open>z \<in> F\<close> by blast
      
-       then have "- A *\<^sub>v z \<le> 0\<^sub>v nr" unfolding polyhedron_def 
-        using append_rows_le[of "-A" nr n "1\<^sub>m n @\<^sub>r - 1\<^sub>m n" "2*n" "0\<^sub>v nr" z "1\<^sub>v n @\<^sub>v 1\<^sub>v n"]
+       then have "A *\<^sub>v z \<le> 0\<^sub>v nr" unfolding polyhedron_def 
+        using append_rows_le[of "A" nr n "1\<^sub>m n @\<^sub>r - 1\<^sub>m n" "2*n" "0\<^sub>v nr" z "1\<^sub>v n @\<^sub>v 1\<^sub>v n"]
         by (simp add: A mult_2 )
     
-      then have "- (A *\<^sub>v z) \<le> 0\<^sub>v nr" 
+      then have "(A *\<^sub>v z) \<le> 0\<^sub>v nr" 
         using A A'_b'(1) \<open>z \<in> F\<close> by force
+ then have "A *\<^sub>v ?z' \<le> 0\<^sub>v nr" 
+        using A A'_b'(1) \<open>z \<in> F\<close> 
+        by (simp add: mult_mat_vec smult_nneg_npos_vec)
 
-
-       then have "(-1) \<cdot>\<^sub>v (A *\<^sub>v z) \<le> 0\<^sub>v nr" using minus_mult_minus_one  
-         by force
-       then have "(abs(det A')) \<cdot>\<^sub>v ((-1) \<cdot>\<^sub>v (A *\<^sub>v z)) \<le> 0\<^sub>v nr" 
-         using abs_ge_zero smult_nneg_npos_vec by blast
-       then have "(abs(det A')*(-1)) \<cdot>\<^sub>v (A *\<^sub>v z) \<le> 0\<^sub>v nr" 
-         by (metis smult_smult_assoc)
-      then have "(- abs(det A')) \<cdot>\<^sub>v (A *\<^sub>v z) \<le> 0\<^sub>v nr" 
-        by algebra
-      then have "A *\<^sub>v ?z' \<le> 0\<^sub>v nr" using mult_mat_vec[of A nr n z "(- abs(det A'))"]
-        using A A'_b'(1) \<open>z \<in> F\<close> by force
+     
 
 
         have "row C j \<in> carrier_vec n" 
@@ -1260,7 +1462,8 @@ proof(rule ccontr)
       
       then have "v \<in> integer_hull P" using assms(5) 
         by blast 
-      then have "v \<in> P" sorry
+      then have "v \<in> P" 
+        using A P_def b int_hull_subset by blast
 
         have "A *\<^sub>v v \<le> b" using `v \<in> P` unfolding P_def polyhedron_def by auto
         have "v \<in> carrier_vec n" using v unfolding P_def polyhedron_def by auto
@@ -1280,98 +1483,66 @@ proof(rule ccontr)
           then have "A *\<^sub>v (of_int m \<cdot>\<^sub>v ?z') \<le> 0\<^sub>v nr" 
             using `A *\<^sub>v (of_int m \<cdot>\<^sub>v ?z') = of_int m \<cdot>\<^sub>v ( A *\<^sub>v ?z')` by auto
           have "v + of_int m \<cdot>\<^sub>v ?z' \<in> carrier_vec n" 
-            using \<open>- \<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close> by blast
+            using \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close> by blast
           have "A *\<^sub>v (v + of_int m \<cdot>\<^sub>v ?z') = A *\<^sub>v v + A *\<^sub>v (of_int m \<cdot>\<^sub>v ?z')" 
-            by (meson A \<open>- \<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close> mult_add_distrib_mat_vec smult_closed)
+            by (meson A \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close> mult_add_distrib_mat_vec smult_closed)
           have "A *\<^sub>v v + A *\<^sub>v (of_int m \<cdot>\<^sub>v ?z') \<le> b + 0\<^sub>v nr"
             using `A *\<^sub>v v \<le> b` `A *\<^sub>v (of_int m \<cdot>\<^sub>v ?z') \<le> 0\<^sub>v nr` using vec_add_mono 
             by (metis b carrier_vecD index_zero_vec(2))
           then have "A *\<^sub>v (v + of_int m \<cdot>\<^sub>v ?z') \<le> b" 
-            by (metis \<open>A *\<^sub>v (v + of_int (int m) \<cdot>\<^sub>v (- \<bar>det A'\<bar> \<cdot>\<^sub>v z)) = A *\<^sub>v v + A *\<^sub>v (of_int (int m) \<cdot>\<^sub>v (- \<bar>det A'\<bar> \<cdot>\<^sub>v z))\<close> b right_zero_vec)
-          then show "v + of_int (int m) \<cdot>\<^sub>v (- \<bar>det A'\<bar> \<cdot>\<^sub>v z) \<in> P"
+            by (metis \<open>A *\<^sub>v (v + of_int (int m) \<cdot>\<^sub>v (\<bar>det A'\<bar> \<cdot>\<^sub>v z)) = A *\<^sub>v v + A *\<^sub>v (of_int (int m) \<cdot>\<^sub>v (\<bar>det A'\<bar> \<cdot>\<^sub>v z))\<close> b right_zero_vec)
+          then show "v + of_int (int m) \<cdot>\<^sub>v (\<bar>det A'\<bar> \<cdot>\<^sub>v z) \<in> P"
             unfolding P_def polyhedron_def 
-            using \<open>v + of_int (int m) \<cdot>\<^sub>v (- \<bar>det A'\<bar> \<cdot>\<^sub>v z) \<in> carrier_vec n\<close> by blast
+            using \<open>v + of_int (int m) \<cdot>\<^sub>v (\<bar>det A'\<bar> \<cdot>\<^sub>v z) \<in> carrier_vec n\<close> by blast
         qed
         have "\<forall> m::nat. v + of_int m \<cdot>\<^sub>v ?z' \<in> \<int>\<^sub>v"
         proof
           fix m::nat
           have " m \<in> \<int>"  by simp 
           then have "of_int m \<cdot>\<^sub>v ?z' \<in> \<int>\<^sub>v" using int_mult_int_vec 
-            using Ints_of_int \<open>- \<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> \<int>\<^sub>v\<close> by blast
+            using Ints_of_int \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> \<int>\<^sub>v\<close> by blast
           then show "v + of_int m \<cdot>\<^sub>v ?z' \<in> \<int>\<^sub>v" using v 
-            using \<open>- \<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close> gram_schmidt.sum_int_is_int by blast
+            using \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close> gram_schmidt.sum_int_is_int by blast
         qed
         then have "\<forall> m::nat. v + of_int m \<cdot>\<^sub>v ?z' \<in> integer_hull P" 
-          by (metis A Diff_iff P_def \<open>\<forall>x. v + of_int (int x) \<cdot>\<^sub>v (- \<bar>det A'\<bar> \<cdot>\<^sub>v z) \<in> P\<close> b gram_schmidt.not_in_int_hull_not_int)
+          by (metis A Diff_iff P_def \<open>\<forall>x. v + of_int (int x) \<cdot>\<^sub>v (\<bar>det A'\<bar> \<cdot>\<^sub>v z) \<in> P\<close> b gram_schmidt.not_in_int_hull_not_int)
 
 
+        have "?c \<bullet> z = \<beta>" 
+          using \<open>z \<in> polyhedron (A @\<^sub>r 1\<^sub>m n @\<^sub>r - 1\<^sub>m n) (0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n) \<inter> {x |x. row C j \<bullet> x = \<beta>}\<close> by blast
+        then have "?c \<bullet> ?z' = abs (det A') * \<beta>" 
+          by (metis \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>row C j \<in> carrier_vec n\<close> carrier_vecD index_smult_vec(2) scalar_prod_smult_right)
 
-  
-  oops
-  then have "det A' \<noteq> 0" 
+        have "v + ?z' \<in> \<int>\<^sub>v" using `\<forall> m::nat. v + of_int m \<cdot>\<^sub>v ?z' \<in> \<int>\<^sub>v` 
+          using \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> \<int>\<^sub>v\<close> \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close> gram_schmidt.sum_int_is_int v by blast
+        have "v + ?z' \<in> P"
+        proof -
+          have " v + of_int 1 \<cdot>\<^sub>v ?z' \<in> P" 
+          using `\<forall> m::nat. v + of_int m \<cdot>\<^sub>v ?z' \<in> P` 
+          by (metis int_ops(2))
+        then show ?thesis 
+          by (metis of_int_hom.hom_one scalar_vec_one)  
+      qed
+        then have "v + ?z' \<in> integer_hull P" 
+          by (metis \<open>\<forall>x. v + of_int (int x) \<cdot>\<^sub>v (\<bar>det A'\<bar> \<cdot>\<^sub>v z) \<in> integer_hull P\<close> of_int_hom.hom_one of_nat_1 scalar_vec_one)
 
-    oops
-    then have "A' *\<^sub>v z = b'" 
-      using \<open>z \<in> F\<close> by force
-    have "A' \<in> \<int>\<^sub>m" sorry
-    have "b' \<in> \<int>\<^sub>v" sorry
-    obtain k z' where  " z' = k \<cdot>\<^sub>v z \<and> z' \<in> \<int>\<^sub>v" using `A' *\<^sub>v z = b'` `A' \<in> \<int>\<^sub>m` `b' \<in> \<int>\<^sub>v`
-      sorry
-    have "A *\<^sub>v z' \<le> 0\<^sub>v nr" sorry
-
-    obtain v where "v \<in> P \<and> v \<in> \<int>\<^sub>v" sorry
-    then have "v \<in> integer_hull P" sorry
-    have "\<forall> m. v + of_int m \<cdot>\<^sub>v z' \<in> P \<and> v + of_int m \<cdot>\<^sub>v z' \<in> \<int>\<^sub>v" sorry
-    then have "\<forall> m. v + of_int m \<cdot>\<^sub>v z' \<in> integer_hull P" sorry
-
-
-
-    oops
-
-    then have "valid_ineq ?P' ?c \<beta>" 
-      using support_hyp_is_valid(1) by blast
+        then have "v + ?z' \<in> polyhedron C d " 
+          using assms(5) by blast
+        then have "?c \<bullet> (v + ?z') \<le> Maximum { ?c \<bullet> x | x. x \<in> polyhedron C d}" 
+          using assms(8) has_MaximumD(2) by blast
 
 
+        have "?c \<bullet> (v + ?z') = ?c \<bullet> v + ?c \<bullet> ?z'" 
+          using \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>row C j \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close> scalar_prod_add_distrib by blast
+        then have "?c \<bullet> (v + ?z') = Maximum { ?c \<bullet> x | x. x \<in> polyhedron C d} + abs (det A') * \<beta>"
+            using `?c \<bullet> ?z' = abs (det A') * \<beta>` v 
+            by presburger
+          then have "?c \<bullet> (v + ?z') > Maximum { ?c \<bullet> x | x. x \<in> polyhedron C d}" 
+            by (simp add: \<open>0 < \<beta>\<close> \<open>det A' \<noteq> 0\<close>)
+          then show False 
+            using \<open>row C j \<bullet> (v + \<bar>det A'\<bar> \<cdot>\<^sub>v z) \<le> Maximum {row C j \<bullet> x |x. x \<in> polyhedron C d}\<close> linorder_not_le by blast
+        qed
 
-
-
-    oops
-
-    then obtain F where "min_face (polyhedron ?full_A ?full_b) F" 
-      by (meson \<open>- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n] \<in> carrier_mat (nr + 2) n\<close> \<open>0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)] \<in> carrier_vec (nr + 2)\<close> obtain_min_face_polyhedron)
-    then obtain A' b' I where " F \<subseteq> ?P' \<and> F \<noteq> {} \<and>
-            F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'} \<and>
-                (A', b') = sub_system ?full_A ?full_b I" 
-      by (smt (verit, best) \<open>- A @\<^sub>r mat_of_rows n [1\<^sub>v n, - 1\<^sub>v n] \<in> carrier_mat (nr + 2) n\<close> \<open>0\<^sub>v nr @\<^sub>v vec_of_list [of_int (int n), of_int (int n)] \<in> carrier_vec (nr + 2)\<close> char_min_face)
-
-    oops
-
-
-    oops
-    then have "\<not>  (\<forall> y. y \<in> carrier_vec n \<longrightarrow> A *\<^sub>v y \<ge> 0\<^sub>v nr \<longrightarrow> y \<bullet> row C j \<ge> 0)"
-      using Farkas_Lemma[of "A\<^sup>T" nr "row C j"] using assms(7) row_carrier A
-      by force
-    then obtain y where "y \<in> carrier_vec n \<and> A *\<^sub>v y \<ge> 0\<^sub>v nr \<and> y \<bullet> row C j < 0" 
-      using leI by blast
-
-    have "\<not>  (\<forall> y. y \<in> carrier_vec n \<and> y \<in> \<int>\<^sub>v \<longrightarrow> A *\<^sub>v y \<ge> 0\<^sub>v nr \<longrightarrow> y \<bullet> row C j \<ge> 0)" 
-    proof
-      assume "\<forall>y. y \<in> carrier_vec n \<and> y \<in> \<int>\<^sub>v \<longrightarrow> 0\<^sub>v nr \<le> A *\<^sub>v y \<longrightarrow> 0 \<le> y \<bullet> row C j"
-
-
-      oops
-      then obtain y' where "y' \<in> carrier_vec n \<and> y' \<in> \<int>\<^sub>v \<and> A *\<^sub>v y' \<ge> 0\<^sub>v nr \<and> y' \<bullet> row C j < 0" 
-        using leI by blast
-      obtain m where "m \<in>  \<int>\<^sub>v \<and> m \<in> P" sorry
-      then have "m \<in> integer_hull P" sorry
-
-
-
-      oops
-      by blast
-    then have "y \<in> \<int>\<^sub>v" sledgehammer
-      then have "row C j \<bullet> y \<ge> 0" unfolding mult_mat_vec_def 
-        oops
 
 
 lemma pugi:
@@ -1403,7 +1574,7 @@ next
     then have "convex_hull (P \<inter> \<int>\<^sub>v) = {}" unfolding integer_hull_def  
       by argo
     then have "P \<inter> \<int>\<^sub>v = {}" using set_in_convex_hull 
-      by (metis A Diff_empty P_def \<open>\<not> integer_hull P \<noteq> {}\<close> b disjoint_iff_not_equal pugi)
+      by (metis A Diff_empty P_def \<open>\<not> integer_hull P \<noteq> {}\<close> b disjoint_iff_not_equal gram_schmidt.not_in_int_hull_not_int)
     have "nr > 0"
     proof(rule ccontr)
       assume "\<not> 0 < nr"
@@ -1447,15 +1618,24 @@ next
       using C_d \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> by blast
     have "?\<alpha> \<in> carrier_vec n" 
       by (meson C_d \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> row_carrier_vec)
-    have " has_Maximum { ?\<alpha> \<bullet> x | x. x \<in> P}" sorry
+    have " has_Maximum { ?\<alpha> \<bullet> x | x. x \<in> P}" using fgweugugwe[of A nr b C d j] 
+      unfolding P_def 
+      using A AI C_d False P_def \<open>integer_hull P \<noteq> {}\<close> \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> assms(6) b bI eq_in_P_has_max by force
+
     then obtain x where "x \<in> P \<and> ?\<alpha> \<bullet> x = Maximum { ?\<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v" 
       using assms(6)  
       by (meson \<open>row C j \<in> carrier_vec n\<close>) 
     then have "?\<alpha> \<bullet> y \<le> ?\<alpha> \<bullet> x" 
       using \<open>has_Maximum {row C j \<bullet> x |x. x \<in> P}\<close> has_MaximumD(2) y by fastforce
     have "x \<in> integer_hull P" unfolding integer_hull_def 
-      by (metis (no_types, lifting) A Diff_iff P_def \<open>x \<in> P \<and> row C j \<bullet> x = Maximum {row C j \<bullet> x |x. x \<in> P} \<and> x \<in> \<int>\<^sub>v\<close> b integer_hull_def pugi)
-    then have "?\<alpha> \<bullet> x \<le> d $ j" sorry
+      by (metis (no_types, lifting) A Diff_iff P_def \<open>x \<in> P \<and> row C j \<bullet> x = Maximum {row C j \<bullet> x |x. x \<in> P} \<and> x \<in> \<int>\<^sub>v\<close> b integer_hull_def not_in_int_hull_not_int)
+    have "?\<alpha> \<bullet> x \<le> d $ j" 
+    proof -
+      have "x \<in> polyhedron C d" using C_d `x \<in> integer_hull P` by auto
+      then have "x \<in> carrier_vec n \<and> C *\<^sub>v x \<le> d" unfolding polyhedron_def by auto
+      then show ?thesis unfolding mult_mat_vec_def 
+        by (metis C_d \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> \<open>x \<in> carrier_vec n \<and> C *\<^sub>v x \<le> d\<close> carrier_matD(1) carrier_vecD index_mult_mat_vec less_eq_vec_def)
+    qed
     then have "?\<alpha> \<bullet> y \<le> d $ j" 
       using \<open>row C j \<bullet> y \<le> row C j \<bullet> x\<close> by linarith
     then show False 
