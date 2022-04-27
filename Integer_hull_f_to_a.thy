@@ -1,10 +1,13 @@
 theory Integer_hull_f_to_a
-  imports Faces
+  imports 
+    Matrix_Invertable
+    Faces
     Well_Quasi_Orders.Minimal_Elements
     Linear_Inequalities.Integer_Hull
     Linear_Inequalities.Farkas_Lemma
     Integer_Polyhedron
     Missing_Sums 
+   
     "HOL.Rat"
 
 begin
@@ -12,25 +15,8 @@ begin
 context gram_schmidt_floor
 begin
 
-definition floor\<^sub>v where
-  "floor\<^sub>v v = vec (dim_vec v) (\<lambda> i. floor (v $ i))"
-
-definition ceil\<^sub>v where
-  "ceil\<^sub>v v = vec (dim_vec v) (\<lambda> i. ceiling (v $ i))"
-
-lemma grg:
-  fixes x ::"'a" 
-  assumes "x \<notin> \<int>" 
-  shows "floor x + 1 = ceiling x" unfolding ceiling_def 
-proof -
-  have "\<lfloor>x\<rfloor> + 1 + \<lfloor>- x\<rfloor> = 0"
-    oops
-
-lemma floor_vec_plus_one:
-  fixes v:: "'a vec"
-  shows "floor\<^sub>v v + 1\<^sub>v (dim_vec v) = ceil\<^sub>v v"
-  unfolding floor\<^sub>v_def ceil\<^sub>v_def one_vec_def ceiling_def oops
-
+no_notation inner (infix "\<bullet>" 70)
+no_notation Finite_Cartesian_Product.vec.vec_nth (infixl "$" 90)
 
 lemma integer_hull_is_integer_hull:
   assumes "P \<subseteq> carrier_vec n"
@@ -40,7 +26,7 @@ lemma integer_hull_is_integer_hull:
       gram_schmidt.convex_def set_in_convex_hull subset_antisym subset_eq)
 
 lemma gojeg:
-  fixes bound :: "'a " 
+  fixes bound :: "'a" 
   assumes A: "A \<in> carrier_mat nr nc" 
     and c: "c \<in> carrier_vec nc"
     and sat: "\<exists> x \<in> carrier_vec nc. A *\<^sub>v x \<le> 0\<^sub>v nr" 
@@ -134,7 +120,7 @@ qed
 
 
 lemma vnvnvnoo:
-  fixes A :: "'a  mat"
+  fixes A :: "'a  Matrix.mat"
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
   defines "P \<equiv> polyhedron A b"
@@ -144,9 +130,9 @@ lemma vnvnvnoo:
           (C, d) = sub_system A b I'}"
   assumes " F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'}"  
   assumes "(A', b') = sub_system A b I"
-  shows "distinct (rows A')" 
+  shows "distinct (Matrix.rows A')" 
 proof(rule ccontr)
-  assume "\<not> distinct (rows A') "
+  assume "\<not> distinct (Matrix.rows A') "
   then obtain j1 j2 where j1j2: "j1 \<noteq> j2 \<and> j1 < dim_row A' \<and> j2 < dim_row A' \<and> row A' j1 = row A' j2" 
     by (metis distinct_conv_nth length_rows nth_rows)
   obtain i1 where i1:"i1 < dim_row A \<and> i1 \<in> I \<and> row A i1 = row A' j1 \<and> i1 = (pick I j1) \<and> b' $ j1 = b $ i1" 
@@ -1101,7 +1087,211 @@ proof -
   then show " \<exists>bnd. \<forall>x\<in>S. c \<bullet> x \<le> bnd" by auto
 qed
 
+lemma cwevbew:
+  assumes "A \<in> carrier_mat n n"
+  assumes "b \<in> carrier_vec n"
+  assumes "A \<in> \<int>\<^sub>m"
+  assumes "b \<in> \<int>\<^sub>v"
+  assumes "k < n"
+  shows "det (replace_col A b k) \<in> \<int>"
+proof -
+  have "(replace_col A b k) = 
+    mat (dim_row A) (dim_col A) (\<lambda> (i,j). if j = k then b $ i else A $$ (i,j))"
+    unfolding replace_col_def by auto
+  have "(replace_col A b k) \<in> \<int>\<^sub>m" 
+    unfolding Ints_mat_def
+  proof(safe)
+    fix i j
+    assume "i<dim_row (replace_col A b k)"
+    assume "j < dim_col (replace_col A b k)" 
+    
+    show "replace_col A b k $$ (i, j) \<in> \<int>"
+    proof(cases "j = k")
+      case True
+      have "replace_col A b k $$ (i, j) = b $ i" unfolding replace_col_def 
+        using True \<open>i < dim_row (replace_col A b k)\<close> \<open>replace_col A b k = Matrix.mat (dim_row A) (dim_col A) (\<lambda>(i, j). if j = k then b $v i else A $$ (i, j))\<close> assms(1) assms(5) by auto
 
+      then show ?thesis 
+        by (metis (no_types, lifting) Ints_vec_def \<open>i < dim_row (replace_col A b k)\<close> \<open>replace_col A b k = Matrix.mat (dim_row A) (dim_col A) (\<lambda>(i, j). if j = k then b $v i else A $$ (i, j))\<close> assms(1) assms(2) assms(4) carrier_matD(1) carrier_vecD dim_row_mat(1) mem_Collect_eq)
+
+    next
+      case False
+      have "replace_col A b k $$ (i, j) = A $$ (i,j)" unfolding replace_col_def 
+        using False \<open>i < dim_row (replace_col A b k)\<close> \<open>j < dim_col (replace_col A b k)\<close> \<open>replace_col A b k = Matrix.mat (dim_row A) (dim_col A) (\<lambda>(i, j). if j = k then b $v i else A $$ (i, j))\<close> by force
+
+      then show ?thesis 
+        using Ints_mat_def \<open>i < dim_row (replace_col A b k)\<close> \<open>j < dim_col (replace_col A b k)\<close> \<open>replace_col A b k = Matrix.mat (dim_row A) (dim_col A) (\<lambda>(i, j). if j = k then b $v i else A $$ (i, j))\<close> assms(3) by auto
+    qed
+  qed
+ then show "det (replace_col A b k) \<in> \<int>"  using Ints_det 
+    using Ints_mat_def 
+    by blast 
+qed
+
+lemma vvweb:
+  assumes "A \<in> \<int>\<^sub>m"
+  shows "submatrix A I J \<in> \<int>\<^sub>m"
+proof -
+  
+  show "submatrix A I J \<in> \<int>\<^sub>m" using assms unfolding Ints_mat_def submatrix_def
+  proof(safe)
+    fix i j
+    assume "\<forall>i<dim_row A. \<forall>j<dim_col A. A $$ (i, j) \<in> \<int>"
+    assume  " i < dim_row
+                (Matrix.mat (card {i. i < dim_row A \<and> i \<in> I})
+                  (card {j. j < dim_col A \<and> j \<in> J}) (\<lambda>(i, j). A $$ (pick I i, pick J j)))"
+    assume "j < dim_col
+                (Matrix.mat (card {i. i < dim_row A \<and> i \<in> I})
+                  (card {j. j < dim_col A \<and> j \<in> J}) (\<lambda>(i, j). A $$ (pick I i, pick J j)))"
+    show " Matrix.mat (card {i. i < dim_row A \<and> i \<in> I}) (card {j. j < dim_col A \<and> j \<in> J})
+             (\<lambda>(i, j). A $$ (pick I i, pick J j)) $$ (i, j) \<in> \<int>"
+    proof -
+      have "A $$ (pick I i, pick J j) \<in> \<int>" 
+      proof -
+        have "i < (card {i. i < dim_row A \<and> i \<in> I})" 
+          using \<open>i < dim_row (Matrix.mat (card {i. i < dim_row A \<and> i \<in> I}) (card {j. j < dim_col A \<and> j \<in> J}) (\<lambda>(i, j). A $$ (pick I i, pick J j)))\<close> by auto
+        then have "pick I i < dim_row A" 
+          using pick_le by presburger
+         have "j < (card {i. i < dim_col A \<and> i \<in> J})" 
+           using \<open>j < dim_col (Matrix.mat (card {i. i < dim_row A \<and> i \<in> I}) (card {j. j < dim_col A \<and> j \<in> J}) (\<lambda>(i, j). A $$ (pick I i, pick J j)))\<close> by fastforce
+         then have "pick J j < dim_col A" 
+          using pick_le  by presburger
+        then show ?thesis 
+          using \<open>\<forall>i<dim_row A. \<forall>j<dim_col A. A $$ (i, j) \<in> \<int>\<close> \<open>pick I i < dim_row A\<close> by blast
+      qed
+      then show ?thesis 
+        using \<open>i < dim_row (Matrix.mat (card {i. i < dim_row A \<and> i \<in> I}) (card {j. j < dim_col A \<and> j \<in> J}) (\<lambda>(i, j). A $$ (pick I i, pick J j)))\<close> \<open>j < dim_col (Matrix.mat (card {i. i < dim_row A \<and> i \<in> I}) (card {j. j < dim_col A \<and> j \<in> J}) (\<lambda>(i, j). A $$ (pick I i, pick J j)))\<close> by force
+    qed
+  qed
+qed
+
+lemma ffmoonod:
+  assumes "A \<in> carrier_mat nr1 n"
+  assumes "B \<in> carrier_mat nr2 n"
+  assumes "A \<in> \<int>\<^sub>m"
+  assumes "B \<in> \<int>\<^sub>m"
+  shows "A @\<^sub>r B \<in> \<int>\<^sub>m" 
+proof -
+  show "A @\<^sub>r B \<in> \<int>\<^sub>m" 
+    unfolding Ints_mat_def  
+  proof(safe)
+    fix i j
+    assume "i < dim_row (A @\<^sub>r B)"
+    assume " j < dim_col (A @\<^sub>r B)" 
+    show "(A @\<^sub>r B) $$ (i, j) \<in> \<int>"
+    proof(cases "i<dim_row A")
+      case True
+      have "row (A @\<^sub>r B) i = row A i" using True 
+        using Missing_Matrix.append_rows_nth(1) assms(1) assms(2) by blast
+      have "(A @\<^sub>r B) $$ (i, j) = row (A @\<^sub>r B) i $ j" 
+        by (simp add: \<open>i < dim_row (A @\<^sub>r B)\<close> \<open>j < dim_col (A @\<^sub>r B)\<close>)
+      have "j < dim_col A" 
+        by (metis \<open>Matrix.row (A @\<^sub>r B) i = Matrix.row A i\<close> \<open>j < dim_col (A @\<^sub>r B)\<close> index_row(2))
+      then have "A $$ (i, j) = row A i $ j" 
+        by (simp add: True)
+      then have "(A @\<^sub>r B) $$ (i, j) = A $$ (i, j)" 
+        using \<open>(A @\<^sub>r B) $$ (i, j) = Matrix.row (A @\<^sub>r B) i $v j\<close> \<open>Matrix.row (A @\<^sub>r B) i = Matrix.row A i\<close> by presburger
+
+      then show ?thesis using assms(3) unfolding Ints_mat_def 
+        using True \<open>j < dim_col A\<close> by force
+    next
+      case False
+      have "row (A @\<^sub>r B) i = row B (i - nr1)" using False 
+        using Missing_Matrix.append_rows_nth(2) assms(1) assms(2) 
+        by (metis (no_types, lifting) \<open>i < dim_row (A @\<^sub>r B)\<close> append_rows_def carrier_matD(1) index_mat_four_block(2) index_zero_mat(2) not_less)
+ have "(A @\<^sub>r B) $$ (i, j) = row (A @\<^sub>r B) i $ j" 
+        by (simp add: \<open>i < dim_row (A @\<^sub>r B)\<close> \<open>j < dim_col (A @\<^sub>r B)\<close>)
+      have "j < dim_col B" 
+        by (metis \<open>row (A @\<^sub>r B) i = row B (i - nr1)\<close> \<open>j < dim_col (A @\<^sub>r B)\<close> index_row(2))
+      then have "B $$ (i-nr1, j) = row B (i-nr1) $ j" using False 
+        by (metis (mono_tags, lifting) \<open>(A @\<^sub>r B) $$ (i, j) = Matrix.row (A @\<^sub>r B) i $v j\<close> \<open>Matrix.row (A @\<^sub>r B) i = Matrix.row B (i - nr1)\<close> \<open>i < dim_row (A @\<^sub>r B)\<close> add_0_right append_rows_def assms(1) assms(2) carrier_matD(1) carrier_matD(2) index_mat_four_block(1) index_mat_four_block(2) index_zero_mat(3))
+      then have "(A @\<^sub>r B) $$ (i, j) = B $$ (i - nr1, j)" 
+        using \<open>(A @\<^sub>r B) $$ (i, j) = Matrix.row (A @\<^sub>r B) i $v j\<close> \<open>Matrix.row (A @\<^sub>r B) i = Matrix.row B (i - nr1)\<close> by presburger
+
+      then show ?thesis using assms(4) unfolding Ints_mat_def 
+        by (metis (no_types, lifting) False \<open>i < dim_row (A @\<^sub>r B)\<close> \<open>j < dim_col B\<close> append_rows_def assms(1) carrier_matD(1) index_mat_four_block(2) index_zero_mat(2) le_add_diff_inverse mem_Collect_eq nat_add_left_cancel_less not_less)
+
+    qed
+  qed
+qed
+
+lemma ffmoonffod:
+  assumes "v \<in> carrier_vec nr1"
+  assumes "w \<in> carrier_vec nr2"
+  assumes "v \<in> \<int>\<^sub>v"
+  assumes "w \<in> \<int>\<^sub>v"
+  shows "v @\<^sub>v w \<in> \<int>\<^sub>v" 
+  unfolding Ints_vec_def 
+proof(safe)
+  fix i
+  assume "i < dim_vec (v @\<^sub>v w) "
+  show "(v @\<^sub>v w) $v i \<in> \<int>"
+  proof(cases "i < nr1")
+    case True
+    have "(v @\<^sub>v w) $v i = v $ i" using True 
+      by (metis \<open>i < dim_vec (v @\<^sub>v w)\<close> assms(1) carrier_vecD index_append_vec(1) index_append_vec(2))
+    then show ?thesis using assms(3) unfolding Ints_vec_def 
+      using True assms(1) by auto
+  next
+    case False
+    have "(v @\<^sub>v w) $v i = w $ (i - nr1)" 
+      by (metis False \<open>i < dim_vec (v @\<^sub>v w)\<close> assms(1) carrier_vecD index_append_vec(1) index_append_vec(2))
+    then show ?thesis using assms(4) unfolding Ints_vec_def 
+      using False assms(2) 
+      using \<open>i < dim_vec (v @\<^sub>v w)\<close> assms(1) by auto
+  qed
+qed
+
+lemma fegfnpp: "1\<^sub>m n \<in> \<int>\<^sub>m" 
+  unfolding Ints_mat_def one_mat_def
+proof(safe)
+  fix i j
+  assume "i < dim_row (Matrix.mat n n (\<lambda>(i, j). if i = j then 1 else 0))"
+  assume "j < dim_col (Matrix.mat n n (\<lambda>(i, j). if i = j then 1 else 0))"
+  show "Matrix.mat n n (\<lambda>(i, j). if i = j then 1 else 0) $$ (i, j) \<in> \<int>"
+  proof(cases "i=j")
+    case True
+    have "Matrix.mat n n (\<lambda>(i, j). if i = j then 1 else 0) $$ (i, j) = 1" 
+      using True \<open>i < dim_row (Matrix.mat n n (\<lambda>(i, j). if i = j then 1 else 0))\<close> by auto
+    then show ?thesis  
+      by (smt (verit, ccfv_SIG) Ints_1)
+  next
+    case False
+ have "Matrix.mat n n (\<lambda>(i, j). if i = j then 1 else 0) $$ (i, j) = 0" 
+   using False \<open>i < dim_row (Matrix.mat n n (\<lambda>(i, j). if i = j then 1 else 0))\<close> 
+`j < dim_col (Matrix.mat n n (\<lambda>(i, j). if i = j then 1 else 0))` 
+   by simp
+   
+  
+    then show ?thesis 
+      by (smt (verit) Ints_0)
+  qed
+qed
+
+lemma ewgwegg:
+ assumes bI: "b \<in> \<int>\<^sub>v"
+ shows "vec_of_list (nths (list_of_vec b) I) \<in> \<int>\<^sub>v"
+  using assms unfolding Ints_vec_def
+proof(safe) 
+  fix i
+  assume "\<forall>i<dim_vec b. b $v i \<in> \<int> " 
+  assume "i < dim_vec (vec_of_list (nths (list_of_vec b) I))" 
+  show " vec_of_list (nths (list_of_vec b) I) $v i \<in> \<int>" 
+  proof -
+    have "vec_of_list (nths (list_of_vec b) I) $v i = (nths (list_of_vec b) I) ! i" 
+      by (metis  vec_of_list_index)
+  obtain j where "j< length (list_of_vec b)" "(list_of_vec b) ! j = (nths (list_of_vec b) I) ! i"
+      by (metis Matrix.dim_vec_of_list \<open>i < dim_vec (vec_of_list (nths (list_of_vec b) I))\<close> in_set_conv_nth notin_set_nthsI)
+    then have "(list_of_vec b) ! j \<in> \<int>" 
+      by (metis Matrix.length_list_of_vec \<open>\<forall>i<dim_vec b. b $v i \<in> \<int>\<close> list_of_vec_index)
+    then show ?thesis 
+      by (simp add: \<open>list_of_vec b ! j = nths (list_of_vec b) I ! i\<close>)
+  qed
+qed
+
+lemma fkjpkhp: " 1\<^sub>v n  \<in> \<int>\<^sub>v "
+ unfolding Ints_vec_def  
+  by fastforce
 
 lemma fgweugugwe:
   fixes A :: "'a  mat"
@@ -1390,20 +1580,70 @@ qed
     by (metis \<open>A' \<in> carrier_mat (dim_row A') n\<close> \<open>dim_row A' = n\<close> det_rank_iff det_transpose transpose_carrier_mat)
 
 
-  have "A' *\<^sub>v z = b' \<longleftrightarrow> z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')" sorry
+  have "A' *\<^sub>v z = b' \<longleftrightarrow> z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')" 
+    using cramer1[of A' n  b' z] `det A' \<noteq> 0` `A' \<in> carrier_mat n n` 
+    using A'_b'(1) \<open>z \<in> F\<close> carrier_dim_vec dim_mult_mat_vec by blast
   then have " z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')" 
     using A'_b'(1) \<open>z \<in> F\<close> by force
 
   have "det A \<in> \<int>" using Ints_det AI 
     using Ints_mat_def by blast
-  have "\<forall> k < n. det (replace_col A' b k) \<in> \<int>" sorry
-  let ?z' = "abs(det A') \<cdot>\<^sub>v z" 
+  have "dim_vec z = n" 
+    using \<open>z = Matrix.vec n (\<lambda>k. Determinant.det (replace_col A' b' k) / Determinant.det A')\<close> dim_vec by blast
+  have "1\<^sub>m n \<in> \<int>\<^sub>m" using fegfnpp by auto
+  have "- 1\<^sub>m n \<in> \<int>\<^sub>m" using fegfnpp by auto
+  have "?fullA \<in> \<int>\<^sub>m" using ffmoonod 
+    by (metis A \<open>- 1\<^sub>m n \<in> \<int>\<^sub>m\<close> assms(10) carrier_append_rows fegfnpp one_carrier_mat uminus_carrier_iff_mat)
+ 
+  
+  have "?fullb \<in> \<int>\<^sub>v" using ffmoonffod fkjpkhp 
+    by (metis carrier_vec_dim_vec gram_schmidt.zero_vec_is_int)
+
+
+  have "A' \<in> \<int>\<^sub>m" using vvweb[of ?fullA I UNIV]  A'_b'(2) `?fullA \<in> \<int>\<^sub>m` 
+    unfolding sub_system_def 
+    by blast 
+  have "b' \<in> \<int>\<^sub>v" using ewgwegg[of ?fullb I] A'_b'(2) `?fullb \<in> \<int>\<^sub>v`
+    unfolding sub_system_def 
+    by blast 
+
+  have "\<forall> k < n. det (replace_col A' b' k) \<in> \<int>" using cwevbew[of A' b'] 
+    using \<open>(A' *\<^sub>v z = b') = (z = Matrix.vec n (\<lambda>k. Determinant.det (replace_col A' b' k) / Determinant.det A'))\<close> \<open>A' \<in> \<int>\<^sub>m\<close> \<open>A' \<in> carrier_mat n n\<close> \<open>b' \<in> \<int>\<^sub>v\<close> \<open>dim_row A' = n\<close> \<open>z = Matrix.vec n (\<lambda>k. Determinant.det (replace_col A' b' k) / Determinant.det A')\<close> carrier_dim_vec dim_mult_mat_vec by blast
+  let ?z' = "abs(det A') \<cdot>\<^sub>v z"
   have "?z' \<in> \<int>\<^sub>v"
   proof -
-    have "?z' =  vec n (\<lambda> k. \<bar>det A'\<bar> * det (replace_col A' b k) / det A')" 
-      unfolding smult_vec_def using `z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')` 
-      oops
-
+    have "\<forall>k < n. z $ k = det (replace_col A' b' k) / det A'" 
+      using \<open>z = Matrix.vec n (\<lambda>k. Determinant.det (replace_col A' b' k) / Determinant.det A')\<close> index_vec by blast
+    then have "\<forall>k < n.  (\<lambda>i. \<bar>det A'\<bar> * z $v i) k =
+     (\<lambda>k. \<bar>det A'\<bar> * det (replace_col A' b' k) / det A') k  " 
+      by (metis times_divide_eq_right)
+    then have "?z' =  vec n (\<lambda> k. \<bar>det A'\<bar> * det (replace_col A' b' k) / det A')" 
+      unfolding smult_vec_def using `z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')`
+      by (auto simp: `dim_vec z = n`) 
+    have "\<bar>det A'\<bar> /det A' \<in> \<int>" 
+    proof(cases "det A' > 0")
+      case True
+      have "\<bar>det A'\<bar> /det A' = 1" 
+        by (metis True \<open>Determinant.det A' \<noteq> 0\<close> abs_of_pos divide_self)
+      then show ?thesis 
+        by fastforce
+    next
+      case False
+      have "\<bar>det A'\<bar> /det A' = - 1" 
+        using False  \<open>Determinant.det A' \<noteq> 0\<close>  
+        by (metis abs_if divide_eq_minus_1_iff linorder_neqE_linordered_idom)
+      then show ?thesis by auto
+    qed
+    then have "\<forall>k < n.\<bar>det A'\<bar> * det (replace_col A' b' k) / det A' \<in> \<int>" 
+      
+      by (metis Ints_mult \<open>\<forall>k<n. Determinant.det (replace_col A' b' k) \<in> \<int>\<close> times_divide_eq_left)
+   then have "vec n (\<lambda> k. \<bar>det A'\<bar> * det (replace_col A' b' k) / det A') \<in> \<int>\<^sub>v" 
+     unfolding Ints_vec_def  
+     by simp
+   then show ?thesis 
+     using \<open>\<bar>Determinant.det A'\<bar> \<cdot>\<^sub>v z = Matrix.vec n (\<lambda>k. \<bar>Determinant.det A'\<bar> * Determinant.det (replace_col A' b' k) / Determinant.det A')\<close> by presburger
+ qed
+    
    
 
    
