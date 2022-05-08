@@ -21,10 +21,15 @@ lemma dim_row_subsyst_mat:
   shows "dim_row (fst (sub_system A b I)) = card {i. i < dim_row A \<and> i \<in> I}" 
   using dim_submatrix(1)[of A I UNIV] sub_system_fst by metis
 
+lemma dim_col_submatrix_UNIV:
+  shows "dim_col (submatrix A I UNIV) = dim_col A"
+ using dim_submatrix(2)[of A I UNIV]
+  by fastforce
+
 lemma dim_col_subsyst_mat:
   shows "dim_col (fst (sub_system A b I)) = dim_col A" 
-  using dim_submatrix(2)[of A I UNIV] sub_system_fst 
-  by (metis (no_types, lifting) Collect_cong UNIV_I card_Collect_less_nat)
+  using dim_col_submatrix_UNIV 
+  by (metis sub_system_fst)
 
 lemma dim_row_less_card_I:
   assumes "finite I" 
@@ -79,6 +84,13 @@ lemma dims_subsyst_same':
   using dims_subsyst_same assms 
   by (metis fst_conv snd_conv)
 
+lemma dims_subsyst_same_carr:
+  assumes "A \<in> carrier_mat nr n"
+  assumes "b \<in> carrier_vec nr" 
+  assumes "(A', b') = (sub_system A b I)" 
+  shows "dim_row A' = dim_vec b'"
+  by (metis assms carrier_matD(1) carrier_vecD dims_subsyst_same')
+
 lemma I_subsys_same_card:
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
@@ -97,6 +109,11 @@ lemma carrier_mat_subsyst:
   assumes "dim_row A = dim_vec b"
   shows "(fst (sub_system A b I)) \<in> carrier_mat (dim_row (fst (sub_system A b I))) (dim_col A)" 
   using dim_col_subsyst_mat by blast
+
+lemma subsyst_rows_carr:
+  assumes "A \<in> carrier_mat nr n"
+  shows "set (rows (submatrix A I UNIV)) \<subseteq> carrier_vec n"
+  by (metis assms dim_col_submatrix_UNIV carrier_matD(2) rows_carrier)
 
 lemma nths_list_pick_vec_same:
   shows "vec_of_list (nths (list_of_vec b) I) = 
@@ -154,6 +171,17 @@ proof -
     using  assms dims_subsyst_same pick_index_row_in_A subsyst_b_i 
     by metis
 qed
+
+lemma exist_index_in_A_carr:
+  assumes "A \<in> carrier_mat nr n"
+  assumes "b \<in> carrier_vec nr" 
+  assumes "(C, d) = sub_system A b I" 
+  assumes "j < dim_row C"
+  shows "\<exists> i < nr. i \<in> I \<and> row C j = row A i 
+          \<and> d $ j = b $ i \<and> i = pick I j"
+  by (metis assms carrier_matD(1) carrier_vecD dims_subsyst_same_carr 
+      exist_index_in_A fst_conv snd_conv)
+
 
 lemma card_of_smaller_is_index_in_subsystem:
   assumes "j < dim_vec b"
