@@ -182,6 +182,14 @@ fixes A :: "'a  mat"
   shows "(A, b) = sub_system A b {0..<nr}"
   by  (auto simp: itself_is_subsyst same_subsyst_I_intersect_rows[of A nr b UNIV] assms) 
 
+lemma sum_list_of_map_eq:
+  assumes "\<forall>i \<in> set L. f i = g i"
+  shows "sum_list (map f L) = sum_list (map g L)" 
+  by (metis assms map_eq_conv)
+
+lemma list_range_lt: "i \<in> set [0..<l] \<longleftrightarrow> i < l" 
+  using atLeast_upt by blast
+
 lemma sumlist_system_result:
   assumes "x \<in> carrier_vec n"
   assumes "C *\<^sub>v x = d"
@@ -190,21 +198,27 @@ lemma sumlist_system_result:
   assumes "u = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) [0..<length (rows C)])" 
   shows "u \<bullet> x = sum_list  (map (\<lambda>i. (c i *  d $ i)) [0..<length (rows C)])" 
 proof -
-  have 3:"(\<And>v. v \<in> set ((map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) [0..<length (rows C)])) \<Longrightarrow> v \<in> carrier_vec n)"
-    by (smt (verit, best) \<open>set (rows C) \<subseteq> carrier_vec n\<close> in_set_conv_nth length_map map_nth nth_map smult_closed subsetD)
-
-  have "u \<bullet> x = sum_list (map ((\<bullet>) x) (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) [0..<length (rows C)]))"
-    using scalar_prod_right_sum_distrib 3 `x \<in> carrier_vec n` assms(4-5) comm_scalar_prod subset_code(1)
-    by (smt (verit, ccfv_SIG))
-
-  then have "u \<bullet> x = sum_list  (map (\<lambda>i. (c i \<cdot>\<^sub>v  (rows C) ! i) \<bullet> x) [0..<length (rows C)])"
-    by (smt (verit, best) "3" \<open>x \<in> carrier_vec n\<close> comm_scalar_prod length_map map_eq_conv' nth_map nth_mem)
-  then have "u \<bullet> x = sum_list  (map (\<lambda>i. (c i *  (((rows C) ! i) \<bullet> x))) [0..<length (rows C)])"
-    by (smt (verit, ccfv_SIG) \<open>set (rows C) \<subseteq> carrier_vec n\<close> \<open>x \<in> carrier_vec n\<close> length_map map_eq_conv' map_nth nth_map nth_mem smult_scalar_prod_distrib subsetD)
-  then show "u \<bullet> x = sum_list  (map (\<lambda>i. (c i *  d $ i)) [0..<length (rows C)])"
-    by (smt (verit, ccfv_SIG) \<open>C *\<^sub>v x = d\<close> add.left_neutral index_mult_mat_vec length_map length_rows map_eq_conv' map_nth nth_rows nth_upt)
+  let ?Cl = "[0..<length (rows C)]" 
+  have Cl_map_carr:"(\<And>v. v \<in> set (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) ?Cl) \<Longrightarrow> v \<in> carrier_vec n)"
+    using assms(3) gram_schmidt.ouiou by blast
+  have "u \<bullet> x =  x \<bullet> u" 
+    using assms(1) assms(4) comm_scalar_prod by blast
+  have "u \<bullet> x = sum_list (map ((\<bullet>) x) (map (\<lambda>i. c i \<cdot>\<^sub>v (rows C) ! i) ?Cl))"
+    using scalar_prod_right_sum_distrib[OF Cl_map_carr] 
+    by(simp only: `u \<bullet> x =  x \<bullet> u`,simp only: assms(5) assms(1)) 
+  also have "\<dots> = sum_list (map (\<lambda>i. (c i \<cdot>\<^sub>v (rows C) ! i) \<bullet> x) ?Cl)"
+    apply(simp only: map_map comp_def, intro sum_list_of_map_eq, safe)
+    apply(intro comm_scalar_prod, blast intro: assms(1))
+    using list_range_lt assms(3) nth_mem  by blast
+  also have "\<dots> = sum_list (map (\<lambda>i. (c i * (((rows C) ! i) \<bullet> x))) ?Cl)"
+    apply(intro sum_list_of_map_eq, safe, simp only: list_range_lt)
+    using assms(1) assms(3) nth_mem smult_scalar_prod_distrib by blast
+  also have "\<dots> = sum_list (map (\<lambda>i. (c i * d $ i)) ?Cl)"
+    apply(intro sum_list_of_map_eq, safe, simp only: list_range_lt)
+    using assms(2) by force
+  ultimately show "u \<bullet> x = sum_list (map (\<lambda>i. (c i * d $ i)) ?Cl)"
+    by presburger
 qed
-
 
 lemma min_face_lin_indpt:
   fixes A :: "'a  mat"
@@ -261,7 +275,7 @@ proof
     then have  j': "j' < dim_row C \<and> row C  j' = u"  using length_rows nth_rows by metis  
     obtain i' where i':"i' < nr \<and> i' \<in> (I - {i}) \<and> row A i' = row C j' \<and> d $ j' = b $ i'" 
       by (metis exist_index_in_A_carr[of A nr n b C d _ j'] C_d assms(1) b  j')
-     then show ?thesis 
+    then show ?thesis 
       by (smt (verit, best) Cd_non_empty Collect_empty_eq i index_mult_mat_vec j j')
   next
     case False
@@ -421,7 +435,7 @@ proof
     by presburger
 qed
 
-lemma gfgd:
+lemma distinct_cols_append_rows:
   fixes A :: "'a  mat"
   assumes "A \<in> carrier_mat nr1 n"
   assumes "B \<in> carrier_mat nr2 n"
@@ -440,15 +454,18 @@ proof -
     then have "(card {i. i<dim_row (A @\<^sub>r B) \<and> i\<in> {0..<nr1}}) =  nr1" 
       by auto  
     then show "dim_row (submatrix (A @\<^sub>r B) {0..<nr1} UNIV) = dim_row A" 
-      using dim_submatrix[of "(A @\<^sub>r B)" "{0..<nr1}"] carrier_matD(1)[OF assms(1)]  by presburger
-
+      using dim_submatrix[of "(A @\<^sub>r B)" "{0..<nr1}"] 
+        carrier_matD(1)[OF assms(1)]  by presburger
     show "dim_col (submatrix (A @\<^sub>r B) {0..<nr1} UNIV) = dim_col A" 
       using dim_col_submatrix_UNIV[of "(A @\<^sub>r B)" "{0..<nr1}"]
         AB_dim_col carrier_matD(2)[OF assms(1)] by argo
-    
     fix i j
-    assume "i < dim_row A"
-    assume "j < dim_col A"
+    assume i_dimA:"i < dim_row A"
+    assume j_dimA:"j < dim_col A"
+    have i_dimAB:"i < dim_row (A @\<^sub>r B)" 
+      by (metis AB_dim_row \<open>i < dim_row A\<close> assms(1) carrier_matD(1) trans_less_add1)
+    have j_dimAB:"j < dim_col (A @\<^sub>r B)" 
+      by (metis AB_dim_col \<open>j < dim_col A\<close> assms(1) carrier_matD(2))
     show " submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) = A $$ (i, j)"
     proof -
       have "i < nr1" using `i < dim_row A` 
@@ -457,21 +474,18 @@ proof -
         by auto
       then have "card {a\<in>{0..<nr1}. a < i} = i" 
         by simp
-      have "submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (card {a\<in>{0..<nr1}. a < i}, card {a\<in>UNIV. a < j}) =
-       (A @\<^sub>r B) $$ (i, j)" 
-        using submatrix_index_card[of i "A @\<^sub>r B" j "{0..<nr1}" UNIV] 
-        by (metis UNIV_I \<open>dim_col (A @\<^sub>r B) = n\<close> \<open>dim_row (A @\<^sub>r B) = nr1 + nr2\<close> \<open>i < dim_row A\<close> \<open>j < dim_col A\<close> assms(1) atLeastLessThan_iff carrier_matD(1) carrier_matD(2) trans_less_add1 zero_le)
-
       then have "submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) =  (A @\<^sub>r B) $$ (i, j)" 
-        using \<open>card {a \<in> {0..<nr1}. a < i} = i\<close> by force
-      have " (A @\<^sub>r B) $$ (i, j) =  A $$ (i, j)" 
-        by (metis (mono_tags, lifting) \<open>dim_col (A @\<^sub>r B) = n\<close> \<open>dim_row (A @\<^sub>r B) = nr1 + nr2\<close> \<open>i < dim_row A\<close> \<open>j < dim_col A\<close> append_rows_index_same assms(1) assms(2) carrier_matD(1) carrier_matD(2) index_row(1) trans_less_add1)
-      then show "submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) = A $$ (i, j)" 
-        using \<open>submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) = (A @\<^sub>r B) $$ (i, j)\<close> by presburger
+        using submatrix_index_card[of i "A @\<^sub>r B" j "{0..<nr1}" UNIV] 
+          i_dimAB \<open>i < nr1\<close> j_dimAB by force
+      also have " (A @\<^sub>r B) $$ (i, j) =  A $$ (i, j)" 
+        using append_rows_index_same[of A nr1 B nr2] assms(1-2) 
+        by (metis i_dimA i_dimAB j_dimA j_dimAB  index_row(1))
+      ultimately show "submatrix (A @\<^sub>r B) {0..<nr1} UNIV $$ (i, j) = A $$ (i, j)" 
+        by presburger
     qed
   qed
-  then show ?thesis using distinct_cols_submatrix_UNIV 
-    by (metis assms(3))
+  then show ?thesis
+    by (metis distinct_cols_submatrix_UNIV assms(3))
 qed
 
 lemma append_rows_eq: assumes A: "A \<in> carrier_mat nr1 nc" 
@@ -482,7 +496,7 @@ shows "(A @\<^sub>r B) *\<^sub>v v = (a @\<^sub>v b) \<longleftrightarrow> A *\<
   unfolding mat_mult_append[OF A B v]
   by (rule append_vec_eq[OF _ a], insert A v, auto)
 
-lemma vvnvnvwwcc:
+lemma mult_vec_in_lin_dep_set:
   assumes "v \<in> carrier_vec n"
   assumes "u \<in> carrier_vec n"
   assumes "v = k \<cdot>\<^sub>v u"
@@ -550,7 +564,7 @@ next
       then show False 
         by (metis \<open>l < n \<and> row A i $ l \<noteq> 0\<close> \<open>row A i $ l = row A j $ l\<close> assms(4) m_comm mult_cancel_left r_one)
     qed
-    then show ?thesis using vvnvnvwwcc[of "row A i" "row A j" k " (set (rows A))"] 
+    then show ?thesis using mult_vec_in_lin_dep_set[of "row A i" "row A j" k " (set (rows A))"] 
       by (metis assms(1) assms(2) assms(3) assms(5) carrier_matD(1) in_set_conv_nth length_rows nth_rows row_carrier_vec)
   qed
 qed
@@ -796,7 +810,7 @@ proof(cases "nr = 0")
         qed
       qed
       have "distinct (cols ?fullA)" 
-        by (metis \<open>distinct (cols A)\<close> assms(1) gfgd mat_carrier mat_of_rows_def)
+        by (metis \<open>distinct (cols A)\<close> assms(1) distinct_cols_append_rows mat_carrier mat_of_rows_def)
       have "lin_dep (set (rows ?fullA))"
       proof -
         have "row ?fullA nr = row ?app_rows 0" 
