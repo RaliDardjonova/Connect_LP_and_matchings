@@ -525,52 +525,58 @@ proof -
     using \<open>finite {u, v}\<close> \<open>{u, v} \<subseteq> S\<close> by blast
 qed
 
-lemma  dasdasd:
+lemma row_in_set_rows:
+   fixes A :: "'a  mat"
+  assumes "i < dim_row A"
+  shows "row A i \<in> set (rows A)"
+  by (metis assms in_set_conv_nth length_rows nth_rows)
+
+lemma  mult_row_lin_dep:
   fixes A :: "'a  mat"
-  assumes "A \<in> carrier_mat nr n"
+  assumes"A \<in> carrier_mat nr n"
   assumes "i < nr"
   assumes "j < nr"
   assumes "k \<noteq> 1" 
   assumes "row A i = k \<cdot>\<^sub>v row A j"
   shows "lin_dep (set (rows A))"
-proof(cases "row A i = 0\<^sub>v n")
-  case True
-  then have "0\<^sub>v n \<in> (set (rows A))" 
-    by (metis assms(1) assms(2) carrier_matD(1) in_set_conv_nth length_rows nth_rows)
-  then show ?thesis 
-    by (metis assms(1) carrier_matD(2) rows_carrier vs_zero_lin_dep)
-next
-  case False
-  then show ?thesis
+proof -
+  have i_dim: "i < dim_row A" 
+    using assms(1) assms(2) by blast
+  have j_dim: "j < dim_row A" 
+    using assms(1) assms(3) by blast
+  show ?thesis
   proof(cases "row A j = 0\<^sub>v n")
     case True
     then have "0\<^sub>v n \<in> (set (rows A))" 
-      by (metis assms(1) assms(3) carrier_matD(1) in_set_conv_nth length_rows nth_rows)
+      apply(simp add: in_set_conv_nth sym[OF nth_rows[OF j_dim]])
+      using j_dim by blast
     then show ?thesis 
-      by (metis assms(1) carrier_matD(2) rows_carrier vs_zero_lin_dep)
+      using field.one_not_zero one_zeroI zero_lin_dep by presburger
   next
     case False
-
-    have "row A i \<noteq> row A j"
+    have "row A i \<noteq> row A j" 
     proof(rule ccontr)
       assume " \<not> row A i \<noteq> row A j"
       then have "row A i = row A j" by auto
-      obtain l where "l < n \<and> row A i $ l \<noteq> 0" 
-        by (metis False M.zero_closed \<open>row A i = row A j\<close> assms(1) assms(2) carrier_vecD eq_vecI index_zero_vec(1) row_carrier_vec)
-      then have "row A i $ l = row A j $ l" 
-        using \<open>\<not> row A i \<noteq> row A j\<close> by presburger
-      have "row A i $ l = k * row A j $ l" 
-        by (metis \<open>l < n \<and> row A i $ l \<noteq> 0\<close> \<open>row A i = row A j\<close> assms(1) assms(2) assms(5) carrier_vecD index_smult_vec(1) row_carrier_vec)
-      then show False 
-        by (metis \<open>l < n \<and> row A i $ l \<noteq> 0\<close> \<open>row A i $ l = row A j $ l\<close> assms(4) m_comm mult_cancel_left r_one)
+      then have "row A j = k \<cdot>\<^sub>v row A j" using  assms(5) 
+        by auto
+      then have "(1 - k) \<cdot>\<^sub>v row A j = 0\<^sub>v n" 
+        apply(auto simp: diff_smult_distrib_vec)
+        by (meson assms(1) assms(3) minus_cancel_vec row_carrier_vec)
+      then have "1 - k = 0"
+        by (metis False rmult_0 smult_vec_nonneg_eq)
+      then show False
+         by (simp add: assms(4))
     qed
-    then show ?thesis using mult_vec_in_lin_dep_set[of "row A i" "row A j" k " (set (rows A))"] 
-      by (metis assms(1) assms(2) assms(3) assms(5) carrier_matD(1) in_set_conv_nth length_rows nth_rows row_carrier_vec)
+    show ?thesis 
+      using mult_vec_in_lin_dep_set[of "row A i" "row A j" k " (set (rows A))"] 
+      apply(simp add: assms(3))
+      apply (simp add: sym[OF assms(5)] `row A i \<noteq> row A j`) 
+      using row_in_set_rows i_dim j_dim  assms(1) row_carrier_vec by blast
   qed
 qed
 
-
-lemma  lin_depE1assd:
+lemma  one_solution_system_sq_mat:
   fixes A :: "'a  mat"
   assumes "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
@@ -580,52 +586,61 @@ lemma  lin_depE1assd:
   shows "nr = n" 
 proof(cases "nr = 0")
   case True
-    then have "nr = 0" by auto
-    then have "\<forall>x \<in> carrier_vec n.  A *\<^sub>v x = b" 
-      by (metis assms(1) b carrier_matD(1) carrier_vecD dim_mult_mat_vec vec_of_dim_0)
-    have "\<exists>!(x:: 'a vec).  x \<in> carrier_vec n" 
-      using \<open>\<forall>x\<in>carrier_vec n. A *\<^sub>v x = b\<close> assms(3) by auto
-    
-    have "n = 0 "
+  then have "nr = 0" by auto
+  then have dim_rowA: "dim_row A = 0" 
+    using assms(1) by blast 
+  have dim_vecb:" dim_vec b = 0" 
+    using True assms(2) carrier_vecD by blast
+  then have "\<forall>x \<in> carrier_vec n. A *\<^sub>v x = b" 
+    by (insert dim_mult_mat_vec[of A], simp only: dim_rowA vec_of_dim_0, blast)
+      then  have "\<exists>!(x:: 'a vec).  x \<in> carrier_vec n" 
+      using  assms(3) by auto
+    have "n = 0" 
     proof(rule ccontr)
       assume "n \<noteq> 0" 
-      have "(1\<^sub>v n:: 'a vec) \<in> carrier_vec n" by auto
-      have "(0\<^sub>v n:: 'a vec) \<in> carrier_vec n" by auto
-      have "(1\<^sub>v n:: 'a vec) \<noteq> (1\<^sub>v n:: 'a vec)" 
-        by (metis M.zero_closed \<open>\<exists>!x. x \<in> carrier_vec n\<close> \<open>n \<noteq> 0\<close> gr_zeroI index_one_vec(1) index_zero_vec(1) one_carrier_vec zero_not_one)
-        then show False using `(1\<^sub>v n:: 'a vec) \<in> carrier_vec n` `(0\<^sub>v n:: 'a vec) \<in> carrier_vec n` 
-              `\<exists>!(x:: 'a vec).  x \<in> carrier_vec n`
-          by blast
+      have "(1\<^sub>v n:: 'a vec) \<noteq> (0\<^sub>v n:: 'a vec)"
+        using index_one_vec(1) index_zero_vec(1)
+        by (metis \<open>n \<noteq> 0\<close> field.one_not_zero nonneg_linorder_cases not_less_zero zero_le)
+      then show False 
+        using \<open>\<exists>!x. x \<in> carrier_vec n\<close> one_carrier_vec by blast
       qed
       then show ?thesis using True by auto
     next
       case False
       then have "nr > 0" by auto
+      have dim_colA: "dim_col A = n" 
+        using assms(1) by blast
   have "distinct (cols A)"
   proof(rule ccontr)
     assume "\<not> distinct (cols A)" 
-    then obtain i j where "i < length (cols  A) \<and> j < length (cols  A) \<and> i \<noteq> j \<and> cols A ! i = cols A ! j" 
+    then obtain i j where "i < length (cols A) \<and> j < length (cols A) \<and>
+                           i \<noteq> j \<and> cols A ! i = cols A ! j" 
       using distinct_conv_nth by blast
-    then have "i < n \<and> j < n \<and> i \<noteq> j \<and> col A  i = col A j" 
-      by (metis assms(1) carrier_matD(2) cols_length cols_nth)
-    obtain x where "x \<in> carrier_vec n \<and> A *\<^sub>v x = b" using assms(3) by auto
-
+    then have i_j:"i < n \<and> j < n \<and> i \<noteq> j \<and> col A  i = col A j" 
+      by(simp only: cols_length cols_nth, simp add: dim_colA)
+    obtain x where "x \<in> carrier_vec n \<and> A *\<^sub>v x = b" 
+      using assms(3) by auto
+  
     let ?y = "x + (unit_vec n i) - (unit_vec n j)"
     have "?y \<in> carrier_vec n" 
       by (simp add: \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close>)
     have " A *\<^sub>v ?y= b"
     proof -
       have "A *\<^sub>v (x + unit_vec n i - unit_vec n j) = A *\<^sub>v x + A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j" 
-        by (smt (verit) M.add.m_closed \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(1) mult_add_distrib_mat_vec mult_minus_distrib_mat_vec unit_vec_carrier)
-      have "A *\<^sub>v unit_vec n i = col A i" using mult_unit_vec_is_col 
-        using \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> assms(1) by blast
-      have "A *\<^sub>v unit_vec n j = col A j" using mult_unit_vec_is_col 
-        using \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> assms(1) by blast
-      have "A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j = 0\<^sub>v nr" 
-        by (metis \<open>A *\<^sub>v unit_vec n i = col A i\<close> \<open>A *\<^sub>v unit_vec n j = col A j\<close> \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> assms(1) col_carrier_vec minus_cancel_vec)
-      show "A *\<^sub>v ?y= b" 
-        by (metis \<open>A *\<^sub>v (x + unit_vec n i - unit_vec n j) = A *\<^sub>v x + A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j\<close> \<open>A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j = 0\<^sub>v nr\<close> \<open>A *\<^sub>v unit_vec n i = col A i\<close> \<open>A *\<^sub>v unit_vec n j = col A j\<close> \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> add_diff_eq_vec assms(1) b col_carrier_vec right_zero_vec)
+        apply(insert mult_minus_distrib_mat_vec[of A nr n "(x + unit_vec n i)" "unit_vec n j"])
+        apply(insert mult_add_distrib_mat_vec[of A nr n "x" "unit_vec n i"])
+        by (simp add: \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(1))
+      moreover have "A *\<^sub>v unit_vec n i = col A i"
+        using i_j assms(1) mult_unit_vec_is_col by blast
+      moreover have "A *\<^sub>v unit_vec n j = col A j" using mult_unit_vec_is_col 
+        using i_j assms(1) by blast
+      moreover have "A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j = 0\<^sub>v nr" 
+        apply(auto simp: calculation(2-3) i_j, intro minus_cancel_vec)
+        using assms(1) col_carrier_vec i_j by blast
+      ultimately show "A *\<^sub>v ?y= b" 
+        by (metis \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> add_diff_cancel_right_vec assms(1) assms(2) col_carrier_vec i_j)
     qed
+    oops
     have "x \<noteq> ?y"
     proof(rule ccontr)
       assume "\<not> (x \<noteq> ?y)"
@@ -721,7 +736,7 @@ proof(cases "nr = 0")
               using \<open>row (A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) j = row (mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) (j - nr)\<close> \<open>row (mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) (j - nr) = rows (mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) ! (j - nr)\<close> \<open>rows (mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) ! (j - nr) = map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]) ! (j - nr)\<close> by presburger
             then have "row A i = of_int ((j - nr) + 2) \<cdot>\<^sub>v row A 0" 
               using \<open>row (A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) i = row A i\<close> i_j by presburger
-            then show ?thesis using dasdasd[of A nr i 0 "of_int ((j - nr) + 2)"] 
+            then show ?thesis using mult_row_lin_dep[of A nr i 0 "of_int ((j - nr) + 2)"] 
               using True assms(1) assms(4) by fastforce
           qed
         next
@@ -753,7 +768,7 @@ proof(cases "nr = 0")
             have "row A j = of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0" 
               using `row ?fullA i = of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0` 
                 \<open>row (A @\<^sub>r mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr]))) j = row A j\<close> i_j by presburger
-            then show ?thesis using dasdasd[of A nr j 0 "of_int ((i - nr) + 2)"] `nr \<noteq> 0` 
+            then show ?thesis using mult_row_lin_dep[of A nr j 0 "of_int ((i - nr) + 2)"] `nr \<noteq> 0` 
               using True assms(1) assms(4) by fastforce
           next
             case False
@@ -824,7 +839,7 @@ proof(cases "nr = 0")
         have "row ?fullA 0 = row A 0" 
           using \<open>mat_of_rows n (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) \<in> carrier_mat (n - nr) n\<close> append_rows_nth(1) assms(1) `nr > 0` by blast
         then have "row ?fullA nr = 2 \<cdot>\<^sub>v row ?fullA 0" using `row ?fullA nr = 2 \<cdot>\<^sub>v row A 0` by auto
-        then show ?thesis using dasdasd[of ?fullA n nr 0 2] 
+        then show ?thesis using mult_row_lin_dep[of ?fullA n nr 0 2] 
           using True sq_fullA by linarith
       qed
       then have "lin_dep (set (cols ?fullA))" using lin_dep_cols_iff_rows[of ?fullA] 
