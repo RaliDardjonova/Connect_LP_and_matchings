@@ -576,6 +576,46 @@ proof -
   qed
 qed
 
+lemma qwfqwf:
+  fixes x :: "'a vec" 
+  assumes "x \<in> carrier_vec n"
+  assumes "a \<in> carrier_vec n"
+  assumes " b \<in> carrier_vec n" 
+  assumes "x = x + a - b"
+  shows "a = b" 
+proof -
+  have "a - b = 0\<^sub>v n" 
+  using add.l_cancel_one[of x "a-b"] assms
+  by (simp add: add_diff_eq_vec)
+  then have "a - b + b = 0\<^sub>v n + b" 
+    by argo
+ then show ?thesis 
+   apply(auto simp: comm_add_vec[OF zero_carrier_vec assms(3)] right_zero_vec[OF assms(3)])
+   using M.minus_equality assms(2) assms(3) minus_add_uminus_vec  by fastforce
+qed
+
+lemma lin_indpt_rows_le_dim_cols:
+  fixes A :: "'a  mat"
+  assumes "A \<in> carrier_mat nr n"
+  assumes "lin_indpt (set (rows A))" 
+  assumes "distinct (rows A)"
+  shows "nr \<le> n"
+proof -
+ have "rank A\<^sup>T = nr" 
+    by (simp add: assms vec_space.lin_indpt_full_rank)
+  have "set (rows A) \<subseteq> carrier_vec n" 
+    using assms(1) set_rows_carrier by blast
+  then have "(set (cols A\<^sup>T)) \<subseteq> carrier_vec n" 
+    by simp 
+  then have "dim_span (set (cols A\<^sup>T)) \<le> n" 
+    using dim_span_le_n  by blast
+  have "rank A\<^sup>T = dim_span (set (cols A\<^sup>T))" 
+    by (metis \<open>rank A\<^sup>T = nr\<close> \<open>set (cols A\<^sup>T) \<subseteq> carrier_vec n\<close> assms carrier_matD(1) cols_length
+ cols_transpose distinct_card index_transpose_mat(3) same_span_imp_card_eq_dim_span)
+  then show "nr \<le> n" 
+    using \<open>dim_span (set (cols A\<^sup>T)) \<le> n\<close> \<open>rank A\<^sup>T = nr\<close> by presburger
+qed
+
 lemma  one_solution_system_sq_mat:
   fixes A :: "'a  mat"
   assumes "A \<in> carrier_mat nr n"
@@ -593,23 +633,22 @@ proof(cases "nr = 0")
     using True assms(2) carrier_vecD by blast
   then have "\<forall>x \<in> carrier_vec n. A *\<^sub>v x = b" 
     by (insert dim_mult_mat_vec[of A], simp only: dim_rowA vec_of_dim_0, blast)
-      then  have "\<exists>!(x:: 'a vec).  x \<in> carrier_vec n" 
-      using  assms(3) by auto
-    have "n = 0" 
-    proof(rule ccontr)
-      assume "n \<noteq> 0" 
-      have "(1\<^sub>v n:: 'a vec) \<noteq> (0\<^sub>v n:: 'a vec)"
-        using index_one_vec(1) index_zero_vec(1)
-        by (metis \<open>n \<noteq> 0\<close> field.one_not_zero nonneg_linorder_cases not_less_zero zero_le)
-      then show False 
-        using \<open>\<exists>!x. x \<in> carrier_vec n\<close> one_carrier_vec by blast
-      qed
-      then show ?thesis using True by auto
-    next
-      case False
-      then have "nr > 0" by auto
-      have dim_colA: "dim_col A = n" 
-        using assms(1) by blast
+  then  have "\<exists>!(x:: 'a vec).  x \<in> carrier_vec n" 
+    using  assms(3) by auto
+  have "n = 0" 
+  proof(rule ccontr)
+    assume "n \<noteq> 0" 
+    have "(1\<^sub>v n:: 'a vec) \<noteq> (0\<^sub>v n:: 'a vec)"
+      by (metis \<open>n \<noteq> 0\<close> index_one_vec(1) index_zero_vec(1) neq0_conv zero_neq_one)
+    then show False 
+      using \<open>\<exists>!x. x \<in> carrier_vec n\<close> one_carrier_vec by blast
+  qed
+  then show ?thesis using True by auto
+next
+  case False
+  then have "nr > 0" by auto
+  have dim_colA: "dim_col A = n" 
+    using assms(1) by blast
   have "distinct (cols A)"
   proof(rule ccontr)
     assume "\<not> distinct (cols A)" 
@@ -618,58 +657,38 @@ proof(cases "nr = 0")
       using distinct_conv_nth by blast
     then have i_j:"i < n \<and> j < n \<and> i \<noteq> j \<and> col A  i = col A j" 
       by(simp only: cols_length cols_nth, simp add: dim_colA)
-    obtain x where "x \<in> carrier_vec n \<and> A *\<^sub>v x = b" 
+    obtain x where x:"x \<in> carrier_vec n \<and> A *\<^sub>v x = b" 
       using assms(3) by auto
-  
+
     let ?y = "x + (unit_vec n i) - (unit_vec n j)"
     have "?y \<in> carrier_vec n" 
-      by (simp add: \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close>)
+      by (simp add: x)
+
+    have colA_carr:"col A j \<in> carrier_vec nr" 
+      by (meson assms(1) col_carrier_vec i_j)
     have " A *\<^sub>v ?y= b"
     proof -
-      have "A *\<^sub>v (x + unit_vec n i - unit_vec n j) = A *\<^sub>v x + A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j" 
+      have "A *\<^sub>v ?y = A *\<^sub>v x + A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j" 
         apply(insert mult_minus_distrib_mat_vec[of A nr n "(x + unit_vec n i)" "unit_vec n j"])
         apply(insert mult_add_distrib_mat_vec[of A nr n "x" "unit_vec n i"])
-        by (simp add: \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(1))
-      moreover have "A *\<^sub>v unit_vec n i = col A i"
-        using i_j assms(1) mult_unit_vec_is_col by blast
-      moreover have "A *\<^sub>v unit_vec n j = col A j" using mult_unit_vec_is_col 
-        using i_j assms(1) by blast
-      moreover have "A *\<^sub>v unit_vec n i - A *\<^sub>v unit_vec n j = 0\<^sub>v nr" 
-        apply(auto simp: calculation(2-3) i_j, intro minus_cancel_vec)
-        using assms(1) col_carrier_vec i_j by blast
-      ultimately show "A *\<^sub>v ?y= b" 
-        by (metis \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> add_diff_cancel_right_vec assms(1) assms(2) col_carrier_vec i_j)
+        by (simp add: x assms(1))
+      then show "A *\<^sub>v ?y= b" 
+        apply(simp, insert mult_unit_vec_is_col[OF assms(1)], simp add: i_j)
+        using colA_carr x add_diff_cancel_right_vec b by blast
     qed
-    oops
-    have "x \<noteq> ?y"
-    proof(rule ccontr)
-      assume "\<not> (x \<noteq> ?y)"
-      then have "x = ?y" by auto
-      then have "x $ i = ?y $ i" 
-        by force
-      have "?y $ i = x $ i + unit_vec n i $ i - unit_vec n j $ i" 
-        by (simp add: \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close>)
-      then have "unit_vec n i $ i - unit_vec n j $ i = 0" 
-        using \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> \<open>x = x + unit_vec n i - unit_vec n j\<close> by auto
-      then show False 
-        using \<open>i < n \<and> j < n \<and> i \<noteq> j \<and> col A i = col A j\<close> index_unit_vec(1) by fastforce
-    qed
-    then show False 
-      using \<open>A *\<^sub>v (x + unit_vec n i - unit_vec n j) = b\<close> \<open>x + unit_vec n i - unit_vec n j \<in> carrier_vec n\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(3) by blast
-  qed
-  have "rank A\<^sup>T = nr" 
-    by (simp add: assms(1) assms(4) assms(5) vec_space.lin_indpt_full_rank)
-  have "set (rows A) \<subseteq> carrier_vec n" 
-    using assms(1) set_rows_carrier by blast
-  then have "(set (cols A\<^sup>T)) \<subseteq> carrier_vec n" 
-    by simp 
-  then have "dim_span (set (cols A\<^sup>T)) \<le> n" using dim_span_le_n 
-    by blast
-  have "rank A\<^sup>T = dim_span (set (cols A\<^sup>T))" 
-    by (metis \<open>rank A\<^sup>T = nr\<close> \<open>set (cols A\<^sup>T) \<subseteq> carrier_vec n\<close> assms(1) assms(4) assms(5) carrier_matD(1) cols_length cols_transpose distinct_card index_transpose_mat(3) same_span_imp_card_eq_dim_span)
-  then have "nr \<le> n" 
-    using \<open>dim_span (set (cols A\<^sup>T)) \<le> n\<close> \<open>rank A\<^sup>T = nr\<close> by presburger
+    have "unit_vec n i \<noteq> unit_vec n j" 
+      by (simp add: i_j)
+    have "x \<noteq> ?y" 
+      using qwfqwf[of x "unit_vec n i" "unit_vec n j"]  
+      by (meson \<open>unit_vec n i \<noteq> unit_vec n j\<close> unit_vec_carrier x)
 
+    then show False 
+      using \<open>A *\<^sub>v ?y = b\<close> \<open>?y \<in> carrier_vec n\<close> assms(3) x by blast
+  qed
+ have "nr \<le> n" using lin_indpt_rows_le_dim_cols assms(1) assms(4) assms(5) 
+    by blast
+ have "set (rows A) \<subseteq> carrier_vec n" 
+    using assms(1) set_rows_carrier by blast
 
   show "nr = n"
   proof(cases "nr < n")
