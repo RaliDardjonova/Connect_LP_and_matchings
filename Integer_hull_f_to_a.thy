@@ -566,7 +566,7 @@ proof -
       then have "1 - k = 0"
         by (metis False rmult_0 smult_vec_nonneg_eq)
       then show False
-         by (simp add: assms(4))
+        by (simp add: assms(4))
     qed
     show ?thesis 
       using mult_vec_in_lin_dep_set[of "row A i" "row A j" k " (set (rows A))"] 
@@ -576,7 +576,7 @@ proof -
   qed
 qed
 
-lemma qwfqwf:
+lemma add_left_diff_then_eq:
   fixes x :: "'a vec" 
   assumes "x \<in> carrier_vec n"
   assumes "a \<in> carrier_vec n"
@@ -585,13 +585,13 @@ lemma qwfqwf:
   shows "a = b" 
 proof -
   have "a - b = 0\<^sub>v n" 
-  using add.l_cancel_one[of x "a-b"] assms
-  by (simp add: add_diff_eq_vec)
+    using add.l_cancel_one[of x "a-b"] assms
+    by (simp add: add_diff_eq_vec)
   then have "a - b + b = 0\<^sub>v n + b" 
     by argo
- then show ?thesis 
-   apply(auto simp: comm_add_vec[OF zero_carrier_vec assms(3)] right_zero_vec[OF assms(3)])
-   using M.minus_equality assms(2) assms(3) minus_add_uminus_vec  by fastforce
+  then show ?thesis 
+    apply(auto simp: comm_add_vec[OF zero_carrier_vec assms(3)] right_zero_vec[OF assms(3)])
+    using M.minus_equality assms(2) assms(3) minus_add_uminus_vec  by fastforce
 qed
 
 lemma lin_indpt_rows_le_dim_cols:
@@ -601,7 +601,7 @@ lemma lin_indpt_rows_le_dim_cols:
   assumes "distinct (rows A)"
   shows "nr \<le> n"
 proof -
- have "rank A\<^sup>T = nr" 
+  have "rank A\<^sup>T = nr" 
     by (simp add: assms vec_space.lin_indpt_full_rank)
   have "set (rows A) \<subseteq> carrier_vec n" 
     using assms(1) set_rows_carrier by blast
@@ -611,7 +611,7 @@ proof -
     using dim_span_le_n  by blast
   have "rank A\<^sup>T = dim_span (set (cols A\<^sup>T))" 
     by (metis \<open>rank A\<^sup>T = nr\<close> \<open>set (cols A\<^sup>T) \<subseteq> carrier_vec n\<close> assms carrier_matD(1) cols_length
- cols_transpose distinct_card index_transpose_mat(3) same_span_imp_card_eq_dim_span)
+        cols_transpose distinct_card index_transpose_mat(3) same_span_imp_card_eq_dim_span)
   then show "nr \<le> n" 
     using \<open>dim_span (set (cols A\<^sup>T)) \<le> n\<close> \<open>rank A\<^sup>T = nr\<close> by presburger
 qed
@@ -684,16 +684,14 @@ next
     have "unit_vec n i \<noteq> unit_vec n j" 
       by (simp add: i_j)
     have "x \<noteq> ?y" 
-      using qwfqwf[of x "unit_vec n i" "unit_vec n j"]  
+      using add_left_diff_then_eq[of x "unit_vec n i" "unit_vec n j"]  
       by (meson \<open>unit_vec n i \<noteq> unit_vec n j\<close> unit_vec_carrier x)
 
     then show False 
       using \<open>A *\<^sub>v ?y = b\<close> \<open>?y \<in> carrier_vec n\<close> assms(3) x by blast
   qed
- have "nr \<le> n" using lin_indpt_rows_le_dim_cols assms(1) assms(4) assms(5) 
+  have "nr \<le> n" using lin_indpt_rows_le_dim_cols assms(1) assms(4) assms(5) 
     by blast
- have "set (rows A) \<subseteq> carrier_vec n" 
-    using assms(1) set_rows_carrier by blast
 
   show "nr = n"
   proof(cases "nr < n")
@@ -714,7 +712,7 @@ next
         using assms(1) length_rows by blast
       have dim_rowA: "dim_row A = nr"
         using assms(1) by blast
-      have "distinct (rows fullA)"
+      have distinct_rows:"distinct (rows fullA)"
       proof(rule ccontr)
         assume "\<not> distinct (rows fullA)" 
         then obtain i j where "i < n \<and> j < n \<and> i \<noteq> j \<and> rows fullA ! i = rows fullA ! j" 
@@ -732,14 +730,14 @@ next
             case True
             have "row fullA j = row A j"
               unfolding fullA app_rows
-            using append_rows_nth(1) True app_rows_dims app_rows assms(1) by blast
-          then have "rows A ! i = rows A ! j" 
-            apply(auto simp: `i < nr` `j < nr` dim_rowA) 
-            using \<open>row fullA i =row A i\<close> i_j by presburger
-           then  show ?thesis 
+              using append_rows_nth(1) True app_rows_dims app_rows assms(1) by blast
+            then have "rows A ! i = rows A ! j" 
+              apply(auto simp: `i < nr` `j < nr` dim_rowA) 
+              using \<open>row fullA i =row A i\<close> i_j by presburger
+            then  show ?thesis 
               using len_rows `i < nr` assms(5) distinct_conv_nth i_j True by blast
           next
-    case False
+            case False
             then have "j - nr < dim_row app_rows" 
               by (simp add: app_rows diff_less_mono i_j) 
             have "nr \<le> j"
@@ -769,22 +767,22 @@ next
           have "i < nr + (n - nr)" using False i_j 
             by linarith
           then have "row fullA i = row app_rows (i-nr)" 
-              using fullA
-                append_rows_nth(2) `nr \<le> i` app_rows_dims assms(1) by blast 
-            also have "row app_rows (i-nr) = rows app_rows ! (i-nr)" 
-              by (auto simp: \<open>i - nr < dim_row app_rows\<close>)
-            also have 1: "\<dots> = (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) ! (i-nr)"
-              using \<open>0 < nr\<close> \<open>i - nr < dim_row app_rows\<close> app_rows assms(1) by auto
-            also have "\<dots> =  of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0" 
-              using \<open>i - nr < dim_row app_rows\<close>  app_rows  by auto
-            finally have "row fullA i = of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0" 
-              using \<open>row fullA i = row app_rows (i-nr)\<close> i_j by presburger 
+            using fullA
+              append_rows_nth(2) `nr \<le> i` app_rows_dims assms(1) by blast 
+          also have "row app_rows (i-nr) = rows app_rows ! (i-nr)" 
+            by (auto simp: \<open>i - nr < dim_row app_rows\<close>)
+          also have 1: "\<dots> = (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) ! (i-nr)"
+            using \<open>0 < nr\<close> \<open>i - nr < dim_row app_rows\<close> app_rows assms(1) by auto
+          also have "\<dots> =  of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0" 
+            using \<open>i - nr < dim_row app_rows\<close>  app_rows  by auto
+          finally have "row fullA i = of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0" 
+            using \<open>row fullA i = row app_rows (i-nr)\<close> i_j by presburger 
           show ?thesis 
           proof(cases "j < nr")
             case True
-            have "row fullA  j = row A j"
-              using True fullA app_rows
-              by (metis append_rows_index_same assms(1) carrier_matD(1) mat_carrier mat_of_rows_def)
+            have "row fullA j = row A j"
+              unfolding fullA app_rows
+              using append_rows_nth(1) True app_rows_dims app_rows assms(1) by blast
             have "row A j = of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0" 
               using `row fullA i = of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0` 
                 \<open>row fullA j = row A j\<close> i_j by presburger
@@ -797,105 +795,88 @@ next
             have "nr \<le> j" using False by auto
             have "j < nr + (n - nr)" using False i_j 
               by linarith
-            then have "row fullA  j = row app_rows (j-nr)" using fullA 
-                append_rows_nth(2)[of A nr n app_rows "n-nr" j] `nr \<le> j` `app_rows \<in> carrier_mat (n-nr) n` 
-                assms(1) 
-              by blast 
-            have "row app_rows (j-nr) = rows app_rows ! (j-nr)" 
-              by (metis \<open>j - nr < dim_row app_rows\<close> nth_rows)
-            have "rows app_rows ! (j-nr) = (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) ! (j-nr)"
-              by (metis (no_types, lifting) app_rows \<open>j - nr < dim_row app_rows\<close> assms(1) carrier_matD(2) length_map mat_of_rows_carrier(2) mat_of_rows_row nth_map nth_rows row_carrier smult_closed)
-            have "(map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) ! (j-nr) = 
-                of_int ((j - nr) + 2) \<cdot>\<^sub>v row A 0" 
-              using \<open>j - nr < dim_row app_rows\<close>  app_rows by auto
-            then have "row fullA  j = of_int ((j - nr) + 2) \<cdot>\<^sub>v row A 0" 
-              using \<open>Matrix.row app_rows (j - nr) = Matrix.rows app_rows ! (j - nr)\<close> \<open>Matrix.row fullA j = Matrix.row app_rows (j - nr)\<close> \<open>Matrix.rows app_rows ! (j - nr) = map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v Matrix.row A 0) (map int [0..<n - nr]) ! (j - nr)\<close> by presburger
+            then have "row fullA  j = row app_rows (j-nr)" 
+              using fullA
+                append_rows_nth(2) `nr \<le> j` app_rows_dims assms(1) by blast 
+            also have "\<dots> = rows app_rows ! (j-nr)" 
+              by(auto simp: \<open>j - nr < dim_row app_rows\<close>) 
+            also have 1: "\<dots> = (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) ! (j-nr)"
+              using \<open>0 < nr\<close> \<open>j - nr < dim_row app_rows\<close> app_rows assms(1) by auto
+            also have "\<dots> =  of_int ((j - nr) + 2) \<cdot>\<^sub>v row A 0" 
+              using \<open>j - nr < dim_row app_rows\<close>  app_rows  by auto
+            finally have "row fullA j = of_int ((j - nr) + 2) \<cdot>\<^sub>v row A 0" 
+              using  i_j by presburger 
+
+
             then have "of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0 = of_int ((j - nr) + 2) \<cdot>\<^sub>v row A 0"
               using \<open>row fullA i = of_int (int (i - nr + 2)) \<cdot>\<^sub>v row A 0\<close> i_j by presburger
             then have "of_int ((i - nr) + 2) \<cdot>\<^sub>v row A 0 - of_int ((j - nr) + 2) \<cdot>\<^sub>v row A 0 = 0\<^sub>v n"
-              using  `nr > 0` 
-              by (metis assms(1)  minus_cancel_vec row_carrier_vec smult_closed)
-            then have "(of_int ((i - nr) + 2) - of_int ((j - nr) + 2)) \<cdot>\<^sub>v row A 0 = 0\<^sub>v n" 
+              using \<open>0 < nr\<close> assms(1) by auto
+            then have smult_zero:"(of_int ((i - nr) + 2) - of_int ((j - nr) + 2)) \<cdot>\<^sub>v row A 0 = 0\<^sub>v n"
               by (metis diff_smult_distrib_vec)
             show ?thesis
             proof(cases "row A 0 = 0\<^sub>v n")
               case True
               then have "0\<^sub>v n \<in> (set (rows A))"  
-                by (metis assms(1) `nr > 0` carrier_matD(1) in_set_conv_nth length_rows nth_rows)
+                by (metis \<open>0 < nr\<close> dim_rowA row_in_set_rows)
               then show ?thesis 
-                using \<open>set (rows A) \<subseteq> carrier_vec n\<close> assms(4) vs_zero_lin_dep by blast
+                using assms(4) field.one_not_zero zero_lin_dep by blast
             next
               case False
-              then obtain l where "l < n \<and> row A 0 $ l \<noteq> 0" 
-                by (metis M.zero_closed assms(1) `nr > 0` carrier_vecD eq_vecI index_zero_vec(1) row_carrier_vec)
-              then have "((of_int ((i - nr) + 2) - of_int ((j - nr) + 2)) \<cdot>\<^sub>v row A 0) $ l = 
-                      (of_int ((i - nr) + 2) - of_int ((j - nr) + 2)) * row A 0 $ l" 
-                by (metis assms(1) `nr > 0` carrier_vecD index_smult_vec(1) row_carrier_vec)
-              then have "(of_int ((i - nr) + 2) - of_int ((j - nr) + 2)) * row A 0 $ l =  0\<^sub>v n $ l"
-                by (metis \<open>(of_int (int (i - nr + 2)) - of_int (int (j - nr + 2))) \<cdot>\<^sub>v row A 0 = 0\<^sub>v n\<close>)
-              then have "(of_int ((i - nr) + 2) - of_int ((j - nr) + 2)) * row A 0 $ l = 0"
-                by (metis \<open>l < n \<and> row A 0 $ l \<noteq> 0\<close> index_zero_vec(1))
-              then have "(of_int ((i - nr) + 2) - of_int ((j - nr) + 2)) = 0" 
-                by (metis \<open>l < n \<and> row A 0 $ l \<noteq> 0\<close> cancel_comm_monoid_add_class.diff_cancel mult_eq_0_iff of_int_eq_iff r_right_minus_eq)
-
-              then show ?thesis using fullA app_rows  
-                by (smt (verit, best) \<open>nr \<le> i\<close> \<open>nr \<le> j\<close> add_diff_cancel_right' eq_diff_iff i_j of_int_of_nat_eq of_nat_eq_iff)
+              then show False 
+                by (metis False R.minus_other_side smult_zero \<open>nr \<le> i\<close> \<open>nr \<le> j\<close> diff_add_inverse2 
+                    eq_diff_iff i_j of_int_of_nat_eq of_nat_eq_iff smult_r_null smult_vec_nonneg_eq)
             qed
           qed
         qed
       qed
-      have "distinct (cols fullA)" 
-        by (metis fullA app_rows \<open>distinct (cols A)\<close> assms(1) distinct_cols_append_rows mat_carrier mat_of_rows_def)
+      have distinct_cols:"distinct (cols fullA)" 
+        using \<open>distinct (cols A)\<close> app_rows_dims assms(1) fullA distinct_cols_append_rows by blast
       have "lin_dep (set (rows fullA))"
       proof -
         have "row fullA nr = row app_rows 0" 
-          by (smt (verit, ccfv_threshold) fullA True \<open>app_rows \<in> carrier_mat (n - nr) n\<close> \<open>nr \<le> n\<close> append_rows_nth(2) assms(1) cancel_comm_monoid_add_class.diff_cancel le_add_diff_inverse verit_comp_simplify1(2))
+          using True app_rows_dims append_rows_index_same' assms(1) fullA  by auto
         have "row app_rows 0 = (map (\<lambda>k. (of_int k + 2) \<cdot>\<^sub>v row A 0) (map int [0..<n - nr])) ! 0" 
           using True assms(1) `nr > 0` app_rows  by fastforce
-        then have "row app_rows 0 = 2 \<cdot>\<^sub>v row A 0" 
-          by (simp add: True)
         then have "row fullA nr = 2 \<cdot>\<^sub>v row A 0" 
-          using \<open>row fullA nr = row app_rows 0\<close> by presburger
-        have "row fullA 0 = row A 0" 
-          using \<open>app_rows \<in> carrier_mat (n - nr) n\<close> append_rows_nth(1) assms(1) `nr > 0` fullA by blast
-        then have "row fullA nr = 2 \<cdot>\<^sub>v row fullA 0" using `row fullA nr = 2 \<cdot>\<^sub>v row A 0` by auto
-        then show ?thesis using mult_row_lin_dep[of fullA n nr 0 2] 
-          using True sq_fullA by linarith
+          by(simp add: \<open>row fullA nr = row app_rows 0\<close> True)
+        moreover have "row fullA 0 = row A 0" 
+          using append_rows_nth(1) \<open>0 < nr\<close> app_rows_dims assms(1) fullA by blast
+        ultimately show ?thesis 
+          using mult_row_lin_dep[of fullA n nr 0 2] True sq_fullA by simp 
       qed
-      then have "lin_dep (set (cols fullA))" using lin_dep_cols_iff_rows[of fullA] 
-        using \<open>fullA \<in> carrier_mat n n\<close> \<open>distinct (cols fullA)\<close> \<open>distinct (rows fullA)\<close> by fastforce
-
-      obtain v where "v \<in> carrier_vec n" "v \<noteq> 0\<^sub>v n" "fullA *\<^sub>v v = 0\<^sub>v n" 
-        using lin_depE[of fullA] 
-        using \<open>fullA \<in> carrier_mat n n\<close> \<open>distinct (cols fullA)\<close> \<open>lin_dep (set (cols fullA))\<close> by blast
+      then have "lin_dep (set (cols fullA))"
+        using lin_dep_cols_iff_rows[of fullA] distinct_rows distinct_cols sq_fullA by fastforce
+      then obtain v where v:"v \<in> carrier_vec n" "v \<noteq> 0\<^sub>v n" "fullA *\<^sub>v v = 0\<^sub>v n" 
+        using lin_depE[of fullA] sq_fullA distinct_cols  by blast
       then have "(A @\<^sub>r app_rows) *\<^sub>v v = A *\<^sub>v v @\<^sub>v app_rows *\<^sub>v v"
-        by (metis app_rows assms(1) mat_carrier mat_mult_append mat_of_rows_def)
-      have "A *\<^sub>v v = 0\<^sub>v nr" using append_rows_eq
-        by (smt (verit, ccfv_SIG) \<open>(A @\<^sub>r app_rows) *\<^sub>v v = A *\<^sub>v v @\<^sub>v app_rows *\<^sub>v v\<close> \<open>app_rows \<in> carrier_mat (n - nr) n\<close> \<open>fullA *\<^sub>v v = 0\<^sub>v n\<close> \<open>v \<in> carrier_vec n\<close> assms(1) fullA minus_cancel_vec mult_mat_vec_carrier mult_minus_distrib_mat_vec sq_fullA)
-
-      obtain x where "x \<in> carrier_vec n \<and> A *\<^sub>v x = b" using assms(3) by auto
-      have "x + v \<noteq> x" 
-        by (simp add: \<open>v \<in> carrier_vec n\<close> \<open>v \<noteq> 0\<^sub>v n\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close>)
-      have "A *\<^sub>v (x + v) = b"
+        by (meson app_rows_dims assms(1) mat_mult_append)
+      have " 0\<^sub>v nr @\<^sub>v 0\<^sub>v (n - nr) = 0\<^sub>v n"
+        using \<open>nr \<le> n\<close> by fastforce 
+      have "A *\<^sub>v v = 0\<^sub>v nr"
+        using append_rows_eq[of A nr n app_rows "n-nr" "0\<^sub>v nr" v "0\<^sub>v (n-nr)" ]
+        apply(simp add: `0\<^sub>v nr @\<^sub>v 0\<^sub>v (n - nr) = 0\<^sub>v n` app_rows_dims assms(1) v(1))
+        using fullA v(3) by blast+
+      obtain x where x:"x \<in> carrier_vec n \<and> A *\<^sub>v x = b" 
+        using assms(3) by auto
+      then have "x + v \<noteq> x" 
+        by (simp add: v(1-2))
+      have "A *\<^sub>v (x + v) = b" 
       proof -
         have "A *\<^sub>v (x + v) = A *\<^sub>v x + A *\<^sub>v v" 
-          using \<open>v \<in> carrier_vec n\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(1) mult_add_distrib_mat_vec by blast
+          using v(1) x assms(1) mult_add_distrib_mat_vec by blast
         then show ?thesis 
-          by (simp add: \<open>A *\<^sub>v v = 0\<^sub>v nr\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> b)
+          by (simp add: \<open>A *\<^sub>v v = 0\<^sub>v nr\<close> x b)
       qed
-      then have False 
-        by (metis M.add.m_closed \<open>v \<in> carrier_vec n\<close> \<open>x + v \<noteq> x\<close> \<open>x \<in> carrier_vec n \<and> A *\<^sub>v x = b\<close> assms(3))
-      then show ?thesis 
-        by simp
+        then show ?thesis 
+          by (metis \<open>x + v \<noteq> x\<close> add_carrier_vec assms(3) v(1) x)
     qed
   next
     case False
     then show ?thesis 
       by (simp add: \<open>nr \<le> n\<close> nless_le)
   qed
-
 qed
- 
 
 
 lemma bounded_min_faces_are_vertexdfrgegegeg:
@@ -928,7 +909,8 @@ proof -
     by (metis A  assms(9) b carrier_matD(1) carrier_matD(2) carrier_mat_subsyst carrier_vecD  fst_conv)
   have "b' \<in> carrier_vec (dim_row A')" 
     by (metis \<open>A' \<in> carrier_mat (dim_row A') n\<close> \<open>\<exists>!x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'\<close> mult_mat_vec_carrier)
-  then show "dim_row A' = n" using lin_depE1assd[of A' "dim_row A'" b']  
+  then show "dim_row A' = n" 
+    using one_solution_system_sq_mat[of A' "dim_row A'" b']
     using  \<open>A' \<in> carrier_mat (dim_row A') n\<close> \<open>\<exists>!x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'\<close> \<open>distinct (rows A')\<close> \<open>lin_indpt (set (rows A'))\<close> by blast
 qed
 
