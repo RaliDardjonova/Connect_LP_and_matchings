@@ -9,7 +9,7 @@ theory Integer_hull_f_to_a
     Missing_Sums 
 begin
 
-context gram_schmidt_floor
+context gram_schmidt
 begin
 
 no_notation inner (infix "\<bullet>" 70)
@@ -319,8 +319,8 @@ lemma bounded_min_faces_are_vertex:
   assumes b: "b \<in> carrier_vec nr"
   defines "P \<equiv> polyhedron A b"
   assumes "P \<noteq> {}"
-  assumes bounded: "\<forall> x \<in> P. \<forall> i < n.  x $ i \<le> bound" 
   assumes "min_face P F"
+  assumes bounded: "\<forall> x \<in> P. \<forall> i < n.  x $ i \<le> bound" 
   shows "card F = 1"
 proof(cases "n = 0")
   case True
@@ -329,28 +329,28 @@ proof(cases "n = 0")
   then have "P = {0\<^sub>v 0}" 
     using assms(4) unfolding P_def polyhedron_def  using True by auto
   have "F = {0\<^sub>v 0}"
-    using  face_subset_polyhedron[OF min_face_elim(1)[OF assms(6)]] 
-      face_non_empty[OF min_face_elim(1)[OF assms(6)]]
+    using  face_subset_polyhedron[OF min_face_elim(1)[OF assms(5)]] 
+      face_non_empty[OF min_face_elim(1)[OF assms(5)]]
     using \<open>P = {0\<^sub>v 0}\<close> by blast
   then show ?thesis 
     using card_eq_1_iff by blast
 next
   case False
   have bound_scalar:"\<forall> x \<in> P. \<forall> i < n. unit_vec n i \<bullet> x \<le> bound"
-    using assms(5) scalar_prod_left_unit 
+    using bounded scalar_prod_left_unit 
     unfolding P_def polyhedron_def  
     by auto
   have "n > 0" using False by auto
   have "F \<noteq> {}" 
-    using A P_def assms(6) b char_min_face by blast
+    using A P_def assms(5) b char_min_face by blast
   obtain \<alpha> \<beta> where \<alpha>_\<beta>:"support_hyp P \<alpha> \<beta> \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>}"
-    using assms(6)
+    using assms(5)
     by (metis faceE min_face_elim(1))
   obtain C d where C_d: "F = polyhedron C d"  "dim_row C = dim_vec d" "dim_col C = n" 
     using face_is_polyhedron 
-    by (metis A P_def assms(6) b min_face_elim(1))
+    by (metis A P_def assms(5) b min_face_elim(1))
   have "\<exists>x\<in>carrier_vec n. C *\<^sub>v x \<le> d" 
-    apply (insert assms(6) char_min_face[of A nr b F])
+    apply (insert assms(5) char_min_face[of A nr b F])
     by(auto simp: \<open>F = polyhedron C d\<close>  A b P_def polyhedron_def)
 
   have "\<forall> i < n. \<exists> \<beta>\<^sub>i. \<forall>x \<in> F. x $ i = \<beta>\<^sub>i" 
@@ -375,11 +375,102 @@ next
       using `F \<noteq> {}` by blast
     then have "face P (F\<inter>{x |x. (unit_vec n i) \<bullet> x = \<beta>\<^sub>i})" 
       using face_trans[of A nr b F "(F\<inter>{x |x. (unit_vec n i) \<bullet> x = \<beta>\<^sub>i})"] 
-        A P_def  assms(6) b min_face_elim(1) by presburger
+        A P_def  assms(5) b min_face_elim(1) by presburger
     then have "\<forall> x \<in> F. (unit_vec n i) \<bullet> x = \<beta>\<^sub>i"
-      using assms(6) unfolding min_face_def using  basic_trans_rules(17) by blast
+      using assms(5) unfolding min_face_def using  basic_trans_rules(17) by blast
     then show "(\<exists>\<beta>\<^sub>i. \<forall>x\<in>F. x $ i = \<beta>\<^sub>i)"
       by (simp add: C_d(1) \<open>i < n\<close> polyhedron_def)
+  qed
+  have "\<exists>! x. x \<in> F" 
+  proof(rule ccontr)
+    assume "\<nexists>!x. x \<in> F"
+    then obtain x y where x_y:"x \<in> F \<and> y \<in> F \<and> x \<noteq> y" 
+      using \<open>F \<noteq> {}\<close> by blast
+    have "\<forall>x \<in> F. x  \<in> carrier_vec n" 
+      by (metis (no_types, lifting) C_d(1) polyhedron_def mem_Collect_eq)
+    then obtain i where i:"i < n \<and> x $ i \<noteq> y $ i"
+      using eq_vecI x_y carrier_vecD by metis 
+    have "\<exists>\<beta>\<^sub>i. \<forall>x\<in>F. x $ i = \<beta>\<^sub>i" 
+      using \<open>\<forall>i<n. \<exists>\<beta>\<^sub>i. \<forall>x\<in>F. x $ i = \<beta>\<^sub>i\<close> i by presburger
+    then show False 
+      by (metis i x_y)
+  qed
+  then show "card F = 1" 
+    by (metis \<open>F \<noteq> {}\<close> is_singletonI' is_singleton_altdef)
+qed
+
+
+lemma bounded_min_faces_are_vertex':
+  fixes A :: "'a  mat"
+  fixes bound:: "'a" 
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+  defines "P \<equiv> polyhedron A b"
+  assumes "P \<noteq> {}"
+  assumes "min_face P F"
+  assumes bounded: "\<forall> x \<in> P. \<forall> i < n. x $ i \<ge> bound" 
+  shows "card F = 1"
+proof(cases "n = 0")
+  case True
+  have "{x |x. x \<in> carrier_vec 0} = {0\<^sub>v 0}" 
+    using eq_vecI ex_in_conv  by fastforce
+  then have "P = {0\<^sub>v 0}" 
+    using assms(4) unfolding P_def polyhedron_def  using True by auto
+  have "F = {0\<^sub>v 0}"
+    using  face_subset_polyhedron[OF min_face_elim(1)[OF assms(5)]] 
+      face_non_empty[OF min_face_elim(1)[OF assms(5)]]
+    using \<open>P = {0\<^sub>v 0}\<close> by blast
+  then show ?thesis 
+    using card_eq_1_iff by blast
+next
+  case False
+  have bound_scalar:"\<forall> x \<in> P. \<forall> i < n. - unit_vec n i \<bullet> x \<le> - bound"
+    using bounded scalar_prod_left_unit 
+    unfolding P_def polyhedron_def 
+    by auto
+  have "n > 0" using False by auto
+  have "F \<noteq> {}" 
+    using A P_def assms(5) b char_min_face by blast
+  obtain \<alpha> \<beta> where \<alpha>_\<beta>:"support_hyp P \<alpha> \<beta> \<and> F = P \<inter> {x |x. \<alpha> \<bullet> x = \<beta>}"
+    using assms(5)
+    by (metis faceE min_face_elim(1))
+  obtain C d where C_d: "F = polyhedron C d"  "dim_row C = dim_vec d" "dim_col C = n" 
+    using face_is_polyhedron 
+    by (metis A P_def assms(5) b min_face_elim(1))
+  have "\<exists>x\<in>carrier_vec n. C *\<^sub>v x \<le> d" 
+    apply (insert assms(5) char_min_face[of A nr b F])
+    by(auto simp: \<open>F = polyhedron C d\<close>  A b P_def polyhedron_def)
+
+  have "\<forall> i < n. \<exists> \<beta>\<^sub>i. \<forall>x \<in> F. x $ i = \<beta>\<^sub>i" 
+  proof(safe)
+    fix i
+    assume "i < n" 
+    have "\<forall> x \<in> F. - unit_vec n i  \<bullet> x \<le> - bound" 
+      by (simp add: bound_scalar \<open>i < n\<close> \<alpha>_\<beta>)
+    then have  "\<forall> x \<in> carrier_vec n. C *\<^sub>v x \<le> d \<longrightarrow> - unit_vec n i  \<bullet> x \<le> - bound"
+      apply (simp add: \<open>F = polyhedron C d\<close> gram_schmidt.polyhedron_def)
+      by (metis neg_le_iff_le uminus_scalar_prod unit_vec_carrier)
+    then have "has_Maximum {- unit_vec n i  \<bullet> x | x. x \<in> carrier_vec n \<and> C *\<^sub>v x \<le> d}"
+      using strong_duality_theorem_primal_sat_bounded_min_max(2)[of C _ n d " - unit_vec n i"]
+        C_d `\<exists>x\<in>carrier_vec n. C *\<^sub>v x \<le> d`  unit_vec_carrier  carrier_dim_vec 
+      by (smt (verit, del_insts) carrier_matI index_uminus_vec(2))
+    then obtain \<beta>\<^sub>i where "\<beta>\<^sub>i \<in> { - unit_vec n i  \<bullet> x | x. x \<in> carrier_vec n \<and> C *\<^sub>v x \<le> d} 
+        \<and> \<beta>\<^sub>i = Maximum { - unit_vec n i  \<bullet> x | x. x \<in> carrier_vec n \<and> C *\<^sub>v x \<le> d}" 
+      using has_MaximumD(1) by blast
+    then have "support_hyp F (- unit_vec n i) \<beta>\<^sub>i " 
+      apply(intro support_hypI)
+      unfolding C_d polyhedron_def
+      using \<open>has_Maximum { - unit_vec n i \<bullet> x |x. x \<in> carrier_vec n \<and> C *\<^sub>v x \<le> d}\<close> by auto+
+    then have "face F (F\<inter>{x |x. (- unit_vec n i) \<bullet> x = \<beta>\<^sub>i})" 
+      using `F \<noteq> {}` by blast
+    then have "face P (F\<inter>{x |x. (- unit_vec n i) \<bullet> x = \<beta>\<^sub>i})" 
+      using face_trans[of A nr b F "(F\<inter>{x |x. (- unit_vec n i) \<bullet> x = \<beta>\<^sub>i})"] 
+        A P_def  assms(5) b min_face_elim(1) by presburger
+    then have "\<forall> x \<in> F. (- unit_vec n i) \<bullet> x = \<beta>\<^sub>i"
+      using assms(5) unfolding min_face_def using  basic_trans_rules(17) by blast
+    then show "(\<exists>\<beta>\<^sub>i. \<forall>x\<in>F. x $ i = \<beta>\<^sub>i)"
+      apply (simp add: C_d(1) \<open>i < n\<close> polyhedron_def)
+      by (metis R.minus_minus \<open>i < n\<close> scalar_prod_left_unit uminus_scalar_prod unit_vec_carrier)
   qed
   have "\<exists>! x. x \<in> F" 
   proof(rule ccontr)
@@ -886,7 +977,7 @@ lemma bounded_min_faces_are_vertexdfrgegegeg:
   assumes b: "b \<in> carrier_vec nr"
   defines "P \<equiv> polyhedron A b"
   assumes "P \<noteq> {}"
-  assumes bounded: "\<forall> x \<in> P. \<forall> i < n.  x $ i \<le> bound" 
+  assumes bounded: "(\<forall> x \<in> P. \<forall> i < n. x $ i \<le> bound) \<or> (\<forall> x \<in> P. \<forall> i < n. x $ i \<ge> bound)" 
   assumes "min_face P F"
   assumes "dim_vec b' = Min {dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
           (C, d) = sub_system A b I'}"
@@ -894,8 +985,8 @@ lemma bounded_min_faces_are_vertexdfrgegegeg:
   assumes "(A', b') = sub_system A b I"
   shows "dim_row A' = n"
 proof -
-  have "card F = 1" using bounded_min_faces_are_vertex assms(1-6) 
-    by blast
+  have "card F = 1" using bounded_min_faces_are_vertex bounded_min_faces_are_vertex' assms(1-6)
+    by metis
   then have " \<exists>!x. x \<in> F" using card_eq_Suc_0_ex1 
     by (metis One_nat_def)
   then have "\<exists>!x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'" using assms(8) 
@@ -1227,6 +1318,156 @@ lemma fkjpkhp: " 1\<^sub>v n  \<in> \<int>\<^sub>v "
  unfolding Ints_vec_def  
   by fastforce
 
+
+
+lemma bounded_min_faces_det_non_zero:
+  fixes A :: "'a  mat"
+  fixes bound:: "'a" 
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+  defines "P \<equiv> polyhedron A b"
+  assumes "P \<noteq> {}"
+  assumes bounded: "(\<forall> x \<in> P. \<forall> i < n. x $ i \<le> bound) \<or> (\<forall> x \<in> P. \<forall> i < n. x $ i \<ge> bound)" 
+  assumes "min_face P F"
+  assumes "dim_vec b' = Min {dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
+          (C, d) = sub_system A b I'}"
+  assumes " F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'}"  
+  assumes "(A', b') = sub_system A b I"
+  shows "det A' \<noteq> 0"
+proof -
+  have 1: "polyhedron A b \<noteq> {}" 
+    using assms(3) assms(4) by blast
+  have 2: "(\<forall> x \<in> polyhedron A b. \<forall> i < n. x $ i \<le> bound) \<or> 
+    (\<forall> x \<in> polyhedron A b. \<forall> i < n. x $ i \<ge> bound)" 
+    using assms(3) assms(5) by fastforce
+  have 3: "min_face (polyhedron A b) F" 
+    using assms(3) assms(6) by blast
+  have "dim_row A' = n" 
+    using bounded_min_faces_are_vertexdfrgegegeg[OF A b 1 2 3]
+    using assms(7-9) by blast
+  then have "A' \<in> carrier_mat n n" 
+    using  A  carrier_matD(2) carrier_matI dim_col_subsyst_mat fst_conv
+  by (metis assms(9))
+
+   then have "lin_indpt (set (rows A'))"
+     using min_face_lin_indpt[OF A b 1 3] 
+     using assms(7-9) by blast
+   have "distinct (rows A')"
+     using min_face_distinct[OF A b 1 3]  using assms(7-9) by blast
+   
+  have "(rows A') = cols (A'\<^sup>T)" 
+    by simp
+
+  have "lin_indpt (set (cols A'\<^sup>T))" using `lin_indpt (set (rows A'))` by auto
+  have "distinct (cols A'\<^sup>T)" using `distinct (rows A')` by auto
+  have "A' \<in> carrier_mat (dim_row A') n" 
+    by (metis assms(1,9) carrier_matD(2) carrier_matI dim_col_subsyst_mat fst_conv)
+  then have "rank A'\<^sup>T = dim_row A'" 
+    using lin_indpt_full_rank[of "A'\<^sup>T" "dim_row A'"] `lin_indpt (set (cols A'\<^sup>T))` `distinct (cols A'\<^sup>T)`
+    using transpose_carrier_mat by blast
+  then show "det A' \<noteq> 0" 
+    by (metis \<open>A' \<in> carrier_mat (dim_row A') n\<close> \<open>dim_row A' = n\<close> det_rank_iff det_transpose transpose_carrier_mat)
+qed
+
+lemma min_face_has_int:
+  fixes A :: "'a  mat"
+  fixes bound:: "'a" 
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+  assumes AI: "A \<in> \<int>\<^sub>m"
+  assumes bI: "b \<in> \<int>\<^sub>v"
+  defines "P \<equiv> polyhedron A b"
+  assumes "P \<noteq> {}"
+  assumes bounded: "(\<forall> x \<in> P. \<forall> i < n. x $ i \<le> bound) \<or> (\<forall> x \<in> P. \<forall> i < n. x $ i \<ge> bound)" 
+  assumes "min_face P F"
+  assumes "dim_vec b' = Min {dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
+          (C, d) = sub_system A b I'}"
+  assumes " F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'}"  
+  assumes "(A', b') = sub_system A b I"
+  shows "\<exists> x \<in> F. abs(det A') \<cdot>\<^sub>v x \<in>  \<int>\<^sub>v"
+proof -
+  obtain z where "z \<in> F" using assms(8)
+    by (metis ex_in_conv face_non_empty gram_schmidt.min_face_elim(1))
+  have 1: "polyhedron A b \<noteq> {}"
+  using assms(5) assms(6) by auto
+  have 2: " (\<forall>x\<in>local.polyhedron A b. \<forall>i<n. x $v i \<le> bound) \<or>
+  (\<forall>x\<in>local.polyhedron A b. \<forall>i<n. bound \<le> x $v i) " 
+    using assms(5) assms(7) by fastforce
+  have 3: "min_face (polyhedron A b) F " 
+    using assms(5) assms(8) by blast
+   have "det A' \<noteq> 0" 
+     using bounded_min_faces_det_non_zero[OF A b 1 2 3 assms(9) assms(10) assms(11)]
+     by blast
+   have "dim_row A' = n"
+      using bounded_min_faces_are_vertexdfrgegegeg[OF A b 1 2 3]
+    using assms(9-11) 
+    by blast
+   then have "A' \<in> carrier_mat n n" 
+     by (metis  A assms(11) carrier_matD(2) carrier_matI dim_col_subsyst_mat fst_conv)
+ 
+  have "A' *\<^sub>v z = b' \<longleftrightarrow> z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')" 
+    using cramer1[of A' n  b' z] `det A' \<noteq> 0` `A' \<in> carrier_mat n n` 
+    using \<open>z \<in> F\<close> assms(10) by fastforce
+  then have " z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')" 
+    using assms(10) \<open>z \<in> F\<close> by force
+  have "det A \<in> \<int>" using Ints_det AI 
+    using Ints_mat_def by blast
+  have "dim_vec z = n" 
+    using \<open>z = Matrix.vec n (\<lambda>k. Determinant.det (replace_col A' b' k) / Determinant.det A')\<close> dim_vec by blast
+ 
+
+
+  have "A' \<in> \<int>\<^sub>m" using vvweb[of A I UNIV]  assms(11) `A \<in> \<int>\<^sub>m` 
+    unfolding sub_system_def 
+    by blast 
+  have "b' \<in> \<int>\<^sub>v" using ewgwegg[of b I] assms(11) `b \<in> \<int>\<^sub>v`
+    unfolding sub_system_def 
+    by blast 
+
+  have "\<forall> k < n. det (replace_col A' b' k) \<in> \<int>" using cwevbew[of A' b'] 
+    using \<open>(A' *\<^sub>v z = b') = (z = Matrix.vec n (\<lambda>k. Determinant.det (replace_col A' b' k) / Determinant.det A'))\<close> \<open>A' \<in> \<int>\<^sub>m\<close> \<open>A' \<in> carrier_mat n n\<close> \<open>b' \<in> \<int>\<^sub>v\<close> \<open>dim_row A' = n\<close> \<open>z = Matrix.vec n (\<lambda>k. Determinant.det (replace_col A' b' k) / Determinant.det A')\<close> carrier_dim_vec dim_mult_mat_vec by blast
+  let ?z' = "abs(det A') \<cdot>\<^sub>v z"
+  have "?z' \<in> \<int>\<^sub>v"
+  proof -
+    have "\<forall>k < n. z $ k = det (replace_col A' b' k) / det A'" 
+      using \<open>z = Matrix.vec n (\<lambda>k. Determinant.det (replace_col A' b' k) / Determinant.det A')\<close> index_vec by blast
+    then have "\<forall>k < n.  (\<lambda>i. \<bar>det A'\<bar> * z $v i) k =
+     (\<lambda>k. \<bar>det A'\<bar> * det (replace_col A' b' k) / det A') k  " 
+      by (metis times_divide_eq_right)
+    then have "?z' =  vec n (\<lambda> k. \<bar>det A'\<bar> * det (replace_col A' b' k) / det A')" 
+      unfolding smult_vec_def using `z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')`
+      by (auto simp: `dim_vec z = n`) 
+    have "\<bar>det A'\<bar> /det A' \<in> \<int>" 
+    proof(cases "det A' > 0")
+      case True
+      have "\<bar>det A'\<bar> /det A' = 1" 
+        by (metis True \<open>Determinant.det A' \<noteq> 0\<close> abs_of_pos divide_self)
+      then show ?thesis 
+        by fastforce
+    next
+      case False
+      have "\<bar>det A'\<bar> /det A' = - 1" 
+        using False  \<open>Determinant.det A' \<noteq> 0\<close>  
+        by (metis abs_if divide_eq_minus_1_iff linorder_neqE_linordered_idom)
+      then show ?thesis by auto
+    qed
+    then have "\<forall>k < n.\<bar>det A'\<bar> * det (replace_col A' b' k) / det A' \<in> \<int>" 
+      
+      by (metis Ints_mult \<open>\<forall>k<n. Determinant.det (replace_col A' b' k) \<in> \<int>\<close> times_divide_eq_left)
+   then have "vec n (\<lambda> k. \<bar>det A'\<bar> * det (replace_col A' b' k) / det A') \<in> \<int>\<^sub>v" 
+     unfolding Ints_vec_def  
+     by simp
+   then show ?thesis 
+     using \<open>\<bar>Determinant.det A'\<bar> \<cdot>\<^sub>v z = Matrix.vec n (\<lambda>k. \<bar>Determinant.det A'\<bar> * Determinant.det (replace_col A' b' k) / Determinant.det A')\<close> by presburger
+ qed
+  show " \<exists>x\<in>F. \<bar>Determinant.det A'\<bar> \<cdot>\<^sub>v x \<in> \<int>\<^sub>v" 
+    using \<open>\<bar>Determinant.det A'\<bar> \<cdot>\<^sub>v z \<in> \<int>\<^sub>v\<close> \<open>z \<in> F\<close> by blast
+qed
+
+end 
+context gram_schmidt_floor
+begin
+
 lemma fgweugugwe:
   fixes A :: "'a  mat"
   fixes b:: "'a vec" 
@@ -1289,7 +1530,7 @@ proof(rule ccontr)
   have "(-y) \<bullet> row C j > 0"
     by (simp add: assms(7) y)
   have "A *\<^sub>v (-y) \<le> 0\<^sub>v nr" 
-    by (smt (verit, ccfv_SIG) A carrier_matD(1) class_ring.minus_zero dim_mult_mat_vec gram_schmidt_floor.minus_mult_minus_one index_uminus_vec(1) index_zero_vec(1) less_eq_vec_def mult_mat_vec neg_le_iff_le y)
+    by (smt (verit, ccfv_SIG) A carrier_matD(1) class_ring.minus_zero dim_mult_mat_vec minus_mult_minus_one index_uminus_vec(1) index_zero_vec(1) less_eq_vec_def mult_mat_vec neg_le_iff_le y)
 
   then obtain y' where y': "y' \<in> carrier_vec n \<and> A *\<^sub>v y' \<le> 0\<^sub>v nr \<and> y' \<bullet> row C j > 0" 
     using \<open>0 < - y \<bullet> row C j\<close> uminus_carrier_vec y by blast
@@ -1489,31 +1730,24 @@ qed
     using F_def min_face_min_subsyst[of ?fullA "(nr + 2*n)" ?fullb F]  
     using 2 3
     by (smt (verit, ccfv_SIG))
+  have 9: "(\<forall>x\<in>local.polyhedron (A @\<^sub>r 1\<^sub>m n @\<^sub>r - 1\<^sub>m n) (0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n).
+        \<forall>i<n. x $v i \<le> 1) \<or>
+    (\<forall>x\<in>local.polyhedron (A @\<^sub>r 1\<^sub>m n @\<^sub>r - 1\<^sub>m n) (0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n).
+        \<forall>i<n. 1 \<le> x $v i)" using `\<forall> x \<in> ?P'. \<forall> i < n.  x $ i \<le> 1` 
+    by blast
+  have 10:"dim_vec b' = Min {dim_vec d| C d I.   F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and>
+              (C, d) = sub_system ?fullA ?fullb I}" 
+    by (smt (verit) A'_b'(3) Collect_cong)
+   have "det A' \<noteq> 0" 
+    using bounded_min_faces_det_non_zero[OF 2 3 1 9] F_def A'_b' 10 
+    by fast
+
   have "dim_row A' = n" using bounded_min_faces_are_vertexdfrgegegeg[of ?fullA "nr+ 2*n" ?fullb 1 F b' A' I]
     using A'_b' `\<forall> x \<in> ?P'. \<forall> i < n.  x $ i \<le> 1` 1 2 3 
     by (smt (verit, ccfv_SIG) Collect_cong F_def)
    then have "A' \<in> carrier_mat n n" 
      by (metis "2" A'_b'(2) carrier_matD(2) carrier_matI dim_col_subsyst_mat fst_conv)
-  then have "lin_indpt (set (rows A'))" using min_face_lin_indpt[of ?fullA "(nr + 2*n)" ?fullb F] 1 
-    using 2 3 F_def 
-    by (smt (verit, best) A'_b'(1) A'_b'(2) A'_b'(3) Collect_cong)
-  have "distinct (rows A')" using min_face_distinct[of ?fullA "(nr + 2*n)" ?fullb F b' A'] 1 
-    using 2 3 F_def
-    by (smt (verit, del_insts) A'_b'(1) A'_b'(2) A'_b'(3) Collect_cong)
-  have "(rows A') = cols (A'\<^sup>T)" 
-    by simp
-
-  have "lin_indpt (set (cols A'\<^sup>T))" using `lin_indpt (set (rows A'))` by auto
-  have "distinct (cols A'\<^sup>T)" using `distinct (rows A')` by auto
-  have "A' \<in> carrier_mat (dim_row A') n" 
-    by (metis A'_b'(2) 2 carrier_matD(2) carrier_matI dim_col_subsyst_mat fst_conv)
-  then have "rank A'\<^sup>T = dim_row A'" 
-    using lin_indpt_full_rank[of "A'\<^sup>T" "dim_row A'"] `lin_indpt (set (cols A'\<^sup>T))` `distinct (cols A'\<^sup>T)`
-    using transpose_carrier_mat by blast
-  then have "det A' \<noteq> 0" 
-    by (metis \<open>A' \<in> carrier_mat (dim_row A') n\<close> \<open>dim_row A' = n\<close> det_rank_iff det_transpose transpose_carrier_mat)
-
-
+ 
   have "A' *\<^sub>v z = b' \<longleftrightarrow> z = vec n (\<lambda> k. det (replace_col A' b' k) / det A')" 
     using cramer1[of A' n  b' z] `det A' \<noteq> 0` `A' \<in> carrier_mat n n` 
     using A'_b'(1) \<open>z \<in> F\<close> carrier_dim_vec dim_mult_mat_vec by blast
@@ -1817,4 +2051,31 @@ next
   qed
 qed
 
+lemma min_face_iff_int_polyh:
+  fixes A :: "'a  mat"
+  fixes b:: "'a vec" 
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+    and AI: "A \<in> \<int>\<^sub>m"
+    and bI: "b \<in> \<int>\<^sub>v"
+  defines "P \<equiv> polyhedron A b"
+  shows "(\<forall> F. min_face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)) \<longleftrightarrow> P = integer_hull P"
+proof
+  show " \<forall>F. min_face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v) \<Longrightarrow> P = integer_hull P"
+  proof -
+    assume asm: "\<forall>F. min_face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)"
+    have "(\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))"
+      using A asm assms(2) assms(5) int_all_min_faces_then_int_all_faces by presburger
+    then have "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> P} \<longrightarrow>
+   (\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v)"
+      using int_face_then_max_suphyp_int[OF A b] 
+      using assms(5) by fastforce
+    then show "P = integer_hull P" using pugi[OF A b AI bI] 
+      using assms(5) by fastforce
+  qed
+  show  "P = integer_hull P \<Longrightarrow> \<forall>F. min_face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)" 
+    by (metis P_int_then_face_int assms(1) assms(2) assms(5) gram_schmidt.min_face_elim(1))
+qed
+  
+end
 end
