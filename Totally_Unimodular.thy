@@ -234,6 +234,70 @@ lemma mat_delete_index':
   unfolding insert_index_def
   using A i j i' j' by auto
 
+lemma pick_suc_diff_set:
+  assumes "Suc j < card J \<or> infinite J"
+  shows "pick J (Suc j) = pick (J - {pick J j}) j" 
+proof(cases "infinite J")
+  case True
+  have "pick J (Suc j) > pick J j" 
+    using True pick_mono_le 
+    using lessI pick_mono by presburger
+  have "pick J (Suc j) \<in> J - {pick J j}" 
+    by (metis Diff_iff True \<open>pick J j < pick J (Suc j)\<close> nat_neq_iff pick_in_set_inf singletonD)
+ then have 1: "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J (Suc j)}) = pick J (Suc j)"
+    using pick_card_in_set 
+    by presburger
+  have "{a\<in>(J - {pick J j}). a < pick J (Suc j)} \<union> {pick J j} = {a\<in>J. a < pick J (Suc j)}"
+    apply safe 
+     apply (simp add: True pick_in_set)
+    using \<open>pick J j < pick J (Suc j)\<close> by blast
+have "pick J j \<notin> {a\<in>(J - {pick J j}). a < pick J (Suc j)}"
+    by blast
+  have "card {a\<in>J. a < pick J (Suc j)} = (Suc j)" 
+    using True card_pick by blast
+  have "card ({a\<in>(J - {pick J j}). a < pick J (Suc j)} \<union> {pick J j}) = card {a\<in>(J - {pick J j}). a < pick J (Suc j)} + card {pick J j}"
+    by force
+  then have "card {a\<in>(J - {pick J j}). a < pick J (Suc j)} + 1 = card {a\<in>J. a < pick J (Suc j)}"
+    by (metis \<open>{a \<in> J - {pick J j}. a < pick J (Suc j)} \<union> {pick J j} = {a \<in> J. a < pick J (Suc j)}\<close> card_eq_1_iff)
+  then have "card {a\<in>(J - {pick J j}). a < pick J (Suc j)} = (Suc j) - 1" 
+    using \<open>card {a \<in> J. a < pick J (Suc j)} = (Suc j)\<close> by presburger
+  then have "pick (J - {pick J j}) ((Suc j) - 1) = pick J (Suc j)" using 1 
+    by presburger
+  then show ?thesis 
+    by (metis diff_Suc_1)
+next
+  case False
+  have "Suc j < card J" 
+    using False assms by force
+  have "pick J (Suc j) > pick J j" 
+    using \<open>Suc j < card J\<close> pick_mono_le by blast
+  have "pick J (Suc j) \<in> J - {pick J j}" 
+    by (metis Diff_iff False \<open>pick J j < pick J (Suc j)\<close> assms nat_neq_iff pick_in_set_le singletonD)
+  then have 1: "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J (Suc j)}) = pick J (Suc j)"
+    using pick_card_in_set 
+    by presburger
+  have "{a\<in>(J - {pick J j}). a < pick J (Suc j)} \<union> {pick J j} = {a\<in>J. a < pick J (Suc j)}"
+    apply safe
+     apply (simp add: Suc_lessD \<open>Suc j < card J\<close> pick_in_set_le)
+    using \<open>pick J j < pick J (Suc j)\<close> by blast
+  have "pick J j \<notin> {a\<in>(J - {pick J j}). a < pick J (Suc j)}"
+    by blast
+  have "card {a\<in>J. a < pick J (Suc j)} = (Suc j)" 
+    using \<open>Suc j < card J\<close> card_pick by presburger
+  have "card ({a\<in>(J - {pick J j}). a < pick J (Suc j)} \<union> {pick J j}) = card {a\<in>(J - {pick J j}). a < pick J (Suc j)} + card {pick J j}"
+    by force
+  then have "card {a\<in>(J - {pick J j}). a < pick J (Suc j)} + 1 = card {a\<in>J. a < pick J (Suc j)}"
+    by (metis \<open>{a \<in> J - {pick J j}. a < pick J (Suc j)} \<union> {pick J j} = {a \<in> J. a < pick J (Suc j)}\<close> card_eq_1_iff)
+  then have "card {a\<in>(J - {pick J j}). a < pick J (Suc j)} = (Suc j) - 1" 
+    using \<open>card {a \<in> J. a < pick J (Suc j)} = (Suc j)\<close> by presburger
+  then have "pick (J - {pick J j}) ((Suc j) - 1) = pick J (Suc j)" using 1 
+    by presburger
+  then show ?thesis 
+    by (metis diff_Suc_1)
+qed
+
+
+
 lemma gbergre:
   fixes A :: "'a  mat"
   assumes A: "A \<in> carrier_mat nr n"
@@ -375,7 +439,12 @@ proof
          show ?thesis
          proof(cases "k = j")
            case True
-           then show ?thesis sorry
+           have "pick J (Suc k) = pick J (Suc j)"
+             using True by fastforce
+           have "j < dim_col B - 1"
+             using "3" True by blast
+           then show ?thesis using pick_suc_diff_set 
+             by (metis False True \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(22) card_mono insert_index_def)
          next
            case False
            have "k > j" using `\<not> k < j` False 
@@ -426,6 +495,12 @@ proof
          using "6" \<open>B $$ (i, insert_index j k) = A $$ (i', k1)\<close> \<open>submatrix A I (J - {pick J j}) $$ (i, k) = A $$ (i', k2)\<close> by presburger
      qed
    qed
+
+lemma fwqfqwfojj:
+  assumes "b \<in> carrier_vec n"
+  shows "submatrix (mat_of_rows n [b]) {0} J =
+         mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec (b)) J)]"
+  sorry
 
 lemma tot_unimod_append_unit_vec:
  fixes A :: "'a  mat"
