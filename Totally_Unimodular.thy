@@ -378,15 +378,48 @@ proof
            then show ?thesis sorry
          next
            case False
+           have "k > j" using `\<not> k < j` False 
+             using nat_neq_iff by blast
+           then have "pick J k > pick J j" 
+             by (metis Suc_lessD \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(22) card_mono insert_index_def pick_mono_inf pick_mono_le)
 
-         have "pick (J - {pick J j}) k = pick J (Suc k)" 
-           sorry
-
-         then show ?thesis sorry
+           have "pick J k \<in> J - {pick J j}" 
+             by (metis (no_types, lifting) DiffI \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>pick J j < pick J k\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(22) card_mono insert_index_def le_eq_less_or_eq lessI nat_neq_iff pick_in_set_inf pick_in_set_le singletonD)
+           then have 1: "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J k}) = pick J k"
+           using pick_card_in_set 
+           by presburger
+         have "{a\<in>(J - {pick J j}). a < pick J k} \<union> {pick J j} = {a\<in>J. a < pick J k}"
+           apply safe
+           apply (metis Diff_empty Diff_insert0 \<open>card {i. i < dim_col A \<and> i \<in> J} - 1 = card {i. i < dim_col A \<and> i \<in> J - {pick J j}}\<close> \<open>dim_col (submatrix A I (J - {pick J j})) = card {i. i < dim_col A \<and> i \<in> J - {pick J j}}\<close> \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> assms(3) assms(4) diff_less less_nat_zero_code order.irrefl semiring_norm(135) zero_less_iff_neq_zero)
+           by (simp add: \<open>pick J j < pick J k\<close>)
+         have "pick J j \<notin> {a\<in>(J - {pick J j}). a < pick J k}"
+           by blast
+         have "card {a\<in>J. a < pick J k} = k" 
+           by (metis Suc_lessD \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>j < k\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(19) card_mono card_pick card_pick_le  insert_index(2) insert_index_def linorder_neqE_nat n_not_Suc_n not_less_iff_gr_or_eq)
+         have "card ({a\<in>(J - {pick J j}). a < pick J k} \<union> {pick J j}) = card {a\<in>(J - {pick J j}). a < pick J k} + card {pick J j}"
+           by force
+         then have "card {a\<in>(J - {pick J j}). a < pick J k} + 1 = card {a\<in>J. a < pick J k}"
+           by (metis \<open>{a \<in> J - {pick J j}. a < pick J k} \<union> {pick J j} = {a \<in> J. a < pick J k}\<close> card_eq_1_iff)
+         then have "card {a\<in>(J - {pick J j}). a < pick J k} = k - 1" 
+           using \<open>card {a \<in> J. a < pick J k} = k\<close> by presburger
+         then have "pick (J - {pick J j}) (k - 1) = pick J k" using 1 
+           by presburger
+         have "pick (J - {pick J j}) (Suc (k - 1)) = (LEAST a. a \<in> (J - {pick J j}) \<and> pick (J - {pick J j}) (k - 1) < a)" 
+           using DL_Missing_Sublist.pick.simps(2) by blast
+         have "pick J (Suc k) = (LEAST a. a \<in> J \<and> pick J k < a)"
+           using DL_Missing_Sublist.pick.simps(2) by blast
+         have "(LEAST a. a \<in> (J - {pick J j}) \<and> pick (J - {pick J j}) (k - 1) < a) = 
+              (LEAST a. a \<in> J \<and> pick J k < a)" 
+           by (metis Diff_iff \<open>pick (J - {pick J j}) (k - 1) = pick J k\<close> \<open>pick J j < pick J k\<close> basic_trans_rules(19) less_not_refl2 singletonD)
+         then have "pick (J - {pick J j}) k = pick J (Suc k)" 
+           by (metis Suc_eq_plus1 \<open>card {a \<in> J - {pick J j}. a < pick J k} + 1 = card {a \<in> J. a < pick J k}\<close> \<open>card {a \<in> J - {pick J j}. a < pick J k} = k - 1\<close> \<open>card {a \<in> J. a < pick J k} = k\<close> \<open>pick (J - {pick J j}) (Suc (k - 1)) = (LEAST a. a \<in> J - {pick J j} \<and> pick (J - {pick J j}) (k - 1) < a)\<close> \<open>pick J (Suc k) = (LEAST a. a \<in> J \<and> pick J k < a)\<close>)
+       
+         then show ?thesis 
+           using \<open>pick J (insert_index j k) = pick J (Suc k)\<close> by presburger
        qed
+     qed
 
-         oops
-         sorry
+ 
        then have "k1 = k2" using k1 k2 
          by blast 
        then show ?thesis 
