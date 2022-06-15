@@ -279,30 +279,173 @@ next
     by (metis diff_Suc_1)
 qed
 
+lemma pipppi:
+  assumes "j < card J \<or> infinite J"
+  assumes "k < j"
+  shows "pick (J - {pick J j}) k = pick J k"
+proof -
+  have 1: "k < card J \<or> infinite J" using assms by auto
+  have "pick J (insert_index j k) = pick J k" unfolding insert_index_def 
+    using assms(2) 
+    by simp
+  have "pick J k < pick J j" 
+    using pick_mono
+    using assms(2) assms(1) by blast    
+  then have "pick J k \<in> J - {pick J j}" using pick_in_set[OF assms(1)]
+    by (metis Diff_iff 1 nat_neq_iff pick_in_set singletonD)
+  then have "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J k}) = pick J k" 
+    using pick_card_in_set 
+    by presburger
+  have "card {a\<in>J. a < pick J k} = k" 
+    using 1 card_pick by blast
+  have "pick J k < pick J j" 
+    using \<open>pick J k < pick J j\<close> by blast
+  then  have "{a\<in>J. a < pick J k} = {a\<in>(J - {pick J j}). a < pick J k}"
+    by auto
+  then show "pick (J - {pick J j}) k = pick J k" 
+    using \<open>card {a \<in> J. a < pick J k} = k\<close> \<open>pick (J - {pick J j}) (card {a \<in> J - {pick J j}. a < pick J k}) = pick J k\<close> by presburger
+qed
+
+
+
+lemma pokkds:
+  assumes "k < card J \<or> infinite J"
+  assumes "j < k"
+  shows "pick (J - {pick J j}) k = pick J (Suc k)"
+proof -
+  have "pick J k > pick J j" 
+    using assms(1) assms(2) pick_mono by blast
+
+  have "pick J k \<in> J - {pick J j}" 
+    by (metis Diff_iff \<open>pick J j < pick J k\<close> assms(1) nat_neq_iff pick_in_set singletonD)
+  then have 1: "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J k}) = pick J k"
+    using pick_card_in_set 
+    by presburger
+  have "{a\<in>(J - {pick J j}). a < pick J k} \<union> {pick J j} = {a\<in>J. a < pick J k}"
+    apply safe
+    using assms(1) assms(2) basic_trans_rules(19) pick_in_set apply blast
+    by (simp add: \<open>pick J j < pick J k\<close>)
+  have "pick J j \<notin> {a\<in>(J - {pick J j}). a < pick J k}"
+    by blast
+  have "card {a\<in>J. a < pick J k} = k" 
+    using assms(1) card_pick by blast
+  have "card ({a\<in>(J - {pick J j}). a < pick J k} \<union> {pick J j}) = card {a\<in>(J - {pick J j}). a < pick J k} + card {pick J j}"
+    by force
+  then have "card {a\<in>(J - {pick J j}). a < pick J k} + 1 = card {a\<in>J. a < pick J k}"
+    by (metis \<open>{a \<in> J - {pick J j}. a < pick J k} \<union> {pick J j} = {a \<in> J. a < pick J k}\<close> card_eq_1_iff)
+  then have "card {a\<in>(J - {pick J j}). a < pick J k} = k - 1" 
+    using \<open>card {a \<in> J. a < pick J k} = k\<close> by presburger
+  then have "pick (J - {pick J j}) (k - 1) = pick J k" using 1 
+    by presburger
+  have "pick (J - {pick J j}) (Suc (k - 1)) = (LEAST a. a \<in> (J - {pick J j}) \<and> pick (J - {pick J j}) (k - 1) < a)" 
+    using DL_Missing_Sublist.pick.simps(2) by blast
+  have "pick J (Suc k) = (LEAST a. a \<in> J \<and> pick J k < a)"
+    using DL_Missing_Sublist.pick.simps(2) by blast
+  have "(LEAST a. a \<in> (J - {pick J j}) \<and> pick (J - {pick J j}) (k - 1) < a) = 
+              (LEAST a. a \<in> J \<and> pick J k < a)" 
+    by (metis Diff_iff \<open>pick (J - {pick J j}) (k - 1) = pick J k\<close> \<open>pick J j < pick J k\<close> basic_trans_rules(19) less_not_refl2 singletonD)
+  then show "pick (J - {pick J j}) k = pick J (Suc k)" 
+    by (metis Suc_eq_plus1 \<open>card {a \<in> J - {pick J j}. a < pick J k} + 1 = card {a \<in> J. a < pick J k}\<close> \<open>card {a \<in> J - {pick J j}. a < pick J k} = k - 1\<close> \<open>card {a \<in> J. a < pick J k} = k\<close> \<open>pick (J - {pick J j}) (Suc (k - 1)) = (LEAST a. a \<in> J - {pick J j} \<and> pick (J - {pick J j}) (k - 1) < a)\<close> \<open>pick J (Suc k) = (LEAST a. a \<in> J \<and> pick J k < a)\<close>)
+qed  
+
 lemma fbfewlon:
-assumes "card {i. i < Suc k \<and> i \<in> I} < card I \<or> infinite I"
-assumes "card {i. i < Suc k \<and> i \<in> I} \<le> i" 
+assumes "Suc i < card I \<or> infinite I"
+assumes "card {i. i < k \<and> i \<in> I} \<le> i" 
 assumes "k \<in> I"
 shows "pick (I - {k}) i  = pick I (Suc i)"
-  sledgehammer 
+proof - 
+  let ?j = "(card {a \<in> I. a < k})"
+  have "pick I ?j = k" using pick_card_in_set 
+    using assms(3) by presburger
+  have "{a \<in> I. a < k} \<union> {k} = {i. i < Suc k \<and> i \<in> I}" 
+    apply safe 
+      apply linarith
+    using assms(3) less_SucE by blast+
+  then have "{a \<in> I. a < k} \<subset> {i. i < Suc k \<and> i \<in> I}" 
+    by force
+  then have "?j < card {i. i < Suc k \<and> i \<in> I}" 
+    by (simp add: psubset_card_mono)
+  then have "?j \<le> i" 
+    using assms(2) basic_trans_rules(22) 
+    by (smt (verit, best) Collect_cong)
+  then show ?thesis 
+  proof(cases "?j = i")
+    case True
+    have "pick I (Suc i) = pick (I - {pick I i}) i" 
+      using pick_suc_diff_set[OF assms(1)] by auto
+    then show ?thesis 
+      by (metis (no_types, lifting) Suc_lessD \<open>card {a \<in> I. a < k} \<le> i\<close> \<open>pick I (card {a \<in> I. a < k}) = k\<close> assms(1) le_neq_implies_less pokkds)
+  next
+    case False
+    then show ?thesis 
+    using pokkds[of i I ?j] False 
+    by (metis Suc_lessD \<open>card {a \<in> I. a < k} \<le> i\<close> \<open>pick I (card {a \<in> I. a < k}) = k\<close> assms(1) le_neq_implies_less pokkds)
+qed
 
 lemma fbowejbowf:
-assumes "card {i. i < Suc k \<and> i \<in> I} < card I \<or> infinite I"
+assumes "i  < card I \<or> infinite I"
  assumes "card {i. i < Suc k \<and> i \<in> I} \<le> i" 
   shows "pick ((I - {i. i < Suc k \<and> i \<in> I})) ((i - card {i. i < Suc k \<and> i \<in> I})) =
     pick (I - {i. i < k \<and> i \<in> I}) (i - card {i. i < k \<and> i \<in> I})"
 proof(cases "k \<in> I")
   case True
+  let ?i = "i - card {i. i < Suc k \<and> i \<in> I}"
+    let ?j = "(card {a \<in> I. a < k})"
+  have "pick I ?j = k" using pick_card_in_set 
+    using True by presburger
+  have "{a \<in> I. a < k} \<union> {k} = {i. i < Suc k \<and> i \<in> I}" 
+    apply safe 
+      apply linarith
+    using True less_SucE by blast+
+  then have "{a \<in> I. a < k} \<subset> {i. i < Suc k \<and> i \<in> I}" 
+    by force
+  then have 3:"?j < card {i. i < Suc k \<and> i \<in> I}" 
+    by (simp add: psubset_card_mono)
+  then have "?j < i" 
+    using assms(2) basic_trans_rules(22) by blast
+  have "I - {i. i < Suc k \<and> i \<in> I} = (I - {i. i < k \<and> i \<in> I}) - {k}"
+    by force
+  have 2: "k \<in> I - {i. i < k \<and> i \<in> I}" 
+    using True by force
+
+  have 1: "?i < card (I - {i. i < k \<and> i \<in> I}) \<or> infinite (I - {i. i < k \<and> i \<in> I})" 
+  proof(cases "infinite I")
+    case True
+    have "infinite (I - {i. i < k \<and> i \<in> I})" using True by auto
+    then show ?thesis by auto
+  next
+    case False
+    have "i < card I" 
+      using False assms(1) by blast
+    then have "?i < card I - card {i. i < Suc k \<and> i \<in> I}" 
+      using assms(2) diff_less_mono by blast
+    have "{i. i < k \<and> i \<in> I} \<subseteq> I" by auto
+    then have "card (I - {i. i < k \<and> i \<in> I}) = card I - card {i. i < k \<and> i \<in> I}"
+      by (simp add: card_Diff_subset)
+    have "?i < card I - card {i. i <  k \<and> i \<in> I}" using 3 
+      by (smt (verit, ccfv_SIG) "2" True \<open>I - {i. i < Suc k \<and> i \<in> I} = I - {i. i < k \<and> i \<in> I} - {k}\<close> \<open>card (I - {i. i < k \<and> i \<in> I}) = card I - card {i. i < k \<and> i \<in> I}\<close> \<open>i - card {i. i < Suc k \<and> i \<in> I} < card I - card {i. i < Suc k \<and> i \<in> I}\<close> basic_trans_rules(21) bot_least card.infinite card_Diff_subset diff_card_le_card_Diff finite_subset insert_subset less_imp_diff_less not_less_eq not_less_zero)
     then show ?thesis 
-    proof(cases "card {i. i < Suc k \<and> i \<in> I} = i")
-  case True 
-  have " pick ((I - {i. i < Suc k \<and> i \<in> I})) ((i - card {i. i < Suc k \<and> i \<in> I})) = 
-      (LEAST a. a\<in>(I - {i. i < Suc k \<and> i \<in> I}))" 
-    by (simp add: True)
-  have "pick (I - {i. i < k \<and> i \<in> I}) (i - card {i. i < k \<and> i \<in> I}) = 
-    (LEAST a. a\<in>(I - {i. i < k \<and> i \<in> I}) \<and> a > pick (I - {i. i < k \<and> i \<in> I}) (i - card {i. i < k \<and> i \<in> I}) - 1)"
-    sledgehammer
-  oops
+      using \<open>card (I - {i. i < k \<and> i \<in> I}) = card I - card {i. i < k \<and> i \<in> I}\<close> by presburger
+  qed
+
+  have 3: "card {i. i < Suc k \<and> i \<in> I - {i. i < k \<and> i \<in> I}}
+            \<le> i - card {i. i < Suc k \<and> i \<in> I}" 
+    sorry
+
+
+  have 5:" pick (I - {i. i < k \<and> i \<in> I} - {k}) (i - card {i. i < Suc k \<and> i \<in> I}) =
+  pick (I - {i. i < k \<and> i \<in> I}) (Suc (i - card {i. i < Suc k \<and> i \<in> I}))"
+    using fbfewlon[OF 1 3 2] 
+    by blast
+
+  have 4: " (Suc (i - card {i. i < Suc k \<and> i \<in> I})) = (i - card {i. i < k \<and> i \<in> I})" sorry
+
+  have "pick (I - {i. i < k \<and> i \<in> I} - {k}) (i - card {i. i < Suc k \<and> i \<in> I}) =
+    pick ((I - {i. i < Suc k \<and> i \<in> I})) ((i - card {i. i < Suc k \<and> i \<in> I}))" 
+    using \<open>I - {i. i < Suc k \<and> i \<in> I} = I - {i. i < k \<and> i \<in> I} - {k}\<close> by presburger
+  then show ?thesis using 4 5 
+    by presburger
+ 
 next
   case False
   have "{i. i < Suc k \<and> i \<in> I} = {i. i <  k \<and> i \<in> I} \<union> {i. i=k \<and> i \<in> I}" 
@@ -313,27 +456,7 @@ next
   then show ?thesis 
     by presburger
 qed
-proof(cases "card {i. i < Suc k \<and> i \<in> I} = i")
-  case True 
-  have " pick ((I - {i. i < Suc k \<and> i \<in> I})) ((i - card {i. i < Suc k \<and> i \<in> I})) = 
-      (LEAST a. a\<in>(I - {i. i < Suc k \<and> i \<in> I}))" 
-    by (simp add: True)
 
-  then show ?thesis 
-  proof(cases "k \<in> I")
-    case True
-    then show ?thesis sorry
-  next
-    case False
-    have "{i. i < Suc k \<and> i \<in> I} = {i. i <  k \<and> i \<in> I}" using False 
-      using less_Suc_eq by force
-    then show ?thesis 
-      by presburger
-  qed
-next
-  case False
-  then show ?thesis sorry
-qed
 
 
 lemma ppknb:
@@ -371,9 +494,10 @@ next
   have " pick (I - {i. i < nr1 \<and> i \<in> I}) (i - card {i. i < nr1 \<and> i \<in> I}) =
     pick I i" 
     using Suc(1) \<open>card {i. i < nr1 \<and> i \<in> I} < card I \<or> infinite I\<close> \<open>card {i. i < nr1 \<and> i \<in> I} \<le> i\<close> by blast
-
-  then show ?case 
-oops
+  have " pick (I - {i. i < nr1 \<and> i \<in> I}) (i - card {i. i < nr1 \<and> i \<in> I}) =
+       pick (I - {i. i < Suc nr1 \<and> i \<in> I}) (i - card {i. i < Suc nr1 \<and> i \<in> I})" 
+    using fbowejbowf[of i I nr1] sorry
+  then show ?case sorry
 qed
 
     
@@ -530,6 +654,8 @@ proof
   then have 9:"(A @\<^sub>r B) $$ (pick I i, pick J j) =  B $$ (pick I i - nr1, pick J j)"
     using append_rows_nth(2)[OF A B 7 8]
     by (metis "7" "8" B SNF_Missing_Lemmas.append_rows_nth assms(1) carrier_matD(1) not_le)
+
+  have "i < card I" sledgehammer
  have "B $$ (pick ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) (i - card {i. i < nr1 \<and> i \<in> I}), pick J j) = 
         B $$ (pick I i - nr1, pick J j)" sorry
   then show ?thesis 
@@ -708,7 +834,7 @@ proof
            using True 
            by simp
       
-         have "pick J k \<in> J - {pick J j}" 
+         have "pick J k \<in> J - {pick J j}" sledgehammer
            by (smt (verit, del_insts) DiffI True \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> assms(4) card_mono insert_index(1) nat_neq_iff order_less_le_trans pick_eq_iff_inf pick_in_set_inf pick_in_set_le pick_mono_le singletonD)
          then have "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J k}) = pick J k" 
            using pick_card_in_set 
