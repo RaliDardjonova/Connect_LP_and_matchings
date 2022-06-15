@@ -381,6 +381,7 @@ proof -
     using pokkds[of i I ?j] False 
     by (metis Suc_lessD \<open>card {a \<in> I. a < k} \<le> i\<close> \<open>pick I (card {a \<in> I. a < k}) = k\<close> assms(1) le_neq_implies_less pokkds)
 qed
+qed
 
 lemma fbowejbowf:
 assumes "i  < card I \<or> infinite I"
@@ -408,7 +409,7 @@ proof(cases "k \<in> I")
   have 2: "k \<in> I - {i. i < k \<and> i \<in> I}" 
     using True by force
 
-  have 1: "?i < card (I - {i. i < k \<and> i \<in> I}) \<or> infinite (I - {i. i < k \<and> i \<in> I})" 
+  have 1: "Suc ?i < card (I - {i. i < k \<and> i \<in> I}) \<or> infinite (I - {i. i < k \<and> i \<in> I})" 
   proof(cases "infinite I")
     case True
     have "infinite (I - {i. i < k \<and> i \<in> I})" using True by auto
@@ -422,30 +423,35 @@ proof(cases "k \<in> I")
     have "{i. i < k \<and> i \<in> I} \<subseteq> I" by auto
     then have "card (I - {i. i < k \<and> i \<in> I}) = card I - card {i. i < k \<and> i \<in> I}"
       by (simp add: card_Diff_subset)
-    have "?i < card I - card {i. i <  k \<and> i \<in> I}" using 3 
-      by (smt (verit, ccfv_SIG) "2" True \<open>I - {i. i < Suc k \<and> i \<in> I} = I - {i. i < k \<and> i \<in> I} - {k}\<close> \<open>card (I - {i. i < k \<and> i \<in> I}) = card I - card {i. i < k \<and> i \<in> I}\<close> \<open>i - card {i. i < Suc k \<and> i \<in> I} < card I - card {i. i < Suc k \<and> i \<in> I}\<close> basic_trans_rules(21) bot_least card.infinite card_Diff_subset diff_card_le_card_Diff finite_subset insert_subset less_imp_diff_less not_less_eq not_less_zero)
-    then show ?thesis 
+    have "Suc ?i < card I - card {i. i < Suc k \<and> i \<in> I} + 1" 
+      by (simp add: \<open>i - card {i. i < Suc k \<and> i \<in> I} < card I - card {i. i < Suc k \<and> i \<in> I}\<close>)
+    then have "Suc ?i < card I - card {i. i < k \<and> i \<in> I}" 
+      by (smt (verit, del_insts) "2" "3" Diff_iff False \<open>I - {i. i < Suc k \<and> i \<in> I} = I - {i. i < k \<and> i \<in> I} - {k}\<close> \<open>card (I - {i. i < k \<and> i \<in> I}) = card I - card {i. i < k \<and> i \<in> I}\<close> \<open>{i. i < k \<and> i \<in> I} \<subseteq> I\<close> basic_trans_rules(22) bot_least card.empty card.infinite card_Diff_insert card_Diff_subset card_mono card_seteq diff_card_le_card_Diff empty_iff finite.intros(1) less_Suc_eq_le less_diff_conv2 linorder_not_le minus_nat.simps(1) plus_1_eq_Suc)
+  then show ?thesis 
       using \<open>card (I - {i. i < k \<and> i \<in> I}) = card I - card {i. i < k \<and> i \<in> I}\<close> by presburger
   qed
 
-  have 3: "card {i. i < Suc k \<and> i \<in> I - {i. i < k \<and> i \<in> I}}
+  have 3: "card {i. i < k \<and> i \<in> I - {i. i < k \<and> i \<in> I}}
             \<le> i - card {i. i < Suc k \<and> i \<in> I}" 
-    sorry
+    by (metis (no_types, lifting) Collect_empty_eq DiffE card_eq_0_iff mem_Collect_eq zero_le)
 
 
   have 5:" pick (I - {i. i < k \<and> i \<in> I} - {k}) (i - card {i. i < Suc k \<and> i \<in> I}) =
   pick (I - {i. i < k \<and> i \<in> I}) (Suc (i - card {i. i < Suc k \<and> i \<in> I}))"
     using fbfewlon[OF 1 3 2] 
     by blast
-
-  have 4: " (Suc (i - card {i. i < Suc k \<and> i \<in> I})) = (i - card {i. i < k \<and> i \<in> I})" sorry
-
+  have "card {i. i < Suc k \<and> i \<in> I} = card ({i. i < k \<and> i \<in> I} \<union> {k})" 
+    by (metis (no_types, lifting) Collect_cong \<open>{a \<in> I. a < k} \<union> {k} = {i. i < Suc k \<and> i \<in> I}\<close>)
+  have "card {i. i < Suc k \<and> i \<in> I} =  card {i. i < k \<and> i \<in> I} + card {k}" 
+    using \<open>card {i. i < Suc k \<and> i \<in> I} = card ({i. i < k \<and> i \<in> I} \<union> {k})\<close> by force
+  then have "card {i. i < Suc k \<and> i \<in> I} = card {i. i < k \<and> i \<in> I} + 1" by auto
+  then have 4: " (Suc (i - card {i. i < Suc k \<and> i \<in> I})) = (i - card {i. i < k \<and> i \<in> I})" 
+    using assms(2) by linarith
   have "pick (I - {i. i < k \<and> i \<in> I} - {k}) (i - card {i. i < Suc k \<and> i \<in> I}) =
     pick ((I - {i. i < Suc k \<and> i \<in> I})) ((i - card {i. i < Suc k \<and> i \<in> I}))" 
     using \<open>I - {i. i < Suc k \<and> i \<in> I} = I - {i. i < k \<and> i \<in> I} - {k}\<close> by presburger
   then show ?thesis using 4 5 
     by presburger
- 
 next
   case False
   have "{i. i < Suc k \<and> i \<in> I} = {i. i <  k \<and> i \<in> I} \<union> {i. i=k \<and> i \<in> I}" 
@@ -460,7 +466,7 @@ qed
 
 
 lemma ppknb:
-assumes "card {i. i < nr1 \<and> i \<in> I} < card I \<or> infinite I"
+assumes "i < card I \<or> infinite I"
   assumes "card {i. i < nr1 \<and> i \<in> I} \<le> i" 
   shows "pick (I - {i. i < nr1 \<and> i \<in> I}) (i - card {i. i < nr1 \<and> i \<in> I}) = 
       pick I i" using assms
@@ -481,8 +487,8 @@ next
     then have "card {i. i < nr1 \<and> i \<in> I} \<le> card {i. i < Suc nr1 \<and> i \<in> I}"
       using False 
       by (simp add: card_mono)
-    then show ?thesis
-      using Suc(2) basic_trans_rules(21) by blast
+    then show ?thesis 
+      using Suc(2) Suc(3) by linarith
   qed
   have "finite {i. i < nr1 \<and> i \<in> I}" 
     by simp
@@ -493,28 +499,189 @@ next
     using Suc(3) basic_trans_rules(23) by blast
   have " pick (I - {i. i < nr1 \<and> i \<in> I}) (i - card {i. i < nr1 \<and> i \<in> I}) =
     pick I i" 
-    using Suc(1) \<open>card {i. i < nr1 \<and> i \<in> I} < card I \<or> infinite I\<close> \<open>card {i. i < nr1 \<and> i \<in> I} \<le> i\<close> by blast
+    using Suc(1) \<open>card {i. i < nr1 \<and> i \<in> I} < card I \<or> infinite I\<close> \<open>card {i. i < nr1 \<and> i \<in> I} \<le> i\<close> 
+    using Suc(2) by blast
   have " pick (I - {i. i < nr1 \<and> i \<in> I}) (i - card {i. i < nr1 \<and> i \<in> I}) =
        pick (I - {i. i < Suc nr1 \<and> i \<in> I}) (i - card {i. i < Suc nr1 \<and> i \<in> I})" 
-    using fbowejbowf[of i I nr1] sorry
-  then show ?case sorry
+    using fbowejbowf[of i I nr1] assms(1) 
+    using Suc(3) by presburger  
+  then show ?case 
+    using \<open>pick (I - {i. i < nr1 \<and> i \<in> I}) (i - card {i. i < nr1 \<and> i \<in> I}) = pick I i\<close> by presburger
 qed
 
-    
+lemma pfhwfipwqf:
+  fixes I :: "nat set"
+  assumes "i < card I \<or> infinite I"
+  assumes "\<forall> i \<in> I. i \<ge> k"
+ shows "pick ((\<lambda>i. i - k) ` I) i = pick I i - k"
+proof(cases "I = {}")
+  case True
+  then show ?thesis 
+    using assms by auto
+next
+  case False
+ 
+  let ?f = "(\<lambda>i. i - k)"
+  have "mono ?f" 
+    by (simp add: diff_le_mono mono_def)
+  have "\<exists>x\<in>I. \<forall>y\<in>I. x \<le> y" 
+    by (metis Collect_mem_eq False empty_Collect_eq exists_least_iff le_simps(2) not_less_eq)
+  then have "(LEAST a. a\<in>I) - k = (LEAST a. a\<in>(\<lambda>i. i - k) ` I)"
+    by (simp add: Least_mono \<open>incseq (\<lambda>i. i - k)\<close>)
+
+  show ?thesis using assms(1)
+  proof(induct i)
+    case 0
+    have "pick ((\<lambda>i. i - k) ` I) 0 = (LEAST a. a\<in>(\<lambda>i. i - k) ` I)" 
+      using DL_Missing_Sublist.pick.simps(1) 0 by blast
+    have "pick I 0 - k = (LEAST a. a\<in>I) - k"
+      using DL_Missing_Sublist.pick.simps(1) 0 
+      by presburger
+    then show ?case 
+      using \<open>(LEAST a. a \<in> I) - k = (LEAST a. a \<in> (\<lambda>i. i - k) ` I)\<close> \<open>pick ((\<lambda>i. i - k) ` I) 0 = (LEAST a. a \<in> (\<lambda>i. i - k) ` I)\<close> by presburger
+  next
+    case (Suc i)
+    have "i < card I \<or> infinite I" 
+      using Suc(2) Suc_lessD by blast
+    have "pick I i < pick I (Suc i)" 
+      using Suc(2) lessI pick_mono_inf pick_mono_le by presburger
+   
+  
+
+
+    have 1: "pick ((\<lambda>i. i - k) ` I) i = pick I i - k" 
+      using Suc(1) \<open>i < card I \<or> infinite I\<close>  by blast
+    have "pick ((\<lambda>i. i - k) ` I) (Suc i) = (LEAST a. a\<in>((\<lambda>i. i - k) ` I) \<and> a > pick ((\<lambda>i. i - k) ` I) i)"
+      using DL_Missing_Sublist.pick.simps(2) by presburger
+    then have "pick ((\<lambda>i. i - k) ` I) (Suc i) = (LEAST a. a\<in>((\<lambda>i. i - k) ` I) \<and> a > pick I i - k)"
+      using "1" by presburger
+    have "{a. a\<in>((\<lambda>i. i - k) ` I) \<and> a > pick I i - k} =
+    (\<lambda>i. i - k) ` ( {x. x \<in> I \<and> x > pick I i})" 
+      apply safe
+        apply force+
+      using 1 assms(2) 
+      using \<open>i < card I \<or> infinite I\<close> diff_less_mono pick_in_set by presburger
+
+    have "(LEAST a. a\<in>((\<lambda>i. i - k) ` I) \<and> a > pick I i - k) = 
+        (LEAST a. a\<in>((\<lambda>i. i - k) ` ( {x. x \<in> I \<and> x > pick I i})))"
+      by (metis (no_types, lifting) \<open>{a \<in> (\<lambda>i. i - k) ` I. pick I i - k < a} = (\<lambda>i. i - k) ` {x \<in> I. pick I i < x}\<close> mem_Collect_eq)
+    have "pick I (Suc i) = (LEAST a. a\<in>I \<and> a > pick I i)"
+      using DL_Missing_Sublist.pick.simps(2)
+      by presburger
+    have "(LEAST a. a\<in>I \<and> a > pick I i) = (LEAST a. a\<in> {x. x \<in> I \<and> x > pick I i})"
+      by fastforce
+    show ?case
+    proof(cases "{x. x \<in> I \<and> x > pick I i} = {}")
+      case True
+      then show ?thesis 
+        by (metis Suc.prems diff_Suc_1 diff_less_Suc empty_Collect_eq lessI pick_in_set pick_mono)
+    next
+      case False
+ have 2: "\<exists>x\<in>{x. x \<in> I \<and> x > pick I i}. \<forall>y\<in>{x. x \<in> I \<and> x > pick I i}. x \<le> y" 
+   using  Collect_mem_eq False empty_Collect_eq exists_least_iff le_simps(2) not_less_eq
+   by (metis (no_types, lifting))
+
+  have " (LEAST a. a\<in> {x. x \<in> I \<and> x > pick I i}) - k = 
+      (LEAST a. a\<in>((\<lambda>i. i - k) ` ( {x. x \<in> I \<and> x > pick I i})))"
+    using Least_mono[OF \<open>incseq (\<lambda>i. i - k)\<close> 2]  by auto
+
+      then show ?thesis 
+        using \<open>(LEAST a. a \<in> (\<lambda>i. i - k) ` I \<and> pick I i - k < a) = (LEAST a. a \<in> (\<lambda>i. i - k) ` {x \<in> I. pick I i < x})\<close> \<open>(LEAST a. a \<in> I \<and> pick I i < a) = (LEAST a. a \<in> {x \<in> I. pick I i < x})\<close> \<open>pick ((\<lambda>i. i - k) ` I) (Suc i) = (LEAST a. a \<in> (\<lambda>i. i - k) ` I \<and> pick I i - k < a)\<close> \<open>pick I (Suc i) = (LEAST a. a \<in> I \<and> pick I i < a)\<close> by presburger
+    qed 
+  qed
+qed
+
 
 lemma vwevwev:
-  assumes "card {i. i < nr1 \<and> i \<in> I} < card I \<or> infinite I"
-  assumes "card {i. i < nr1 \<and> i \<in> I} \<le> i" 
-  shows "pick ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) (i - card {i. i < nr1 \<and> i \<in> I}) =
-        pick I i - nr1"
+  assumes "i < card I \<or> infinite I"
+  assumes "card {i. i < k \<and> i \<in> I} \<le> i" 
+  shows "pick ((\<lambda>i. i - k) ` (I - {0..<k})) (i - card {i. i < k \<and> i \<in> I}) =
+        pick I i - k"
 proof -
-  have "I - {0..<nr1} = {i. i \<ge> nr1 \<and> i \<in> I}" sorry
-  have "pick ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) (i - card {i. i < nr1 \<and> i \<in> I}) = 
-    pick ((\<lambda>i. i - nr1) ` {i. i \<ge> nr1 \<and> i \<in> I}) (i - card {i. i < nr1 \<and> i \<in> I})"
-    using \<open>I - {0..<nr1} = {i. nr1 \<le> i \<and> i \<in> I}\<close> by presburger
-  have "pick (I - {i. i < nr1 \<and> i \<in> I}) (i - card {i. i < nr1 \<and> i \<in> I}) = 
+  have "(I - {0..<k}) = I - {i. i < k \<and> i \<in> I}"
+    apply safe
+     apply simp
+    using atLeastLessThan_iff by blast
+
+  have "pick (I - {i. i < k \<and> i \<in> I}) (i - card {i. i < k \<and> i \<in> I}) = 
       pick I i" 
-oops
+    using assms(1) assms(2) ppknb by blast
+  have 1: "\<forall> i \<in> I - {i. i < k \<and> i \<in> I}. i \<ge> k" 
+    using linorder_not_less by blast
+  have 2: "i -card {i. i < k \<and> i \<in> I} < card (I - {i. i < k \<and> i \<in> I}) \<or> 
+      infinite (I - {i. i < k \<and> i \<in> I})" 
+  proof(cases "infinite I")
+    case True
+    have " infinite (I - {i. i < k \<and> i \<in> I})" using True by auto
+    then show ?thesis by auto
+  next
+    case False
+    have "i < card I" using assms(1) False by auto
+    have "card (I - {i. i < k \<and> i \<in> I}) = card I - card{i. i < k \<and> i \<in> I}" 
+      by (metis (no_types, lifting) False card_Diff_subset finite_subset mem_Collect_eq subsetI)
+    then show ?thesis 
+      using False assms(1) assms(2) diff_less_mono by presburger
+  qed
+
+  have "pick ((\<lambda>i. i - k) ` (I - {i. i < k \<and> i \<in> I})) (i - card {i. i < k \<and> i \<in> I}) = 
+        pick (I - {i. i < k \<and> i \<in> I}) (i - card {i. i < k \<and> i \<in> I}) - k"
+      using pfhwfipwqf[OF 2 1]  
+      by blast
+    then show ?thesis 
+      using \<open>I - {0..<k} = I - {i. i < k \<and> i \<in> I}\<close> \<open>pick (I - {i. i < k \<and> i \<in> I}) (i - card {i. i < k \<and> i \<in> I}) = pick I i\<close> by presburger
+  qed
+
+
+lemma bowqbfq:
+  fixes I :: "nat set"
+  shows "card {i. i < a \<and> i \<in> ((\<lambda> i. i - b) ` (I - {0..<b}))} = 
+         card {i. i \<ge> b \<and> i < b + a \<and> i \<in> I}" 
+proof(induct a rule:nat_induct)
+  case 0
+
+  then show ?case by simp
+next
+  case (Suc n)
+  have " card {i. i < n \<and> i \<in> (\<lambda>i. i - b) ` (I - {0..<b})} =
+  card {i. b \<le> i \<and> i < b + n \<and> i \<in> I}" 
+    using Suc.hyps by blast
+  show ?case
+  proof(cases "b + n \<in> I")
+    case True
+    have "n \<in> (\<lambda>i. i - b) ` (I - {0..<b})" 
+      by (metis Diff_iff True add_less_same_cancel1 atLeastLessThan_iff diff_add_inverse imageI zero_order(3))
+    then have 1:"{i. i < Suc n \<and> i \<in> ((\<lambda> i. i - b) ` (I - {0..<b}))} = 
+          {i. i < n \<and> i \<in> ((\<lambda> i. i - b) ` (I - {0..<b}))} \<union> {n}" 
+      using less_Suc_eq by blast
+    have 2: "{i. b \<le> i \<and> i < b + Suc n \<and> i \<in> I} = {i. b \<le> i \<and> i < b + n \<and> i \<in> I} \<union> {b + n}"
+      using True    
+      by force
+    have "{i. i < n \<and> i \<in> ((\<lambda> i. i - b) ` (I - {0..<b}))} \<inter> {n} = {}" by auto
+    then have "card {i. i < Suc n \<and> i \<in> ((\<lambda> i. i - b) ` (I - {0..<b}))} =
+        card {i. i < n \<and> i \<in> ((\<lambda> i. i - b) ` (I - {0..<b}))} + card {n}"
+      using 1 
+      by force
+    have "{i. b \<le> i \<and> i < b + n \<and> i \<in> I} \<inter> {b + n} = {}" by auto
+    then have  "card {i. b \<le> i \<and> i < b + Suc n \<and> i \<in> I} = 
+        card {i. b \<le> i \<and> i < b + n \<and> i \<in> I} + card {b + n}" using 2 
+      by fastforce
+    then show ?thesis 
+      by (simp add: Suc.hyps \<open>card {i. i < Suc n \<and> i \<in> (\<lambda>i. i - b) ` (I - {0..<b})} = card {i. i < n \<and> i \<in> (\<lambda>i. i - b) ` (I - {0..<b})} + card {n}\<close>)
+  next
+    case False
+    have "b + n \<notin> (I - {0..<b})" using False by auto
+    then have "n \<notin> (\<lambda>i. i - b) ` (I - {0..<b})" 
+      by auto
+    then have "{i. i < Suc n \<and> i \<in> (\<lambda>i. i - b) ` (I - {0..<b})} = 
+    {i. i < n \<and> i \<in> (\<lambda>i. i - b) ` (I - {0..<b})}" 
+      using less_Suc_eq by blast
+    have "{i. b \<le> i \<and> i < b + Suc n \<and> i \<in> I} = {i. b \<le> i \<and> i < b + n \<and> i \<in> I}" 
+      using False less_Suc_eq by auto
+    then show ?thesis 
+      using Suc.hyps \<open>{i. i < Suc n \<and> i \<in> (\<lambda>i. i - b) ` (I - {0..<b})} = {i. i < n \<and> i \<in> (\<lambda>i. i - b) ` (I - {0..<b})}\<close> by presburger
+  qed
+ 
+qed
 
 lemma fcdnwe:
    fixes A :: "'a  mat"
@@ -539,7 +706,8 @@ proof
         card {i. i < nr2 \<and> i \<in> ((\<lambda> i. i - nr1) ` (I - {0..<nr1}))}"
      using assms(2) dim_submatrix(1) by blast
    have "card {i. i < nr2 \<and> i \<in> ((\<lambda> i. i - nr1) ` (I - {0..<nr1}))} = 
-         card {i. i \<ge> nr1 \<and> i < nr1 + nr2 \<and> i \<in> I}" sorry
+         card {i. i \<ge> nr1 \<and> i < nr1 + nr2 \<and> i \<in> I}" 
+     using bowqbfq by blast
    have 1:"{i. i < nr1 + nr2  \<and> i \<in> I} = {i. i < nr1 \<and> i \<in> I} \<union> 
           {i. i \<ge> nr1 \<and> i < nr1 + nr2 \<and> i \<in> I}" 
      by force
@@ -655,9 +823,11 @@ proof
     using append_rows_nth(2)[OF A B 7 8]
     by (metis "7" "8" B SNF_Missing_Lemmas.append_rows_nth assms(1) carrier_matD(1) not_le)
 
-  have "i < card I" sledgehammer
- have "B $$ (pick ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) (i - card {i. i < nr1 \<and> i \<in> I}), pick J j) = 
-        B $$ (pick I i - nr1, pick J j)" sorry
+  have "i < card I \<or> infinite I" 
+    by (metis IntE \<open>dim_row (submatrix (A @\<^sub>r B) I J) = card ({0..<nr1 + nr2} \<inter> I)\<close> \<open>dim_row (submatrix (A @\<^sub>r B) I J) = dim_row (submatrix A I J @\<^sub>r submatrix B ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) J)\<close> asmi basic_trans_rules(21) card_mono not_le subsetI)
+ then have "B $$ (pick ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) (i - card {i. i < nr1 \<and> i \<in> I}), pick J j) = 
+        B $$ (pick I i - nr1, pick J j)" using vwevwev 
+   using "6" by presburger
   then show ?thesis 
     using 9 \<open>(submatrix A I J @\<^sub>r submatrix B ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) J) $$ (i, j) = submatrix B ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) J $$ (i - card {i. i < nr1 \<and> i \<in> I}, j)\<close> \<open>B $$ (pick ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) (i - card {i. i < nr1 \<and> i \<in> I}), pick J j) = B $$ (pick I i - nr1, pick J j)\<close> \<open>submatrix (A @\<^sub>r B) I J $$ (i, j) = (A @\<^sub>r B) $$ (pick I i, pick J j)\<close> \<open>submatrix B ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) J $$ (i - card {i. i < nr1 \<and> i \<in> I}, j) = B $$ (pick ((\<lambda>i. i - nr1) ` (I - {0..<nr1})) (i - card {i. i < nr1 \<and> i \<in> I}), pick J j)\<close> by presburger
 qed
@@ -834,7 +1004,7 @@ proof
            using True 
            by simp
       
-         have "pick J k \<in> J - {pick J j}" sledgehammer
+         have "pick J k \<in> J - {pick J j}" 
            by (smt (verit, del_insts) DiffI True \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> assms(4) card_mono insert_index(1) nat_neq_iff order_less_le_trans pick_eq_iff_inf pick_in_set_inf pick_in_set_le pick_mono_le singletonD)
          then have "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J k}) = pick J k" 
            using pick_card_in_set 
@@ -983,6 +1153,14 @@ proof
     using \<open>mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec b) J)] $$ (i, j) = vec_of_list (nths (list_of_vec b) J) $v j\<close> \<open>mat_of_rows n [b] $$ (pick {0} i, pick J j) = b $v pick J j\<close> \<open>submatrix (mat_of_rows n [b]) {0} J $$ (i, j) = mat_of_rows n [b] $$ (pick {0} i, pick J j)\<close> \<open>vec_of_list (nths (list_of_vec b) J) $v j = b $v pick J j\<close> by presburger
 qed
 
+lemma fhqwpfh:
+  assumes "finite S" 
+  assumes "a \<in> S"
+  assumes "\<forall> x \<in> S. x \<noteq> a \<longrightarrow> f x = 0"
+  shows "sum f S = f a" 
+  by (metis (mono_tags, opaque_lifting) Diff_iff add.right_neutral assms(1) assms(2) assms(3) insert_iff sum.neutral sum.remove)
+  
+
 
 lemma tot_unimod_append_unit_vec:
  fixes A :: "'a  mat"
@@ -1035,7 +1213,7 @@ proof rule
           by linarith
       then have "dim_row B - 1 < dim_row B" 
         using I_J diff_less verit_comp_simplify(28) by blast
-      have "det B = (\<Sum>j<dim_row B. B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j)"
+      have 4: "det B = (\<Sum>j<dim_row B. B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j)"
         using laplace_expansion_row[OF 2] 
         using \<open>dim_row B - 1 < dim_row B\<close> by blast
       have 3:"dim_row (mat_of_rows n [unit_vec n i]) =  1" using 1 
@@ -1056,7 +1234,138 @@ proof rule
       have "B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [unit_vec n i]) {0} J" 
         by (simp add: \<open>B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J\<close>
             \<open>submatrix (mat_of_rows n [unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [unit_vec n i]) {0} J\<close>)
-     
+      have "B = submatrix A I J @\<^sub>r mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec (unit_vec n i)) J)]"
+        by (simp add: \<open>B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [unit_vec n i]) {0} J\<close> fwqfqwfojj)
+      have "row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (unit_vec n i)) J)"
+        sorry
+      have 5:"vec_of_list (nths (list_of_vec (unit_vec n i)) J) =
+          vec (card {ia. ia<dim_vec (unit_vec n i) \<and> ia\<in>J})  (\<lambda> ia. (unit_vec n i) $ (pick J ia))"
+        using nths_list_pick_vec_same[of "(unit_vec n i)" J]
+        by force
+     then have 6:"\<forall> j < dim_col B. B $$ (dim_row B - 1,j) = (unit_vec n i) $ (pick J j)" 
+          using 5 
+          by (smt (verit, best) Matrix.row_def \<open>Matrix.row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (unit_vec n i)) J)\<close> index_vec row_carrier vec_carrier_vec)
+      
+      show ?thesis
+      proof(cases "i < n")
+        case True
+        have 7: "\<forall> j < dim_col B. pick J j \<noteq> i \<longrightarrow>  B $$ (dim_row B - 1,j) = 0"
+        proof safe
+          fix k
+          assume asm: "k < dim_col B" "pick J k \<noteq> i"
+          have "pick J k < n" 
+            by (metis (no_types, lifting) "5" Collect_cong \<open>Matrix.row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (unit_vec n i)) J)\<close> asm(1) index_unit_vec(3) pick_le row_carrier vec_carrier_vec)
+          then have "(unit_vec n i) $ (pick J k) = 0" 
+            unfolding unit_vec_def 
+            
+            using asm(2) by force
+          then show " B $$ (dim_row B - 1, k) = 0" 
+            using "6" asm(1) by auto
+        qed
+        have "\<forall> j < dim_col B. pick J j = i \<longrightarrow>  B $$ (dim_row B - 1,j) = 1"
+          by (metis "6" True index_unit_vec(2))
+      
+         show ?thesis 
+         proof(cases "\<exists>j. j < dim_col B \<and> pick J j = i")
+           case True
+           obtain j where j: "pick J j = i \<and> j < dim_col B" 
+             using True by blast
+           have "B $$ (dim_row B - 1,j) = 1" 
+             using \<open>\<forall>j<dim_col B. pick J j = i \<longrightarrow> B $$ (dim_row B - 1, j) = 1\<close> \<open>pick J j = i \<and> j < dim_col B\<close> by presburger
+           have "\<forall> k < dim_col B. k \<noteq> j \<longrightarrow>  B $$ (dim_row B - 1,k) = 0" 
+           proof safe
+             fix k
+             assume asm: "k < dim_col B" " k \<noteq> j"
+             have "pick J k \<noteq> i" 
+             proof(rule ccontr)
+               assume " \<not> pick J k \<noteq> i"
+               then have "pick J k = pick J j" 
+                 using j by fastforce
+               show False
+               proof(cases "infinite J")
+                 case True
+                 then show ?thesis 
+                   using \<open>pick J k = pick J j\<close> asm(2) pick_eq_iff_inf by blast
+               next
+                 case False
+                 have "dim_col B = (card {ia. ia<dim_col (A @\<^sub>r mat_of_rows n [unit_vec n i]) \<and> ia\<in>J})" 
+                      using I_J dim_submatrix(2)
+                      by blast
+                    then have "dim_col B = (card {ia. ia<n \<and> ia\<in>J})" 
+                      by (metis \<open>Matrix.row (A @\<^sub>r mat_of_rows n [unit_vec n i]) nr = unit_vec n i\<close> index_row(2) index_unit_vec(3))
+                 have "j < card J" 
+                   by (metis (mono_tags, lifting) \<open>dim_col B = card {ia. ia < n \<and> ia \<in> J}\<close> \<open>pick J k = pick J j\<close> asm(2) basic_trans_rules(21) card_mono j mem_Collect_eq not_less pick_eq_iff_inf subsetI)
+                 then show ?thesis 
+                   by (metis (mono_tags, lifting) False \<open>\<not> pick J k \<noteq> i\<close> \<open>dim_col B = card {ia. ia < n \<and> ia \<in> J}\<close> asm(1) asm(2) basic_trans_rules(21) card_mono j less_not_refl mem_Collect_eq nat_neq_iff not_less pick_mono subsetI)
+               qed
+             qed
+             then show " B $$ (dim_row B - 1, k) = 0" 
+               using "7" asm(1) by presburger
+           qed
+           have "\<forall>k \<in> {0..<dim_col B}. j\<noteq>k \<longrightarrow>  B $$ (dim_row B - 1,k) = 0" 
+             using \<open>\<forall>k<dim_col B. k \<noteq> j \<longrightarrow> B $$ (dim_row B - 1, k) = 0\<close> atLeastLessThan_iff by blast
+        
+           then have "(\<Sum>j \<in> {0..<dim_col B}. B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j) =
+               B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j" 
+             using fhqwpfh[of "{0..<dim_col B}" j]
+             by (metis (no_types, lifting) atLeast0LessThan finite_atLeastLessThan j lessThan_iff vector_space_over_itself.scale_eq_0_iff)
+  
+           then have "(\<Sum>j<dim_col B. B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j) =
+              B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j" 
+             by (metis atLeast0LessThan)
+           then have "det B =  B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j"
+             by (metis "4" \<open>dim_row B = dim_col B\<close>)
+           then have "det B = cofactor B (dim_row B - 1) j" 
+             using \<open>B $$ (dim_row B - 1, j) = 1\<close> l_one by presburger
+           have 8: "cofactor B (dim_row B - 1) j = 
+                (-1)^((dim_row B - 1)+j) * det (mat_delete B (dim_row B - 1) j)" 
+             by (meson Determinant.cofactor_def)
+           have 9:"mat_delete B (dim_row B - 1) j = submatrix A I (J - {pick J j})"
+             using gbergre 
+             by (smt (z3) "5" A Collect_cong One_nat_def Suc_eq_plus1 \<open>B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J\<close> \<open>Matrix.row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (unit_vec n i)) J)\<close> \<open>submatrix (mat_of_rows n [unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [unit_vec n i]) {0} J\<close> append_rows_def carrier_matD(2) diff_add_inverse dim_submatrix(2) dim_vec fwqfqwfojj index_mat_four_block(2) index_row(2) index_unit_vec(3) index_zero_mat(2) j list.size(3) list.size(4) mat_of_rows_carrier(1) mat_of_rows_carrier(2) plus_1_eq_Suc unit_vec_carrier vec_carrier)
+           have "det (submatrix A I (J - {pick J j})) \<in> {-1, 0, 1}" 
+             using assms(2) unfolding tot_unimodular_def 
+             by blast
+           then have "cofactor B (dim_row B - 1) j \<in> {-1, 0, 1}" using 8 9 
+             by (smt (z3) UNIV_I \<open>B $$ (dim_row B - 1, j) = 1\<close> \<open>Determinant.det B = B $$ (dim_row B - 1, j) * Determinant.cofactor B (dim_row B - 1) j\<close> \<open>Determinant.det B = Determinant.cofactor B (dim_row B - 1) j\<close> cring_simprules(11) cring_simprules(14) cring_simprules(24) insertCI insertE insert_absorb insert_iff insert_not_empty mult_minus1 nat_pow_distrib r_one square_eq_1_iff square_eq_one vector_space_over_itself.scale_eq_0_iff vector_space_over_itself.scale_left_imp_eq vector_space_over_itself.scale_right_imp_eq)
+           then show ?thesis 
+             using `det B = cofactor B (dim_row B - 1) j` by auto
+         next
+           case False
+
+
+             oops
+           then show ?thesis sledgehammer
+           oops
+           then have "det B = B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j"
+             sledgehammer
+           then show ?thesis sorry
+         next
+           case False
+           then show ?thesis sorry
+         qed
+      next
+        case False
+        have "unit_vec n i = 0\<^sub>v n"
+          unfolding unit_vec_def zero_vec_def 
+          using False by fastforce
+     then have "\<forall> j < dim_col B. B $$ (dim_row B - 1,j) = 0" 
+       using 6
+          by (metis (no_types, lifting) "5" Collect_cong \<open>Matrix.row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (unit_vec n i)) J)\<close> \<open>unit_vec n i = 0\<^sub>v n\<close> carrier_vecD index_row(2) index_unit_vec(3) index_zero_vec(1) pick_le vec_carrier)
+        then show ?thesis using 4 
+          by (simp add: \<open>dim_row B = dim_col B\<close>)
+      qed
+
+        oops
+      proof(cases "i \<in> J")
+        case True
+        obtain j where "pick J j = i \<and> j < dim_col B" sledgehammer
+        then have "row B (dim_row B - 1) $ (pick J 
+        then show ?thesis sorry
+      next
+        case False
+        then show ?thesis sorry
+      qed
     
 
       then show ?thesis sorry
