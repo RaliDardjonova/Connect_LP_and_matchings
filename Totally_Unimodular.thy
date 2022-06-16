@@ -1159,7 +1159,21 @@ lemma fhqwpfh:
   assumes "\<forall> x \<in> S. x \<noteq> a \<longrightarrow> f x = 0"
   shows "sum f S = f a" 
   by (metis (mono_tags, opaque_lifting) Diff_iff add.right_neutral assms(1) assms(2) assms(3) insert_iff sum.neutral sum.remove)
-  
+
+
+lemma bcqkcbpqw:
+shows "submatrix A {} J = 0\<^sub>m 0 (dim_col (submatrix A {} J))"
+  unfolding submatrix_def 
+  apply rule
+  by simp+
+
+lemma fpfhpqwfcqw:
+ fixes A :: "'a  mat"
+ assumes A: "A \<in> carrier_mat nr nc" 
+ assumes "b \<in> carrier_vec nc" 
+ assumes "B = A @\<^sub>r mat_of_rows nc [b]"
+ shows "row B nr = b" 
+  by (smt (verit, del_insts) add.right_neutral add_Suc_right assms(1) assms(2) assms(3) diff_add_inverse gram_schmidt.append_rows_index_same' le_refl length_nth_simps(3) lessI list.size(3) list.size(4) mat_of_rows_carrier(1) mat_of_rows_row)
 
 
 lemma tot_unimod_append_unit_vec:
@@ -1192,7 +1206,7 @@ proof rule
       by (metis False carrier_matI)
     let ?f = "(\<lambda> i. i - nr)"
 
-    have "B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [unit_vec n i]) (?f ` (I - {0..<nr})) J"
+    have 10:"B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [unit_vec n i]) (?f ` (I - {0..<nr})) J"
       using fcdnwe[OF A 1]
       using I_J by blast
 
@@ -1236,8 +1250,15 @@ proof rule
             \<open>submatrix (mat_of_rows n [unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [unit_vec n i]) {0} J\<close>)
       have "B = submatrix A I J @\<^sub>r mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec (unit_vec n i)) J)]"
         by (simp add: \<open>B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [unit_vec n i]) {0} J\<close> fwqfqwfojj)
-      have "row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (unit_vec n i)) J)"
-        sorry
+    
+      have "row (submatrix A I J @\<^sub>r mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec (unit_vec n i)) J)]) 
+        (dim_row (submatrix A I J)) = vec_of_list (nths (list_of_vec (unit_vec n i)) J)"
+        using fpfhpqwfcqw[of "submatrix A I J" "card ({0..<nr} \<inter> I)" "card ({0..<n} \<inter> J)" "vec_of_list (nths (list_of_vec (unit_vec n i)) J)"]
+        by (smt (verit, best) A Collect_cong carrier_dim_vec carrier_matD(2) carrier_matI dim_submatrix(2) dim_vec fpfhpqwfcqw fwqfqwfojj mat_of_rows_carrier(3) nths_list_pick_vec_same unit_vec_carrier)
+      
+      then  have "row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (unit_vec n i)) J)"
+        using fpfhpqwfcqw 
+        by (simp add: \<open>B = submatrix A I J @\<^sub>r mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec (unit_vec n i)) J)]\<close> append_rows_def)
       have 5:"vec_of_list (nths (list_of_vec (unit_vec n i)) J) =
           vec (card {ia. ia<dim_vec (unit_vec n i) \<and> ia\<in>J})  (\<lambda> ia. (unit_vec n i) $ (pick J ia))"
         using nths_list_pick_vec_same[of "(unit_vec n i)" J]
@@ -1332,17 +1353,11 @@ proof rule
              using `det B = cofactor B (dim_row B - 1) j` by auto
          next
            case False
-
-
-             oops
-           then show ?thesis sledgehammer
-           oops
-           then have "det B = B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j"
-             sledgehammer
-           then show ?thesis sorry
-         next
-           case False
-           then show ?thesis sorry
+           then have "\<forall> j < dim_col B. B $$ (dim_row B - 1,j) = 0"
+             using "7" by blast
+           then have "det B = 0" 
+             by (simp add: "4" \<open>dim_row B = dim_col B\<close>)
+           then show ?thesis by auto
          qed
       next
         case False
@@ -1355,47 +1370,282 @@ proof rule
         then show ?thesis using 4 
           by (simp add: \<open>dim_row B = dim_col B\<close>)
       qed
-
-        oops
-      proof(cases "i \<in> J")
-        case True
-        obtain j where "pick J j = i \<and> j < dim_col B" sledgehammer
-        then have "row B (dim_row B - 1) $ (pick J 
-        then show ?thesis sorry
-      next
-        case False
-        then show ?thesis sorry
-      qed
-    
-
-      then show ?thesis sorry
     next
       case False
-      then show ?thesis sorry
+      have 3:"dim_row (mat_of_rows n [unit_vec n i]) =  1" using 1 
+        by fast
+      have "submatrix (mat_of_rows n [unit_vec n i]) (?f ` (I - {0..<nr})) J =
+            submatrix (mat_of_rows n [unit_vec n i]) (?f ` (I - {0..<nr})\<inter>{0..<1}) J"
+        using submatrix_inter_rows' 3 
+        by metis
+      have "?f ` (I - {0..<nr}) \<inter> {0..<1} = {}" 
+        apply safe 
+        apply simp+
+        using False by auto
+      
+      have "submatrix (mat_of_rows n [unit_vec n i]) (?f ` (I - {0..<nr})) J = 
+            submatrix (mat_of_rows n [unit_vec n i]) {} J" 
+        by (metis \<open>(\<lambda>i. i - nr) ` (I - {0..<nr}) \<inter> {0..<1} = {}\<close> \<open>submatrix (mat_of_rows n [unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr}) \<inter> {0..<1}) J\<close>)
+      then have 11: "submatrix (mat_of_rows n [unit_vec n i]) {} J 
+      = 0\<^sub>m 0 (dim_col (submatrix (mat_of_rows n [unit_vec n i]) (?f ` (I - {0..<nr})) J))"
+        using bcqkcbpqw 
+        by (smt (verit) Collect_cong dim_submatrix(2) mat_of_rows_carrier(3))
+      have "B = submatrix A I J" 
+        apply rule
+          apply (metis "10" append_rows_def index_mat_four_block(1) trans_less_add1)
+         apply (metis (no_types, lifting) "10" "11" \<open>submatrix (mat_of_rows n [unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [unit_vec n i]) {} J\<close> add.right_neutral append_rows_def index_mat_four_block(2) index_zero_mat(2))
+        by (metis (no_types, lifting) A Collect_cong I_J \<open>Matrix.row (A @\<^sub>r mat_of_rows n [unit_vec n i]) nr = unit_vec n i\<close> carrier_matD(2) dim_submatrix(2) index_row(2) index_unit_vec(3))
+      then show ?thesis
+        using assms(2) unfolding tot_unimodular_def by auto
     qed
   qed
-  oops
-proof(cases "i< n")
-  case True
-  then show ?thesis sorry
-next
-  case False
-  then have "\<forall> j < n. unit_vec n i $ j = 0" 
-    unfolding unit_vec_def by simp
- have 1: "rows (mat_of_rows n [unit_vec n i]) = [unit_vec n i]" 
-    using mat_of_rows_rows 
-  by simp
-  have "unit_vec n i = 0\<^sub>v n" 
-    by (metis \<open>\<forall>j<n. unit_vec n i $v j = 0\<close> carrier_dim_vec eq_vecI index_unit_vec(3)
-        index_zero_vec(1) zero_carrier_vec)
- have "0\<^sub>v n \<in> set (rows (mat_of_rows n [unit_vec n i]))"
-    by (simp only: 1;simp add: \<open>unit_vec n i = 0\<^sub>v n\<close>)
-  then have  "0\<^sub>v n \<in> set (rows ?B)" using rows_append_union_rows 
-    by (smt (verit, del_insts) "1" \<open>unit_vec n i = 0\<^sub>v n\<close> append_insert assms(1) 
-        gram_schmidt_floor.rows_append_append_lists list.set_intros(1) list.simps(15) 
-        mat_of_rows_carrier(1))
-  then show ?thesis sorry
 qed
+qed
+
+lemma dnwqofihq:
+
+shows "- unit_vec n i = vec n (\<lambda> j. if j = i then - 1 else (0::'a))"
+  unfolding uminus_vec_def unit_vec_def
+  by force
+ 
+  
+
+lemma tot_unimod_append_minus_unit_vec:
+ fixes A :: "'a  mat"
+   assumes A: "A \<in> carrier_mat nr n" 
+   assumes "tot_unimodular A"
+   shows "tot_unimodular (A @\<^sub>r mat_of_rows n [- unit_vec n i])" (is "tot_unimodular ?A'")
+  unfolding tot_unimodular_def
+proof rule
+  fix B
+  show " (\<exists>I J. submatrix (A @\<^sub>r mat_of_rows n [- unit_vec n i])I J = B) \<longrightarrow> det B \<in> {- 1, 0, 1}" 
+  proof
+  assume asm:"\<exists>I J. submatrix (A @\<^sub>r mat_of_rows n [- unit_vec n i]) I J = B"
+  then show "det B \<in> {-1,0,1}" 
+  proof(cases "dim_row B \<noteq> dim_col B")
+    case True
+    then show ?thesis unfolding Determinant.det_def 
+      by (meson insertCI)
+  next
+    case False
+    then  have "dim_row B = dim_col B" by auto
+    obtain I J where I_J: "submatrix (A @\<^sub>r mat_of_rows n [- unit_vec n i]) I J = B"
+      using asm by presburger
+    have 1: "mat_of_rows n [- unit_vec n i] \<in> carrier_mat 1 n" 
+      using mat_of_rows_carrier(1)[of n "[unit_vec n i]"] 
+      by auto
+    have "row ?A' nr = - unit_vec n i" 
+      using append_rows_nth(2)[OF A 1] mat_of_rows_row by simp 
+    have 2: "B \<in> carrier_mat (dim_row B) (dim_row B)" 
+      by (metis False carrier_matI)
+    let ?f = "(\<lambda> i. i - nr)"
+
+    have 10:"B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [- unit_vec n i]) (?f ` (I - {0..<nr})) J"
+      using fcdnwe[OF A 1]
+      using I_J by blast
+
+
+    show ?thesis 
+    proof(cases "nr \<in> I")
+      case True
+      have "{ia. ia < dim_row (A @\<^sub>r mat_of_rows n [- unit_vec n i]) \<and> ia \<in> I} \<noteq> {}"
+        by (smt (verit, del_insts) Collect_empty_eq True add.right_neutral add_Suc_right 
+            append_rows_def assms(1) carrier_matD(1) index_mat_four_block(2) index_zero_mat(2)
+            lessI list.size(3) list.size(4) mat_of_rows_carrier(2))
+      have "finite {ia. ia < dim_row (A @\<^sub>r mat_of_rows n [- unit_vec n i]) \<and> ia \<in> I}"
+        using finite_nat_set_iff_bounded by blast
+      then have "card {ia. ia < dim_row (A @\<^sub>r mat_of_rows n [- unit_vec n i]) \<and> ia \<in> I} > 0"
+        using \<open>{ia. ia < dim_row (A @\<^sub>r mat_of_rows n [- unit_vec n i]) \<and> ia \<in> I} \<noteq> {}\<close> card_gt_0_iff by blast
+      then have "dim_row (submatrix ?A' I J) > 0" 
+          using dim_submatrix(1)[of ?A' I J]  
+          by linarith
+      then have "dim_row B - 1 < dim_row B" 
+        using I_J diff_less verit_comp_simplify(28) by blast
+      have 4: "det B = (\<Sum>j<dim_row B. B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j)"
+        using laplace_expansion_row[OF 2] 
+        using \<open>dim_row B - 1 < dim_row B\<close> by blast
+      have 3:"dim_row (mat_of_rows n [- unit_vec n i]) =  1" using 1 
+        by fast
+      have "submatrix (mat_of_rows n [- unit_vec n i]) (?f ` (I - {0..<nr})) J =
+            submatrix (mat_of_rows n [- unit_vec n i]) (?f ` (I - {0..<nr})\<inter>{0..<1}) J"
+        using submatrix_inter_rows' 3 
+        by metis
+      have "?f ` (I - {0..<nr}) \<inter> {0..<1} = {0}" 
+        apply safe 
+          apply simp+
+         apply (metis DiffI True atLeastLessThan_iff diff_self_eq_0 image_iff less_irrefl)
+        by simp
+      have "submatrix (mat_of_rows n [- unit_vec n i]) (?f ` (I - {0..<nr})) J =
+          submatrix (mat_of_rows n [- unit_vec n i]) {0} J" 
+        by (metis \<open>(\<lambda>i. i - nr) ` (I - {0..<nr}) \<inter> {0..<1} = {0}\<close>
+            \<open>submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr}) \<inter> {0..<1}) J\<close>)
+      have "B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [- unit_vec n i]) {0} J" 
+        by (simp add: \<open>B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J\<close>
+            \<open>submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [- unit_vec n i]) {0} J\<close>)
+      have "B = submatrix A I J @\<^sub>r mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec (- unit_vec n i)) J)]"
+        by (simp add: \<open>B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [- unit_vec n i]) {0} J\<close> fwqfqwfojj)
+      have 12:"- unit_vec n i \<in> carrier_vec n" 
+        using uminus_carrier_vec unit_vec_carrier by blast
+        then  have "row (submatrix A I J @\<^sub>r mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec (- unit_vec n i)) J)]) 
+        (dim_row (submatrix A I J)) = vec_of_list (nths (list_of_vec (- unit_vec n i)) J)"
+        using fpfhpqwfcqw[of "submatrix A I J" "card ({0..<nr} \<inter> I)" "card ({0..<n} \<inter> J)" "vec_of_list (nths (list_of_vec (- unit_vec n i)) J)"]
+       A Collect_cong carrier_dim_vec carrier_matD(2) carrier_matI dim_submatrix(2) dim_vec fpfhpqwfcqw fwqfqwfojj mat_of_rows_carrier(3) nths_list_pick_vec_same unit_vec_carrier
+        by (smt (verit, best)) 
+        
+      
+      then  have "row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (- unit_vec n i)) J)"
+        using fpfhpqwfcqw 
+        by (simp add: \<open>B = submatrix A I J @\<^sub>r mat_of_rows (card ({0..<n} \<inter> J)) [vec_of_list (nths (list_of_vec (- unit_vec n i)) J)]\<close> append_rows_def)
+      have 5:"vec_of_list (nths (list_of_vec (- unit_vec n i)) J) =
+          vec (card {ia. ia<dim_vec (- unit_vec n i) \<and> ia\<in>J})  (\<lambda> ia. (- unit_vec n i) $ (pick J ia))"
+        using nths_list_pick_vec_same[of "(- unit_vec n i)" J]
+        by force
+     then have 6:"\<forall> j < dim_col B. B $$ (dim_row B - 1,j) = (- unit_vec n i) $ (pick J j)" 
+          using 5 
+          by (smt (verit, best) Matrix.row_def \<open>Matrix.row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (- unit_vec n i)) J)\<close> index_vec row_carrier vec_carrier_vec)
+      
+      show ?thesis
+      proof(cases "i < n")
+        case True
+        have 7: "\<forall> j < dim_col B. pick J j \<noteq> i \<longrightarrow>  B $$ (dim_row B - 1,j) = 0"
+        proof safe
+          fix k
+          assume asm: "k < dim_col B" "pick J k \<noteq> i"
+          have "pick J k < n" using 12 
+            "5" Collect_cong \<open>Matrix.row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (- unit_vec n i)) J)\<close> asm(1)  pick_le row_carrier vec_carrier_vec 
+            by (metis (no_types, lifting) carrier_vecD)
+          have "- unit_vec n i $ (pick J k) = 0" 
+ unfolding unit_vec_def 
+            using asm(2)
+            sledgehammer
+            apply (simp only: dnwqofihq)
+            using dnwqofihq[of i]
+            sledgehammer
+            unfolding unit_vec_def 
+            oops
+            using asm(2) sledgehammer
+          then show " B $$ (dim_row B - 1, k) = 0" 
+            using "6" asm(1) by auto
+        qed
+        have "\<forall> j < dim_col B. pick J j = i \<longrightarrow>  B $$ (dim_row B - 1,j) = 1"
+          by (metis "6" True index_unit_vec(2))
+      
+         show ?thesis 
+         proof(cases "\<exists>j. j < dim_col B \<and> pick J j = i")
+           case True
+           obtain j where j: "pick J j = i \<and> j < dim_col B" 
+             using True by blast
+           have "B $$ (dim_row B - 1,j) = 1" 
+             using \<open>\<forall>j<dim_col B. pick J j = i \<longrightarrow> B $$ (dim_row B - 1, j) = 1\<close> \<open>pick J j = i \<and> j < dim_col B\<close> by presburger
+           have "\<forall> k < dim_col B. k \<noteq> j \<longrightarrow>  B $$ (dim_row B - 1,k) = 0" 
+           proof safe
+             fix k
+             assume asm: "k < dim_col B" " k \<noteq> j"
+             have "pick J k \<noteq> i" 
+             proof(rule ccontr)
+               assume " \<not> pick J k \<noteq> i"
+               then have "pick J k = pick J j" 
+                 using j by fastforce
+               show False
+               proof(cases "infinite J")
+                 case True
+                 then show ?thesis 
+                   using \<open>pick J k = pick J j\<close> asm(2) pick_eq_iff_inf by blast
+               next
+                 case False
+                 have "dim_col B = (card {ia. ia<dim_col (A @\<^sub>r mat_of_rows n [- unit_vec n i]) \<and> ia\<in>J})" 
+                      using I_J dim_submatrix(2)
+                      by blast
+                    then have "dim_col B = (card {ia. ia<n \<and> ia\<in>J})" 
+                      by (metis \<open>Matrix.row (A @\<^sub>r mat_of_rows n [- unit_vec n i]) nr = - unit_vec n i\<close> index_row(2) index_unit_vec(3))
+                 have "j < card J" 
+                   by (metis (mono_tags, lifting) \<open>dim_col B = card {ia. ia < n \<and> ia \<in> J}\<close> \<open>pick J k = pick J j\<close> asm(2) basic_trans_rules(21) card_mono j mem_Collect_eq not_less pick_eq_iff_inf subsetI)
+                 then show ?thesis 
+                   by (metis (mono_tags, lifting) False \<open>\<not> pick J k \<noteq> i\<close> \<open>dim_col B = card {ia. ia < n \<and> ia \<in> J}\<close> asm(1) asm(2) basic_trans_rules(21) card_mono j less_not_refl mem_Collect_eq nat_neq_iff not_less pick_mono subsetI)
+               qed
+             qed
+             then show " B $$ (dim_row B - 1, k) = 0" 
+               using "7" asm(1) by presburger
+           qed
+           have "\<forall>k \<in> {0..<dim_col B}. j\<noteq>k \<longrightarrow>  B $$ (dim_row B - 1,k) = 0" 
+             using \<open>\<forall>k<dim_col B. k \<noteq> j \<longrightarrow> B $$ (dim_row B - 1, k) = 0\<close> atLeastLessThan_iff by blast
+        
+           then have "(\<Sum>j \<in> {0..<dim_col B}. B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j) =
+               B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j" 
+             using fhqwpfh[of "{0..<dim_col B}" j]
+             by (metis (no_types, lifting) atLeast0LessThan finite_atLeastLessThan j lessThan_iff vector_space_over_itself.scale_eq_0_iff)
+  
+           then have "(\<Sum>j<dim_col B. B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j) =
+              B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j" 
+             by (metis atLeast0LessThan)
+           then have "det B =  B $$ (dim_row B - 1,j) * cofactor B (dim_row B - 1) j"
+             by (metis "4" \<open>dim_row B = dim_col B\<close>)
+           then have "det B = cofactor B (dim_row B - 1) j" 
+             using \<open>B $$ (dim_row B - 1, j) = 1\<close> l_one by presburger
+           have 8: "cofactor B (dim_row B - 1) j = 
+                (-1)^((dim_row B - 1)+j) * det (mat_delete B (dim_row B - 1) j)" 
+             by (meson Determinant.cofactor_def)
+           have 9:"mat_delete B (dim_row B - 1) j = submatrix A I (J - {pick J j})"
+             using gbergre 
+             by (smt (z3) "5" A Collect_cong One_nat_def Suc_eq_plus1 \<open>B = submatrix A I J @\<^sub>r submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J\<close> \<open>Matrix.row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (- unit_vec n i)) J)\<close> \<open>submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [- unit_vec n i]) {0} J\<close> append_rows_def carrier_matD(2) diff_add_inverse dim_submatrix(2) dim_vec fwqfqwfojj index_mat_four_block(2) index_row(2) index_unit_vec(3) index_zero_mat(2) j list.size(3) list.size(4) mat_of_rows_carrier(1) mat_of_rows_carrier(2) plus_1_eq_Suc unit_vec_carrier vec_carrier)
+           have "det (submatrix A I (J - {pick J j})) \<in> {-1, 0, 1}" 
+             using assms(2) unfolding tot_unimodular_def 
+             by blast
+           then have "cofactor B (dim_row B - 1) j \<in> {-1, 0, 1}" using 8 9 
+             by (smt (z3) UNIV_I \<open>B $$ (dim_row B - 1, j) = 1\<close> \<open>Determinant.det B = B $$ (dim_row B - 1, j) * Determinant.cofactor B (dim_row B - 1) j\<close> \<open>Determinant.det B = Determinant.cofactor B (dim_row B - 1) j\<close> cring_simprules(11) cring_simprules(14) cring_simprules(24) insertCI insertE insert_absorb insert_iff insert_not_empty mult_minus1 nat_pow_distrib r_one square_eq_1_iff square_eq_one vector_space_over_itself.scale_eq_0_iff vector_space_over_itself.scale_left_imp_eq vector_space_over_itself.scale_right_imp_eq)
+           then show ?thesis 
+             using `det B = cofactor B (dim_row B - 1) j` by auto
+         next
+           case False
+           then have "\<forall> j < dim_col B. B $$ (dim_row B - 1,j) = 0"
+             using "7" by blast
+           then have "det B = 0" 
+             by (simp add: "4" \<open>dim_row B = dim_col B\<close>)
+           then show ?thesis by auto
+         qed
+      next
+        case False
+        have "- unit_vec n i = 0\<^sub>v n"
+          unfolding unit_vec_def zero_vec_def 
+          using False by fastforce
+     then have "\<forall> j < dim_col B. B $$ (dim_row B - 1,j) = 0" 
+       using 6
+          by (metis (no_types, lifting) "5" Collect_cong \<open>Matrix.row B (dim_row B - 1) = vec_of_list (nths (list_of_vec (- unit_vec n i)) J)\<close> \<open>- unit_vec n i = 0\<^sub>v n\<close> carrier_vecD index_row(2) index_unit_vec(3) index_zero_vec(1) pick_le vec_carrier)
+        then show ?thesis using 4 
+          by (simp add: \<open>dim_row B = dim_col B\<close>)
+      qed
+    next
+      case False
+      have 3:"dim_row (mat_of_rows n [- unit_vec n i]) =  1" using 1 
+        by fast
+      have "submatrix (mat_of_rows n [- unit_vec n i]) (?f ` (I - {0..<nr})) J =
+            submatrix (mat_of_rows n [- unit_vec n i]) (?f ` (I - {0..<nr})\<inter>{0..<1}) J"
+        using submatrix_inter_rows' 3 
+        by metis
+      have "?f ` (I - {0..<nr}) \<inter> {0..<1} = {}" 
+        apply safe 
+        apply simp+
+        using False by auto
+      
+      have "submatrix (mat_of_rows n [- unit_vec n i]) (?f ` (I - {0..<nr})) J = 
+            submatrix (mat_of_rows n [- unit_vec n i]) {} J" 
+        by (metis \<open>(\<lambda>i. i - nr) ` (I - {0..<nr}) \<inter> {0..<1} = {}\<close> \<open>submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr}) \<inter> {0..<1}) J\<close>)
+      then have 11: "submatrix (mat_of_rows n [- unit_vec n i]) {} J 
+      = 0\<^sub>m 0 (dim_col (submatrix (mat_of_rows n [- unit_vec n i]) (?f ` (I - {0..<nr})) J))"
+        using bcqkcbpqw 
+        by (smt (verit) Collect_cong dim_submatrix(2) mat_of_rows_carrier(3))
+      have "B = submatrix A I J" 
+        apply rule
+          apply (metis "10" append_rows_def index_mat_four_block(1) trans_less_add1)
+         apply (metis (no_types, lifting) "10" "11" \<open>submatrix (mat_of_rows n [- unit_vec n i]) ((\<lambda>i. i - nr) ` (I - {0..<nr})) J = submatrix (mat_of_rows n [- unit_vec n i]) {} J\<close> add.right_neutral append_rows_def index_mat_four_block(2) index_zero_mat(2))
+        by (metis (no_types, lifting) A Collect_cong I_J \<open>Matrix.row (A @\<^sub>r mat_of_rows n [- unit_vec n i]) nr = - unit_vec n i\<close> carrier_matD(2) dim_submatrix(2) index_row(2) index_unit_vec(3))
+      then show ?thesis
+        using assms(2) unfolding tot_unimodular_def by auto
+    qed
+  qed
+qed
+qed
+
 
 lemma tot_unimod_append_one:
   assumes "tot_unimodular A"
