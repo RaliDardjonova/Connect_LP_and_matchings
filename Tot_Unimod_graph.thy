@@ -276,6 +276,27 @@ proof safe
       by (metis (no_types, lifting) \<open>insidence_mat E $$ (t1, k1) = 0\<close> asm(1) assms(2) assms(6) dim_submatrix(1) dim_submatrix(2) k1 submatrix_index t1)
   qed
 
+lemma submatrix_insidence_zero_or_one:
+  assumes "graph_invar E"
+  assumes "k < dim_col B"
+  assumes "i < dim_row B"
+  assumes "B = submatrix (insidence_mat E) I J"
+  shows "B $$ (i, k) = 1 \<or> B $$ (i, k) = 0"
+proof -
+  have "B $$ (i, k) = (insidence_mat E) $$ (pick I i, pick J k)" 
+    by (metis (no_types, lifting) assms(2) assms(3) assms(4) dim_submatrix(1) dim_submatrix(2) submatrix_index)
+  have "pick I i < card (Vs E)" 
+    by (metis (no_types, lifting) assms(3) assms(4) dim_submatrix(1) exist_index_in_submat gram_schmidt_floor.dim_row_insidence_mat)
+  have "pick J k < card E" 
+    by (metis assms(2) assms(4) dim_col_insidence_mat dim_submatrix(2) pick_le)
+  
+  have "(insidence_mat E) $$ (pick I i, pick J k) = 1 \<or> (insidence_mat E) $$ (pick I i, pick J k) = 0"
+    using \<open>pick I i < card (Vs E)\<close> \<open>pick J k < card E\<close> elems_insidence_one_zero by blast
+  then show ?thesis 
+    using \<open>B $$ (i, k) = insidence_mat E $$ (pick I i, pick J k)\<close> by presburger
+qed
+  
+
 lemma nowqdnwqo:
   assumes "bipartite E" 
   assumes "B = submatrix (insidence_mat E) I J"
@@ -391,8 +412,57 @@ proof(induct "dim_row B" arbitrary: B I J rule: less_induct)
         case False
         have 4:"dim_row B > 0" using False by auto
 
-      have 5:"\<forall> k < dim_col B. \<exists> i < dim_row B. \<exists> j < dim_row B. B $$ (i, k) = 1 \<and> B $$ (j, k) = 1 \<and> i\<noteq>j" 
-        sorry
+        have 5:"\<forall> k < dim_col B. \<exists> i < dim_row B. \<exists> j < dim_row B. B $$ (i, k) = 1 \<and> B $$ (j, k) = 1 \<and> i\<noteq>j" 
+           apply safe
+          apply (rule ccontr)
+        proof -
+          fix k
+          assume "k < dim_col B"
+          assume "\<not> (\<exists>i<dim_row B. \<exists>j<dim_row B. B $$ (i, k) = 1 \<and> B $$ (j, k) = 1 \<and> i \<noteq> j)"
+          have "col B k \<noteq> 0\<^sub>v (dim_row B)"
+            using `\<not> (\<exists>j<dim_col B. col B j = 0\<^sub>v (dim_row B))` 
+            using \<open>k < dim_col B\<close> by blast
+          have "\<exists> i < dim_row B. B $$ (i, k) = 1"
+          proof(rule ccontr)
+            assume "\<not> (\<exists>i<dim_row B. B $$ (i, k) = 1)"
+            then have "\<forall>i<dim_row B. B $$ (i, k) = 0" 
+              by (metis \<open>k < dim_col B\<close> assms(1) bipartite_def gram_schmidt_floor.submatrix_insidence_zero_or_one less.prems)
+            then have "\<forall>i<dim_row B. col B k $ i = 0"
+              by (metis \<open>k < dim_col B\<close> index_col)
+            then have "col B k = 0\<^sub>v (dim_row B)"
+              unfolding zero_vec_def 
+              by (metis Matrix.zero_vec_def dim_col dim_vec eq_vecI index_zero_vec(1))
+            then show False
+              using `col B k \<noteq> 0\<^sub>v (dim_row B)` by auto
+          qed
+          then obtain i where "i < dim_row B \<and> B $$ (i, k) = 1" by auto
+          have "\<forall> j < dim_row B. i \<noteq> j \<longrightarrow>  B $$ (j, k) = 0" 
+          proof safe
+            fix j
+            assume asm: "j < dim_row B" "i \<noteq> j"
+            show " B $$ (j, k) = 0"
+            proof(rule ccontr)
+              assume "B $$ (j, k) \<noteq> 0"
+              then have "B $$ (j, k) = 1" 
+                using submatrix_insidence_zero_or_one 
+                by (metis \<open>k < dim_col B\<close> asm(1) assms(1) bipartite_def less.prems)
+              then show False 
+                using \<open>\<not> (\<exists>i<dim_row B. \<exists>j<dim_row B. B $$ (i, k) = 1 \<and> B $$ (j, k) = 1 \<and> i \<noteq> j)\<close> \<open>i < dim_row B \<and> B $$ (i, k) = 1\<close> asm(1) asm(2) by blast
+            qed
+          qed
+          have "col B k = unit_vec (dim_row B) i" 
+          proof 
+            show "dim_vec (col B k) = dim_vec (unit_vec (dim_row B) i)"
+              by (metis dim_col index_unit_vec(3))
+            fix ia
+            assume "ia < dim_vec (unit_vec (dim_row B) i)" 
+            show "col B k $v ia = unit_vec (dim_row B) i $v ia" 
+              by (metis \<open>\<forall>j<dim_row B. i \<noteq> j \<longrightarrow> B $$ (j, k) = 0\<close> \<open>dim_vec (col B k) = dim_vec (unit_vec (dim_row B) i)\<close> \<open>i < dim_row B \<and> B $$ (i, k) = 1\<close> \<open>ia < dim_vec (unit_vec (dim_row B) i)\<close> \<open>k < dim_col B\<close> dim_col index_col index_unit_vec(1))
+          qed
+          then show False using `\<not> (\<exists>j<dim_col B. \<exists>i<dim_row B. col B j = unit_vec (dim_row B) i)`
+            using \<open>i < dim_row B \<and> B $$ (i, k) = 1\<close> \<open>k < dim_col B\<close> by blast
+        qed
+      
       obtain X where "graph_invar E \<and> ( X \<subseteq> Vs E \<and> (\<forall> e \<in> E. \<exists> u v.  e = {u, v} \<and> (u \<in> X \<and> v \<in> Vs E - X)))"
         using assms(1) unfolding bipartite_def by auto
       let ?u = "vec (dim_row B) (\<lambda> i. if (vertices_list E) ! pick I i \<in> X then (1::'a)  else -1)"
@@ -423,40 +493,79 @@ proof(induct "dim_row B" arbitrary: B I J rule: less_induct)
           unfolding scalar_prod_def 
           by (metis dim_vec)
         have "sum (\<lambda> k. (col B t $ k) * (?u $ k)) {0..<dim_row B} = 
-              (col B t $ i) * (?u $ i) + (col B t $ j) * (?u $ j)" sorry
+              (col B t $ i) * (?u $ i) + (col B t $ j) * (?u $ j)" 
+        proof -
+          have "sum (\<lambda> k. (col B t $ k) * (?u $ k)) {0..<dim_row B} = 
+              sum (\<lambda> k. (col B t $ k) * (?u $ k)) ({0..<dim_row B} - {i,j}) 
+            + sum (\<lambda> k. (col B t $ k) * (?u $ k)) {i,j}" 
+            by (meson atLeastLessThan_iff empty_subsetI finite_atLeastLessThan i_j(3) i_j(4) insert_subset sum.subset_diff zero_order(1))
+          have "\<forall> k \<in> ({0..<dim_row B} - {i,j}). (col B t $ k) * (?u $ k) = 0" 
+            by (metis Diff_iff \<open>\<forall>k<dim_row B. k \<noteq> i \<and> k \<noteq> j \<longrightarrow> col B t $v k = 0\<close> atLeastLessThan_iff insertCI vector_space_over_itself.scale_eq_0_iff)
+          have "sum (\<lambda> k. (col B t $ k) * (?u $ k)) ({0..<dim_row B} - {i,j}) = 0" 
+            by (metis (no_types, lifting) R.add.finprod_all1 \<open>\<forall>k\<in>{0..<dim_row B} - {i, j}. col B t $v k * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v k = 0\<close>)
+          have "sum (\<lambda> k. (col B t $ k) * (?u $ k)) {i,j} = (col B t $ i) * (?u $ i) + (col B t $ j) * (?u $ j)"
+            by (meson i_j(5) sum_two_elements)
+          then show ?thesis 
+            using R.show_l_zero \<open>(\<Sum>k = 0..<dim_row B. col B t $v k * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v k) = (\<Sum>k\<in>{0..<dim_row B} - {i, j}. col B t $v k * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v k) + (\<Sum>k\<in>{i, j}. col B t $v k * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v k)\<close> \<open>(\<Sum>k\<in>{0..<dim_row B} - {i, j}. col B t $v k * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v k) = 0\<close> by presburger
+        qed
         have "(col B t $ i) = 1 \<and> (col B t $ j) = 1" 
           by (metis i_j(1) i_j(2) i_j(3) i_j(4) index_col t)
         have "col B t \<bullet> ?u = (?u $ i) + (?u $ j)" 
           using \<open>(\<Sum>k = 0..<dim_row B. col B t $v k * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v k) = col B t $v i * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v i + col B t $v j * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v j\<close> \<open>col B t $v i = 1 \<and> col B t $v j = 1\<close> \<open>col B t \<bullet> Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) = (\<Sum>k = 0..<dim_row B. col B t $v k * Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v k)\<close> cring_simprules(12) by presburger
+                have "pick J t < card E" 
+            by (metis dim_submatrix(2) gram_schmidt_floor.dim_col_insidence_mat less(2) pick_le t)
+
+          have "insidence_mat E $$ (pick I i, pick J t) = 1" 
+            by (metis (no_types, lifting) dim_submatrix(1) dim_submatrix(2) i_j(1) i_j(3) less(2) submatrix_index t)
+          then have "vertices_list E ! pick I i \<in> edges_list E! pick J t" 
+            by (metis (no_types, lifting) \<open>pick J t < card E\<close> dim_submatrix(1) exist_index_in_submat gram_schmidt_floor.dim_row_insidence_mat i_j(3) less(2) one_then_in_edge)
+          
+          have "insidence_mat E $$ (pick I j, pick J t) = 1"
+            by (metis (no_types, lifting) dim_submatrix(1) dim_submatrix(2) i_j(2) i_j(4) less(2) submatrix_index t)
+          then have "vertices_list E ! pick I j \<in> edges_list E! pick J t" 
+            by (metis (no_types, lifting) \<open>pick J t < card E\<close> dim_submatrix(1) exist_index_in_submat gram_schmidt_floor.dim_row_insidence_mat gram_schmidt_floor.one_then_in_edge i_j(4) less(2))
+          
+          have "(edges_list E! pick J t) \<in> E"
+            using edges_list_el_in_E
+            using \<open>pick J t < card E\<close> by blast
+          have "vertices_list E ! pick I i \<noteq> vertices_list E ! pick I j"             
+            by (smt (verit, ccfv_SIG) diff_verts dim_row_mat_less_card_I dim_submatrix(1) exist_index_in_submat gram_schmidt_floor.dim_row_insidence_mat i_j(3) i_j(4) i_j(5) le_neq_implies_less less(2) less_or_eq_imp_le not_less order_trans_rules(23) pick_eq_iff_inf pick_mono_le)
+          then have "edges_list E! pick J t = {vertices_list E ! pick I i, vertices_list E ! pick I j}"
+            using 6 
+            using \<open>edges_list E ! pick J t \<in> E\<close> \<open>vertices_list E ! pick I i \<in> edges_list E ! pick J t\<close> \<open>vertices_list E ! pick I j \<in> edges_list E ! pick J t\<close> by fastforce
+         
+        
         have "(?u $ i) + (?u $ j) = 0"
         proof(cases "vertices_list E ! pick I i \<in> X")
           case True
           have "(?u $ i) = 1" 
             by (simp add: True i_j(3))
-          have "insidence_mat E $$ (pick I i, pick J t) = 1" 
-            by (metis (no_types, lifting) dim_submatrix(1) dim_submatrix(2) i_j(1) i_j(3) less(2) submatrix_index t)
-          then have "vertices_list E ! pick I i \<in> edges_list E! pick J t" 
-            by (metis (full_types) "1" dim_submatrix(1) dim_submatrix(2) gram_schmidt_floor.dim_col_insidence_mat gram_schmidt_floor.dim_row_insidence_mat gram_schmidt_floor.one_then_in_edge i_j(3) less(2) pick_le t)
-        
-          have "insidence_mat E $$ (pick I j, pick J t) = 1"
-            by (metis (no_types, lifting) dim_submatrix(1) dim_submatrix(2) i_j(2) i_j(4) less(2) submatrix_index t)
-          then have "vertices_list E ! pick I j \<in> edges_list E! pick J t" 
-            by (metis (full_types) "1" dim_submatrix(1) dim_submatrix(2) gram_schmidt_floor.dim_col_insidence_mat gram_schmidt_floor.dim_row_insidence_mat gram_schmidt_floor.one_then_in_edge i_j(4) less(2) pick_le t)
-          have "card (edges_list E! pick J t) = 2" sledgehammer
-          
-          then show ?thesis sorry
+          have "vertices_list E ! pick I j \<notin> X" 
+            using True \<open>edges_list E ! pick J t = {vertices_list E ! pick I i, vertices_list E ! pick I j}\<close> \<open>edges_list E ! pick J t \<in> E\<close> \<open>graph_invar E \<and> X \<subseteq> Vs E \<and> (\<forall>e\<in>E. \<exists>u v. e = {u, v} \<and> u \<in> X \<and> v \<in> Vs E - X)\<close> insert_absorb by fastforce
+          then have "?u $ j = -1" 
+            by (simp add: i_j(4))
+          then show ?thesis 
+            using \<open>Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v i = 1\<close> by linarith
         next
           case False
-          then show ?thesis sorry
+           have "(?u $ i) = - 1" 
+             by (simp add: False i_j(3))
+           have "vertices_list E ! pick I j \<in> X" 
+             using False \<open>edges_list E ! pick J t \<in> E\<close> \<open>graph_invar E \<and> X \<subseteq> Vs E \<and> (\<forall>e\<in>E. \<exists>u v. e = {u, v} \<and> u \<in> X \<and> v \<in> Vs E - X)\<close> \<open>vertices_list E ! pick I i \<in> edges_list E ! pick J t\<close> \<open>vertices_list E ! pick I i \<noteq> vertices_list E ! pick I j\<close> \<open>vertices_list E ! pick I j \<in> edges_list E ! pick J t\<close> by force
+           then have "?u $ j = 1" 
+            by (simp add: i_j(4))
+          then show ?thesis 
+            using \<open>Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v i = - 1\<close> by linarith
         qed
         
 
 
-        oops
+        
         show "col B t \<bullet> ?u = 0" 
+          using \<open>Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v i + Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v j = 0\<close> \<open>col B t \<bullet> Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) = Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v i + Matrix.vec (dim_row B) (\<lambda>i. if vertices_list E ! pick I i \<in> X then 1 else - 1) $v j\<close> by presburger
+      qed
 
-        oops
-        sorry
+      
       then have "\<forall> t < dim_row B\<^sup>T. row B\<^sup>T t \<bullet> ?u = 0" 
         by (metis Matrix.col_transpose Matrix.transpose_transpose index_transpose_mat(2))
   
@@ -479,7 +588,9 @@ proof(induct "dim_row B" arbitrary: B I J rule: less_induct)
     qed
   qed
 qed
- 
+qed
+qed
+qed
 
 
 lemma bipartite_tot_unimod:
@@ -487,7 +598,10 @@ lemma bipartite_tot_unimod:
   shows "tot_unimodular (insidence_mat E)" 
 proof -
   have "(\<forall> B. (\<exists> I J. submatrix (insidence_mat E) I J = B) \<longrightarrow> det B \<in> {-1, 0, 1})"
-  proof(induct)
+    by (meson assms gram_schmidt_floor.nowqdnwqo)
+  then show ?thesis
+    using tot_unimodular_def by blast
+qed
 
 end
 
