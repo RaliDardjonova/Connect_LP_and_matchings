@@ -1086,6 +1086,316 @@ proof
      qed
    qed
 
+
+lemma gbergre2:
+  fixes A :: "'a  mat"
+  assumes A: "A \<in> carrier_mat nk1 nk2"
+  assumes "B = submatrix A I J" 
+  assumes "i < dim_row B"
+  assumes "j < dim_col B" 
+  shows "mat_delete B i j =  submatrix A (I - {pick I i})  (J - {pick J j})"
+proof
+  have "dim_col (mat_delete B i j) =
+      dim_col B - 1" using mat_delete_dim(2) 
+    by metis 
+  have "dim_col (submatrix A (I - {pick I i}) (J - {pick J j})) = 
+    card {i. i < dim_col A \<and> i \<in> (J - {pick J j})}"
+    using dim_submatrix(2)[of A I "J - {pick J j}"] 
+    using dim_submatrix(2) by blast
+  have "dim_col B = card {i. i < dim_col A \<and> i \<in> J}" 
+    using assms(4) dim_submatrix(2)
+    using assms(2) by blast
+  have "j < card {i. i < dim_col A \<and> i \<in> J}" 
+    using \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> assms(4) by presburger
+  have "{i. i < dim_col A \<and> i \<in> J} \<subseteq> J" 
+    by fastforce
+ 
+  have "{i. i < dim_col A \<and> i \<in> J} = {i. i < dim_col A \<and> i \<in> (J - {pick J j})} \<union> {pick J j}"
+    apply safe
+    using \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> assms(4) pick_le apply presburger
+    apply(cases "infinite J")
+    apply (simp add: pick_in_set_inf)
+    by (meson \<open>j < card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(22) card_mono pick_in_set)
+  
+  then have "card {i. i < dim_col A \<and> i \<in> J} - 1 = card {i. i < dim_col A \<and> i \<in> (J - {pick J j})}"
+    by force
+  
+  show " dim_col (mat_delete B i j) =
+    dim_col (submatrix A (I - {pick I i})  (J - {pick J j}))" 
+    using \<open>card {i. i < dim_col A \<and> i \<in> J} - 1 = card {i. i < dim_col A \<and> i \<in> J - {pick J j}}\<close> \<open>dim_col (mat_delete B i j) = dim_col B - 1\<close> \<open>dim_col (submatrix A (I - {pick I i}) (J - {pick J j})) = card {i. i < dim_col A \<and> i \<in> J - {pick J j}}\<close> \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> by presburger
+
+ have "dim_row (mat_delete B i j) =
+      dim_row B - 1" using mat_delete_dim(1) 
+    by metis 
+  have "dim_row (submatrix A (I - {pick I i}) (J - {pick J j})) = 
+    card {k. k < dim_row A \<and> k \<in> (I - {pick I i})}" 
+     using dim_submatrix(1)
+    by blast
+  have "dim_row B = card {k. k < dim_row A \<and> k \<in> I}"
+    using dim_submatrix(1) assms(2) by blast
+  have "i < card {i. i < dim_row A \<and> i \<in> I}" 
+    using \<open>dim_row B = card {i. i < dim_row A \<and> i \<in> I}\<close> assms(3) by presburger
+  have "{i. i < dim_row A \<and> i \<in> I} \<subseteq> I" 
+    by fastforce
+ 
+  have "{i. i < dim_row A \<and> i \<in> I} = {k. k < dim_row A \<and> k \<in> (I - {pick I i})} \<union> {pick I i}"
+    apply safe
+    using \<open>dim_row B = card {i. i < dim_row A \<and> i \<in> I}\<close> assms(3) pick_le 
+  apply presburger
+    apply(cases "infinite I")
+    apply (simp add: pick_in_set_inf)
+    by (meson \<open>i < card {i. i < dim_row A \<and> i \<in> I}\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close> basic_trans_rules(22) card_mono pick_in_set)
+  
+  then have "card {i. i < dim_row A \<and> i \<in> I} - 1 = card {k. k < dim_row A \<and> k \<in> (I - {pick I i})}"
+    by force
+  
+  show " dim_row (mat_delete B i j) =
+    dim_row (submatrix A (I - {pick I i})  (J - {pick J j}))" 
+    using \<open>card {i. i < dim_row A \<and> i \<in> I} - 1 = card {k. k < dim_row A \<and> k \<in> I - {pick I i}}\<close> 
+      \<open>dim_row (mat_delete B i j) = dim_row B - 1\<close>
+      \<open>dim_row (submatrix A (I - {pick I i}) (J - {pick J j})) = card {k. k < dim_row A \<and> k \<in> I - {pick I i}}\<close> 
+      \<open>dim_row B = card {i. i < dim_row A \<and> i \<in> I}\<close> by presburger
+
+
+
+
+  fix t k
+  assume asmi: "t < dim_row (submatrix A (I - {pick I i}) (J - {pick J j}))"
+  assume asmk: "k < dim_col (submatrix A (I - {pick I i}) (J - {pick J j}))"
+  have asmi': "t < dim_row (mat_delete B i j)"  
+    using \<open>dim_row (mat_delete B i j) = dim_row (submatrix A (I - {pick I i}) (J - {pick J j}))\<close> asmi by presburger
+  have asmk': "k < dim_col (mat_delete B i j)" 
+    using \<open>dim_col (mat_delete B i j) = dim_col (submatrix A (I - {pick I i}) (J - {pick J j}))\<close> asmk by presburger
+
+
+ show "(mat_delete B i j) $$ (t, k) =
+         submatrix A (I - {pick I i}) (J - {pick J j}) $$ (t, k)"
+ proof(cases "dim_col B = 0")
+   case True
+   then show ?thesis 
+     using assms(4) by linarith
+ next
+   case False
+   have 1:"j < Suc (dim_col B - 1)" 
+     using assms(4) by linarith 
+   have 2: "i < Suc (dim_row B - 1)" 
+     using assms(3) by linarith
+   have 3: "k < dim_col B - 1" 
+     using \<open>dim_col (mat_delete B i j) = dim_col B - 1\<close> asmk' by presburger
+   have 4:"B \<in> carrier_mat (Suc (dim_row B - 1)) (Suc (dim_col B - 1))" 
+     by (metis "3" \<open>dim_row (mat_delete B i j) = dim_row B - 1\<close> add_diff_inverse_nat asmi' carrier_matI less_nat_zero_code nat_diff_split_asm plus_1_eq_Suc)
+    have 5: "t < (dim_row B -1)" 
+      using \<open>dim_row (mat_delete B i j) = dim_row B - 1\<close> asmi' by presburger
+   
+   have "mat_delete (B) i j $$ (t, k) =
+            B $$ (insert_index i t, insert_index j k)" 
+     using mat_delete_index'[OF 4 2 1 5 3]
+     by presburger
+
+
+ 
+ have "insert_index j k < dim_col B" 
+   by (metis "3" "4" basic_trans_rules(20) carrier_matD(2) insert_index_def not_less_eq)
+   obtain k1 where k1: "col A k1 = col (submatrix A UNIV J) (insert_index j k) \<and> k1 < dim_col A \<and> k1 = pick J (insert_index j k)" 
+     using asmk  pick_le col_submatrix_UNIV 
+     by (metis (no_types, lifting) Collect_cong \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close>)
+   obtain k2 where k2: "col A k2 = col (submatrix A UNIV (J - {pick J j})) k \<and> k2 < dim_col A \<and> k2 = pick (J - {pick J j}) k"
+         using asmk dim_submatrix(2) pick_le col_submatrix_UNIV 
+         by (metis (no_types, lifting) Collect_cong)
+
+
+ have "insert_index i t < dim_row B" 
+   by (metis "4" \<open>dim_row (mat_delete B i j) = dim_row B - 1\<close> asmi' basic_trans_rules(20) carrier_matD(1) insert_index_def not_less_eq)
+   obtain t1 where t1: "row A t1 = row (submatrix A I UNIV) (insert_index i t) \<and> t1 < dim_row A \<and> t1 = pick I (insert_index i t)" 
+     using asmi  pick_le row_submatrix_UNIV 
+     by (metis (full_types) \<open>dim_row B = card {k. k < dim_row A \<and> k \<in> I}\<close> \<open>insert_index i t < dim_row B\<close>)
+  obtain t2 where t2: "row A t2 = row (submatrix A (I - {pick I i}) UNIV) t \<and> t2 < dim_row A \<and> t2 = pick (I - {pick I i}) t"
+    using asmi dim_submatrix(1) pick_le row_submatrix_UNIV 
+    by (metis (full_types))
+
+  have 7: "B = submatrix (submatrix A I UNIV) UNIV J" 
+    using assms(2) submatrix_split2 by blast
+
+       have "B $$ (insert_index i t, insert_index j k) = A $$ ( pick I (insert_index i t), pick J (insert_index j k))"
+         apply(simp only: assms(2))
+         by (metis (no_types, lifting) \<open>insert_index i t < dim_row B\<close> \<open>insert_index j k < dim_col B\<close> assms(2) dim_submatrix(1) dim_submatrix(2) submatrix_index)
+       have "B $$ (insert_index i t, insert_index j k) = A $$ (t1, k1)" 
+  using \<open>B $$ (insert_index i t, insert_index j k) = A $$ (pick I (insert_index i t), pick J (insert_index j k))\<close> k1 t1 by blast
+       have "submatrix A (I - {pick I i}) (J - {pick J j}) $$ (t, k) = A $$ (t2, k2)"
+         by (metis (no_types, lifting) asmi asmk dim_submatrix(1) dim_submatrix(2) t2 k2 submatrix_index)
+     
+  have "pick J (insert_index j k) = pick (J - {pick J j}) k"
+       proof(cases "k < j")
+         case True
+         have "pick J (insert_index j k) = pick J k" unfolding insert_index_def 
+           using True 
+           by simp
+      
+         have "pick J k \<in> J - {pick J j}" 
+           by (smt (verit, del_insts) DiffI True \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> assms(4) card_mono insert_index(1) nat_neq_iff order_less_le_trans pick_eq_iff_inf pick_in_set_inf pick_in_set_le pick_mono_le singletonD)
+         then have "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J k}) = pick J k" 
+           using pick_card_in_set 
+           by presburger
+         have "card {a\<in>J. a < pick J k} = k" 
+           by (metis True \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> card_mono card_pick insert_index(1) order_trans_rules(22))
+         
+         have "pick J k < pick J j" 
+           by (metis True \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> assms(4) card_mono order_trans_rules(22) pick_mono_inf pick_mono_le)
+
+         then  have "{a\<in>J. a < pick J k} = {a\<in>(J - {pick J j}). a < pick J k}"
+           by auto
+        
+         then have "pick (J - {pick J j}) k = pick J k" 
+           using \<open>card {a \<in> J. a < pick J k} = k\<close> \<open>pick (J - {pick J j}) (card {a \<in> J - {pick J j}. a < pick J k}) = pick J k\<close> by presburger
+         then show ?thesis 
+           using \<open>pick J (insert_index j k) = pick J k\<close> by presburger
+       next
+         case False
+         have "pick J (insert_index j k) = pick J (Suc k)" 
+           using False insert_index_def by presburger
+         show ?thesis
+         proof(cases "k = j")
+           case True
+           have "pick J (Suc k) = pick J (Suc j)"
+             using True by fastforce
+           have "j < dim_col B - 1"
+             using "3" True by blast
+           then show ?thesis using pick_suc_diff_set 
+             by (metis False True \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(22) card_mono insert_index_def)
+         next
+           case False
+           have "k > j" using `\<not> k < j` False 
+             using nat_neq_iff by blast
+           then have "pick J k > pick J j" 
+             by (metis Suc_lessD \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(22) card_mono insert_index_def pick_mono_inf pick_mono_le)
+
+           have "pick J k \<in> J - {pick J j}" 
+             by (metis (no_types, lifting) DiffI \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>pick J j < pick J k\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(22) card_mono insert_index_def le_eq_less_or_eq lessI nat_neq_iff pick_in_set_inf pick_in_set_le singletonD)
+           then have 1: "pick (J - {pick J j}) (card {a\<in>(J - {pick J j}). a < pick J k}) = pick J k"
+           using pick_card_in_set 
+           by presburger
+         have "{a\<in>(J - {pick J j}). a < pick J k} \<union> {pick J j} = {a\<in>J. a < pick J k}"
+           apply safe
+           
+           apply (meson \<open>j < card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> card_mono order_trans_rules(22) pick_in_set_inf pick_in_set_le)
+           by (simp add: \<open>pick J j < pick J k\<close>)
+         have "pick J j \<notin> {a\<in>(J - {pick J j}). a < pick J k}"
+           by blast
+         have "card {a\<in>J. a < pick J k} = k" 
+           by (metis Suc_lessD \<open>dim_col B = card {i. i < dim_col A \<and> i \<in> J}\<close> \<open>insert_index j k < dim_col B\<close> \<open>j < k\<close> \<open>{i. i < dim_col A \<and> i \<in> J} \<subseteq> J\<close> basic_trans_rules(19) card_mono card_pick card_pick_le  insert_index(2) insert_index_def linorder_neqE_nat n_not_Suc_n not_less_iff_gr_or_eq)
+         have "card ({a\<in>(J - {pick J j}). a < pick J k} \<union> {pick J j}) = card {a\<in>(J - {pick J j}). a < pick J k} + card {pick J j}"
+           by force
+         then have "card {a\<in>(J - {pick J j}). a < pick J k} + 1 = card {a\<in>J. a < pick J k}"
+           by (metis \<open>{a \<in> J - {pick J j}. a < pick J k} \<union> {pick J j} = {a \<in> J. a < pick J k}\<close> card_eq_1_iff)
+         then have "card {a\<in>(J - {pick J j}). a < pick J k} = k - 1" 
+           using \<open>card {a \<in> J. a < pick J k} = k\<close> by presburger
+         then have "pick (J - {pick J j}) (k - 1) = pick J k" using 1 
+           by presburger
+         have "pick (J - {pick J j}) (Suc (k - 1)) = (LEAST a. a \<in> (J - {pick J j}) \<and> pick (J - {pick J j}) (k - 1) < a)" 
+           using DL_Missing_Sublist.pick.simps(2) by blast
+         have "pick J (Suc k) = (LEAST a. a \<in> J \<and> pick J k < a)"
+           using DL_Missing_Sublist.pick.simps(2) by blast
+         have "(LEAST a. a \<in> (J - {pick J j}) \<and> pick (J - {pick J j}) (k - 1) < a) = 
+              (LEAST a. a \<in> J \<and> pick J k < a)" 
+           by (metis Diff_iff \<open>pick (J - {pick J j}) (k - 1) = pick J k\<close> \<open>pick J j < pick J k\<close> basic_trans_rules(19) less_not_refl2 singletonD)
+         then have "pick (J - {pick J j}) k = pick J (Suc k)" 
+           by (metis Suc_eq_plus1 \<open>card {a \<in> J - {pick J j}. a < pick J k} + 1 = card {a \<in> J. a < pick J k}\<close> \<open>card {a \<in> J - {pick J j}. a < pick J k} = k - 1\<close> \<open>card {a \<in> J. a < pick J k} = k\<close> \<open>pick (J - {pick J j}) (Suc (k - 1)) = (LEAST a. a \<in> J - {pick J j} \<and> pick (J - {pick J j}) (k - 1) < a)\<close> \<open>pick J (Suc k) = (LEAST a. a \<in> J \<and> pick J k < a)\<close>)
+       
+         then show ?thesis 
+           using \<open>pick J (insert_index j k) = pick J (Suc k)\<close> by presburger
+       qed
+     qed
+  then have "k1 = k2" using k1 k2 
+         by blast 
+     have "pick I (insert_index i t) = pick (I - {pick I i}) t"
+       proof(cases "t < i")
+         case True
+         have "pick I (insert_index i t) = pick I t" unfolding insert_index_def 
+           using True 
+           by simp
+      
+         have "pick I t \<in> I - {pick I i}" 
+           by (metis (no_types, lifting) Diff_iff True \<open>dim_row B = card {k. k < dim_row A \<and> k \<in> I}\<close> \<open>insert_index i t < dim_row B\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close> assms(3) card_mono insert_index(1) order_less_imp_not_eq order_less_le_trans pick_in_set_inf pick_in_set_le pick_mono singletonD)
+         then have "pick (I - {pick I i}) (card {a\<in>(I - {pick I i}). a < pick I t}) = pick I t" 
+           using pick_card_in_set 
+           by presburger
+         have 9:"card {a\<in>I. a < pick I t} = t" 
+           by (metis True \<open>dim_row B = card {i. i < dim_row A \<and> i \<in> I}\<close> \<open>insert_index i t < dim_row B\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close> card_mono card_pick insert_index(1) order_trans_rules(22))
+         have "pick I t < pick I i" 
+           by (metis True \<open>dim_row B = card {i. i < dim_row A \<and> i \<in> I}\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close> assms(3) card_mono order_trans_rules(22) pick_mono_inf pick_mono_le)
+
+         then  have 8: "{a\<in>I. a < pick I t} = {a\<in>(I - {pick I i}). a < pick I t}"
+           by auto
+        
+         then have "pick (I - {pick I i}) t = pick I t" 
+           using "9" \<open>pick (I - {pick I i}) (card {a \<in> I - {pick I i}. a < pick I t}) = pick I t\<close> by presburger
+         then show ?thesis 
+           using \<open>pick I (insert_index i t) = pick I t\<close> by presburger
+       next
+         case False
+         have "pick I (insert_index i t) = pick I (Suc t)" 
+           using False insert_index_def by presburger
+         show ?thesis
+         proof(cases "t = i")
+           case True
+           have "pick I (Suc t) = pick I (Suc i)"
+             using True by fastforce
+           have "i < dim_row B - 1" 
+             using "5" True by blast
+           then show ?thesis using pick_suc_diff_set
+             by (metis False True \<open>dim_row B = card {k. k < dim_row A \<and> k \<in> I}\<close> \<open>insert_index i t < dim_row B\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close> basic_trans_rules(22) card_mono insert_index_def)
+         next
+           case False
+           have "t > i" using `\<not> t < i` False 
+             using nat_neq_iff by blast
+           then have "pick I t > pick I i" 
+             by (metis \<open>dim_row B = card {k. k < dim_row A \<and> k \<in> I}\<close> \<open>insert_index i t < dim_row B\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close> basic_trans_rules(22) card_mono insert_index_def lessI less_or_eq_imp_le pick_mono_inf pick_mono_le) 
+
+           have "pick I t \<in> I - {pick I i}" 
+             by (metis (no_types, lifting) Diff_iff \<open>dim_row B = card {k. k < dim_row A \<and> k \<in> I}\<close> \<open>insert_index i t < dim_row B\<close> \<open>pick I i < pick I t\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close> basic_trans_rules(19) basic_trans_rules(22) card_mono insert_index_def lessI nat_neq_iff pick_in_set_inf pick_in_set_le singletonD)
+           then have 1: "pick (I - {pick I i}) (card {a\<in>(I - {pick I i}). a < pick I t}) = pick I t"
+           using pick_card_in_set 
+           by presburger
+         have "{a\<in>(I - {pick I i}). a < pick I t} \<union> {pick I i} = {a\<in>I. a < pick I t}"
+           apply safe
+           apply (metis "4" "5" \<open>dim_row B = card {k. k < dim_row A \<and> k \<in> I}\<close> \<open>i < t\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close> card_mono carrier_matD(1) less_SucI less_or_eq_imp_le order_trans_rules(22) pick_in_set_inf pick_in_set_le)
+           by (simp add: \<open>pick I i < pick I t\<close>)
+         have "pick I i \<notin> {a\<in>(I - {pick I i}). a < pick I t}"
+           by blast
+         have "card {a\<in>I. a < pick I t} = t" 
+           using Suc_lessD \<open>dim_row B = card {i. i < dim_row A \<and> i \<in> I}\<close> \<open>insert_index i t < dim_row B\<close> 
+                \<open>i < t\<close> \<open>{i. i < dim_row A \<and> i \<in> I} \<subseteq> I\<close>
+           by (metis basic_trans_rules(19) card_mono card_pick card_pick_le  insert_index(2) insert_index_def linorder_neqE_nat n_not_Suc_n not_less_iff_gr_or_eq)
+    
+            have "card ({a\<in>(I - {pick I i}). a < pick I t} \<union> {pick I i}) = card {a\<in>(I - {pick I i}). a < pick I t} + card {pick I i}"
+           by force
+         then have "card {a\<in>(I - {pick I i}). a < pick I t} + 1 = card {a\<in>I. a < pick I t}"
+           by (metis \<open>{a \<in> I - {pick I i}. a < pick I t} \<union> {pick I i} = {a \<in> I. a < pick I t}\<close> card_eq_1_iff)
+         then have "card {a\<in>(I - {pick I i}). a < pick I t} = t - 1" 
+           using \<open>card {a \<in> I. a < pick I t} = t\<close> by presburger
+         then have "pick (I - {pick I i}) (t - 1) = pick I t" using 1 
+           by presburger
+         have "pick (I - {pick I i}) (Suc (t - 1)) = (LEAST a. a \<in> (I - {pick I i}) \<and> pick (I - {pick I i}) (t - 1) < a)" 
+           using DL_Missing_Sublist.pick.simps(2) by blast
+         have "pick I (Suc t) = (LEAST a. a \<in> I \<and> pick I t < a)"
+           using DL_Missing_Sublist.pick.simps(2) by blast
+         have "(LEAST a. a \<in> (I - {pick I i}) \<and> pick (I - {pick I i}) (t - 1) < a) = 
+              (LEAST a. a \<in> I \<and> pick I t < a)" 
+           by (metis Diff_iff \<open>pick (I - {pick I i}) (t - 1) = pick I t\<close> \<open>pick I i < pick I t\<close> basic_trans_rules(19) less_not_refl2 singletonD)
+         then have "pick (I - {pick I i}) t = pick I (Suc t)" 
+           by (metis Suc_eq_plus1 \<open>card {a \<in> I - {pick I i}. a < pick I t} + 1 = card {a \<in> I. a < pick I t}\<close> \<open>card {a \<in> I - {pick I i}. a < pick I t} = t - 1\<close> \<open>card {a \<in> I. a < pick I t} = t\<close> \<open>pick (I - {pick I i}) (Suc (t - 1)) = (LEAST a. a \<in> I - {pick I i} \<and> pick (I - {pick I i}) (t - 1) < a)\<close> \<open>pick I (Suc t) = (LEAST a. a \<in> I \<and> pick I t < a)\<close>)
+         then show ?thesis 
+           using \<open>pick I (insert_index i t) = pick I (Suc t)\<close> by presburger
+       qed
+     qed
+  then have "t1 = t2" using t1 t2 
+    by blast
+  show ?thesis 
+    using \<open>B $$ (insert_index i t, insert_index j k) = A $$ (pick I (insert_index i t), pick J (insert_index j k))\<close> \<open>mat_delete B i j $$ (t, k) = B $$ (insert_index i t, insert_index j k)\<close> \<open>pick I (insert_index i t) = pick (I - {pick I i}) t\<close> \<open>pick J (insert_index j k) = pick (J - {pick J j}) k\<close> \<open>submatrix A (I - {pick I i}) (J - {pick J j}) $$ (t, k) = A $$ (t2, k2)\<close> k2 t2 by presburger
+qed
+qed
+
+
 lemma fwqfqwfojj:
   assumes "b \<in> carrier_vec n"
   shows "submatrix (mat_of_rows n [b]) {0} J =
@@ -2062,12 +2372,21 @@ proof rule+
 qed
   
 
-lemma tot_unimod_iff_int_polyhedron:
-  fixes A :: "'a  mat"
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes  AI: "A \<in> \<int>\<^sub>m"
-  shows "tot_unimodular A \<longleftrightarrow> 
-        (\<forall> b \<in> carrier_vec nr. b \<in> \<int>\<^sub>v \<longrightarrow> int_polyh (pos_polyhedron A b))"
-  oops
+(*
+  - Incidence matrix of a graph
+  - for a bipartite graph we have two subsets of rows which when substracted give zero vector.
+  
+  3 cases for an iduction on the size of a submatrix
+  - if we have a column with 0s \<longrightarrow> linearly dep and then det is 0
+  - if we have a column with one 1 \<longrightarrow> crammer rule for that and apply induction hyps to get the det
+to be -1, 1, or 1.
+  - if each column has tow 1s \<longrightarrow> we get the subsets of the split and acquire the split \<rightarrow>
+    we substract them and get the zero vec and then det is 0
 
+
+
+
+ *)
+
+end
 end
