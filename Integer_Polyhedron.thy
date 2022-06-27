@@ -26,7 +26,6 @@ proof
     using \<open>dim_vec b' = 0\<close> by linarith
 qed
 
-
 lemma subsyst_with_max_ineq:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
   assumes A: "A \<in> carrier_mat nr n"
@@ -45,10 +44,10 @@ proof-
   let ?emp_A = "fst (sub_system A b {})"
   let ?emp_b = "snd (sub_system A b {})" 
   have "{x. ?emp_A *\<^sub>v x = ?emp_b \<and> x \<in> P} = P" 
-    by (smt (verit, ccfv_SIG) Collect_cong P_def all_elem_fulfill_empty mem_Collect_eq polyhedron_def prod.collapse)
+    by (smt (verit, ccfv_SIG) Collect_cong P_def all_elem_fulfill_empty mem_Collect_eq 
+        polyhedron_def prod.collapse)
   then have "dim_vec ?emp_b \<in> ?M" using assms(4) 
     by (smt (verit, best) Collect_cong mem_Collect_eq prod.collapse)
-
   then have "?M \<noteq> {}"  
     by blast
   then have "Max ?M \<in> ?M \<and> (\<forall>a \<in> ?M. a \<le> (Max ?M))"
@@ -61,33 +60,32 @@ qed
 lemma submatrix_same_I_interesect_rows:
   shows "submatrix A I UNIV = submatrix A (I \<inter> {0..<dim_row A}) UNIV"
 proof
-  show "dim_row (submatrix A I UNIV) = dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)" 
+  show 1:"dim_row (submatrix A I UNIV) = dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)" 
     using dim_submatrix 
-    by (smt (verit) Collect_cong Int_iff atLeastLessThan_iff less_nat_zero_code linorder_le_less_linear)
-
-  show "dim_col (submatrix A I UNIV) = dim_col (submatrix A (I \<inter> {0..<dim_row A}) UNIV)" 
+    by (smt (verit) Collect_cong Int_iff atLeastLessThan_iff less_nat_zero_code 
+        linorder_le_less_linear)
+  show 2:"dim_col (submatrix A I UNIV) = dim_col (submatrix A (I \<inter> {0..<dim_row A}) UNIV)" 
     using dim_submatrix 
-    by (smt (verit) Collect_cong Int_iff atLeastLessThan_iff less_nat_zero_code linorder_le_less_linear)
-
+    by (smt (verit) Collect_cong Int_iff atLeastLessThan_iff less_nat_zero_code 
+        linorder_le_less_linear)
   show "\<And>i j. i < dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV) \<Longrightarrow>
            j < dim_col (submatrix A (I \<inter> {0..<dim_row A}) UNIV) \<Longrightarrow>
            submatrix A I UNIV $$ (i, j) = submatrix A (I \<inter> {0..<dim_row A}) UNIV $$ (i, j)" 
   proof -
     fix i j
-    assume "i < dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)" 
-    assume "j < dim_col (submatrix A (I \<inter> {0..<dim_row A}) UNIV)" 
-    have "submatrix A I UNIV $$ (i, j) = A $$ (pick I i, pick UNIV j)" using submatrix_index
-      by (metis (no_types, lifting) \<open>dim_row (submatrix A I UNIV) = dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)\<close> \<open>i < dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)\<close> \<open>j < dim_col (submatrix A (I \<inter> {0..<dim_row A}) UNIV)\<close> dim_submatrix(1) dim_submatrix(2))
-    have "{a. a < dim_row A \<and> a \<in> I} = (I \<inter> {0..<dim_row A})" 
+    assume asmi:"i < dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)" 
+    assume asmj:"j < dim_col (submatrix A (I \<inter> {0..<dim_row A}) UNIV)" 
+    have 2:"submatrix A I UNIV $$ (i, j) = A $$ (pick I i, pick UNIV j)" using submatrix_index
+      by (metis (no_types, lifting) 1 asmi asmj dim_submatrix(1) dim_submatrix(2))
+    have 3:"{a. a < dim_row A \<and> a \<in> I} = (I \<inter> {0..<dim_row A})" 
       by fastforce
     have "i < card {a. a < dim_row A \<and> a \<in> I}"
-      by (metis  \<open>dim_row (submatrix A I UNIV) = dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)\<close> \<open>i < dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)\<close> dim_submatrix(1))
-
+      by (metis 1 asmi dim_submatrix(1))
     then have "pick (I  \<inter> {0..<dim_row A}) i= pick I i"
-      using pick_reduce_set[of i "dim_row A" I] `{a. a < dim_row A \<and> a \<in> I} = (I \<inter> {0..<dim_row A})`
+      using pick_reduce_set[of i "dim_row A" I] 3
       by presburger
     then show " submatrix A I UNIV $$ (i, j) = submatrix A (I \<inter> {0..<dim_row A}) UNIV $$ (i, j)"
-      by (metis (no_types, lifting) \<open>i < dim_row (submatrix A (I \<inter> {0..<dim_row A}) UNIV)\<close> \<open>j < dim_col (submatrix A (I \<inter> {0..<dim_row A}) UNIV)\<close> \<open>submatrix A I UNIV $$ (i, j) = A $$ (pick I i, pick UNIV j)\<close> dim_submatrix(1) dim_submatrix(2) submatrix_index)
+      by (metis (no_types, lifting) asmi asmj 2 dim_submatrix(1) dim_submatrix(2) submatrix_index)
   qed
 qed
 
@@ -102,7 +100,6 @@ proof -
   then show ?thesis 
     unfolding nths_def by argo
 qed
-
 
 lemma same_subsyst_I_intersect_rows:
   assumes A: "A \<in> carrier_mat nr n"
@@ -120,11 +117,11 @@ proof
     by (metis  Matrix.length_list_of_vec)
   then have "vec_of_list (nths (list_of_vec b) I) = 
       vec_of_list (nths (list_of_vec b) (I\<inter> {0..<dim_vec b}))" 
-    by (smt (verit, best) Collect_cong Int_iff Matrix.length_list_of_vec atLeastLessThan_iff nths_intersect_length_same zero_order(1))
+    by (smt (verit, best) Collect_cong Int_iff Matrix.length_list_of_vec atLeastLessThan_iff 
+        nths_intersect_length_same zero_order(1))
   then show "snd (sub_system A b I) = snd (sub_system A b (I \<inter> {0..<nr}))"
     by (metis b carrier_vecD sub_system_snd)
 qed
-
 
 lemma obtain_I_for_subface:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
@@ -159,7 +156,6 @@ proof -
       then have "\<forall>i \<in> I \<inter> {0..<dim_row A}.  (row A i) \<bullet> x = (b $ i)"
         using subsystem_fulfills_P[of A b A' b' I "\<lambda> p q. p \<bullet> x = q"] assms(4)
           `dim_row A = dim_vec b`  by blast
-
       have "\<forall>i < dim_row C. row C i \<bullet> x = d $ i" using `d = C *\<^sub>v x`
         by (metis index_mult_mat_vec)
       then have "\<forall>i \<in> J \<inter> {0..<dim_row A}.  (row A i) \<bullet> x = (b $ i)"
@@ -196,7 +192,8 @@ proof -
     then have "sub_system A b I = sub_system A b (J \<union> I)" 
       by (metis A b gram_schmidt.same_subsyst_I_intersect_rows)
     then have "{x. A' *\<^sub>v x = b' \<and> x \<in> P} = {x. C *\<^sub>v x = d \<and> x \<in> P}" 
-      by (metis (no_types, lifting)  Pair_inject \<open>(C', d') = sub_system A b (J \<union> I)\<close> \<open>{x. C *\<^sub>v x = d \<and> x \<in> P} = {x. C' *\<^sub>v x = d' \<and> x \<in> P}\<close> assms(4))
+      by (metis (no_types, lifting) Pair_inject \<open>(C', d') = sub_system A b (J \<union> I)\<close>
+          \<open>{x. C *\<^sub>v x = d \<and> x \<in> P} = {x. C' *\<^sub>v x = d' \<and> x \<in> P}\<close> assms(4))
     then show False using assms(8) 
       using C_d(2) assms(5) by blast
   qed
@@ -219,13 +216,14 @@ proof -
     using same_subsyst_I_intersect_rows A b 
     by blast
   then have "dim_row A' = card (I \<inter> {0..<nr})" using I_subsys_same_card(2)
-    by (metis (mono_tags, lifting) A assms(4) b carrier_matD(1) carrier_vecD dims_subsyst_same' inf.cobounded2 snd_conv)
-
+    by (metis (mono_tags, lifting) A assms(4) b carrier_matD(1) carrier_vecD dims_subsyst_same' 
+        inf.cobounded2 snd_conv)
   have "sub_system A b J = sub_system A b (J \<inter> {0..<nr})"
     using same_subsyst_I_intersect_rows A b 
     by blast
   then have "dim_row C = card (J \<inter> {0..<nr})" using I_subsys_same_card(2)
-    by (metis (mono_tags, lifting) A assms(5) b carrier_matD(1) carrier_vecD dims_subsyst_same' inf.cobounded2 snd_conv)
+    by (metis (mono_tags, lifting) A assms(5) b carrier_matD(1) carrier_vecD dims_subsyst_same'
+        inf.cobounded2 snd_conv)
   have "finite (J \<inter> {0..<nr})" 
     by blast
   then have "card (I \<inter> {0..<nr}) < card (J \<inter> {0..<nr})" 
@@ -254,8 +252,6 @@ lemma append_rows_index_same':
   shows "\<lbrakk> i \<ge> nr1; i < nr1 + nr2 \<rbrakk> \<Longrightarrow> (row (A @\<^sub>r B)i) = row B (i - nr1)" 
   by (metis A append_rows_nth(2) assms(2))
 
-
-
 lemma face_trans:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
   assumes A: "A \<in> carrier_mat nr n"
@@ -282,21 +278,20 @@ proof -
     using char_face1[of C _ d F'] assms(1-5) 
     unfolding `F = polyhedron C d` 
     by (smt (verit, best) carrier_matI carrier_vec_dim_vec)
-
   obtain A'' b'' where A''_b'': "((A'', b'') = sub_system A b (I' \<union> J))" 
     by (metis surj_pair)
   have "dim_row A'' = dim_vec b''" 
     by (metis A A''_b'' b carrier_matD(1) carrier_vecD dims_subsyst_same')
   have "dim_row A \<le> dim_row C" using C_d 
-    by (metis A add_lessD1 b carrier_matD(1) carrier_vecD index_append_vec(2) linorder_le_less_linear order_less_irrefl)
+    by (metis A add_lessD1 b carrier_matD(1) carrier_vecD index_append_vec(2) 
+        linorder_le_less_linear order_less_irrefl)
   have "\<forall> i < dim_row A. (row C i) = row A i" 
     using C_d(1) append_rows_index_same[of A nr "A' @\<^sub>r - A'" _]  
-
-    by (metis (no_types, lifting) A \<open>(A', b') = sub_system A b I' \<and> F = {x. A' *\<^sub>v x = b' \<and> x \<in> P}\<close> b carrier_matI face_is_polyhedron'(3))
+    by (metis (no_types, lifting) A A'_b' b carrier_matI face_is_polyhedron'(3))
   have "\<forall> i < dim_vec b. d $ i = b $ i" 
     unfolding C_d(2)
     by (meson index_append_vec(1) trans_less_add1)
-  then have "\<forall> i < dim_row A. (row C i) = row A i \<and> d $ i = b $ i" 
+  then have 3:"\<forall> i < dim_row A. (row C i) = row A i \<and> d $ i = b $ i" 
     by (metis A \<open>\<forall>i<dim_row A. row C i = row A i\<close> b carrier_matD(1) carrier_vecD)
   have "dim_row A' = dim_vec b'" 
     by (metis A A'_b' b carrier_matD(1) carrier_vecD dims_subsyst_same')
@@ -308,22 +303,22 @@ proof -
     by blast
   have "dim_row C = nr + dim_row (A' @\<^sub>r - A')" 
     using A A'_b' C_d(1) C_d(4) b face_is_polyhedron'(2) by force
-  have "\<forall> i. (i \<ge> nr \<and> i < dim_row C) \<longrightarrow> (row C i) = row  (A' @\<^sub>r - A') (i - nr)" 
+  have 1:"\<forall> i. (i \<ge> nr \<and> i < dim_row C) \<longrightarrow> (row C i) = row  (A' @\<^sub>r - A') (i - nr)" 
     using C_d(1) append_rows_index_same'[of A nr "A' @\<^sub>r - A'" "dim_row (A' @\<^sub>r - A')"] 
       `A' @\<^sub>r - A' \<in> carrier_mat (dim_row (A' @\<^sub>r - A')) n` A
     by (metis \<open>dim_row C = nr + dim_row (A' @\<^sub>r - A')\<close>)
   have "\<forall> i. i > nr \<and> i < dim_vec d \<longrightarrow> d $ i =  (b' @\<^sub>v (-b')) $ (i - nr)" 
     unfolding C_d(2) 
     using b by auto
-  then have "\<forall> i \<in> {nr..<dim_row C}. (row C i) = row  (A' @\<^sub>r - A') (i - nr) 
-\<and> d $ i =  (b' @\<^sub>v (-b')) $ (i - nr)" 
-    by (metis C_d(1) C_d(2) C_d(4) \<open>\<forall>i. nr \<le> i \<and> i < dim_row C \<longrightarrow> row C i = row (A' @\<^sub>r - A') (i - nr)\<close> atLeastLessThan_iff b carrier_vecD index_append_vec(1) index_append_vec(2) order_le_imp_less_or_eq)
-
+  then have 5:"\<forall> i \<in> {nr..<dim_row C}. (row C i) = row  (A' @\<^sub>r - A') (i - nr) 
+            \<and> d $ i =  (b' @\<^sub>v (-b')) $ (i - nr)" 
+    by (metis C_d(1) C_d(2) C_d(4) 1 atLeastLessThan_iff b carrier_vecD index_append_vec(1) 
+        index_append_vec(2) order_le_imp_less_or_eq)
   have " \<forall> x \<in> F. A' *\<^sub>v x = b' "using A'_b' by auto
   then have "\<forall> x \<in> F. \<forall>i < dim_row A'. row A' i \<bullet> x = b' $ i" 
     using index_mult_mat_vec
     by metis
-  then have "\<forall> x \<in> F. \<forall>i \<in> I' \<inter> {0..<dim_row A}.  (row A i) \<bullet> x = (b $ i)"
+  then have 2:"\<forall> x \<in> F. \<forall>i \<in> I' \<inter> {0..<dim_row A}.  (row A i) \<bullet> x = (b $ i)"
     using subsystem_fulfills_P[of A b A' b' I' "\<lambda> p q. p \<bullet> _ = q"] C_d
     using C'_d' 
     by (metis (no_types, lifting) A A'_b' b carrier_matD(1) carrier_vecD)
@@ -342,8 +337,8 @@ proof -
   then have "\<forall> x \<in> F. A' *\<^sub>v x \<le> b' \<and> (-A') *\<^sub>v x \<le> - b'" 
     using `\<forall> x \<in> F. A' *\<^sub>v x = b'` eq_system_is_leq_system by blast 
   then have "\<forall> x \<in> F. (A' @\<^sub>r (-A')) *\<^sub>v x = (b' @\<^sub>v (-b'))" using append_rows_le 
-    by (smt (verit) \<open>\<forall>x\<in>F. A' *\<^sub>v x = b'\<close> \<open>\<forall>x\<in>F. dim_vec x = dim_col A'\<close> carrier_matI carrier_vec_dim_vec index_uminus_mat(3) mat_mult_append uminus_mult_mat_vec)
-
+    by (smt (verit) \<open>\<forall>x\<in>F. A' *\<^sub>v x = b'\<close> \<open>\<forall>x\<in>F. dim_vec x = dim_col A'\<close> carrier_matI 
+        carrier_vec_dim_vec index_uminus_mat(3) mat_mult_append uminus_mult_mat_vec)
   have "dim_row C = dim_vec d" 
     using C_d(1) C_d(2) C_d(4) by blast
   have "dim_row C' = dim_vec d'" using C'_d' 
@@ -353,22 +348,21 @@ proof -
     {
       fix x
       assume "x \<in> F" "d' = C' *\<^sub>v x" 
-
-
       have "\<forall>i < dim_row C'. row C' i \<bullet> x = d' $ i" using `d' = C' *\<^sub>v x`
         by (metis index_mult_mat_vec)
       then have "\<forall>i \<in> J \<inter> {0..<dim_row C}.  (row C i) \<bullet> x = (d $ i)"
         using subsystem_fulfills_P[of C d C' d' J "\<lambda> p q. p \<bullet> x = q"] C_d
         using C'_d' by blast
       then have "\<forall>i \<in> J \<inter> {0..<dim_row A}.  (row C i) \<bullet> x = (d $ i)" 
-        by (metis IntD1 IntD2 IntI \<open>dim_row A \<le> dim_row C\<close> atLeastLessThan_iff inf.absorb_iff2 inf.strict_boundedE)
+        by (metis IntD1 IntD2 IntI \<open>dim_row A \<le> dim_row C\<close> atLeastLessThan_iff inf.absorb_iff2
+            inf.strict_boundedE)
       have "\<forall>i \<in> J \<inter> {0..<dim_row A}.  (row A i) \<bullet> x = (b $ i)"
         using `\<forall> i < dim_row A. (row C i) = row A i \<and> d $ i = b $ i` 
         by (metis IntD2 \<open>\<forall>i\<in>J \<inter> {0..<dim_row A}. row C i \<bullet> x = d $ i\<close> atLeastLessThan_iff)
       then have "\<forall> i < dim_row A''. (row A'' i) \<bullet> x =  (b'' $ i)" 
         using subsystem_fulfills_P'[of A b A'' b'' _ "\<lambda> p q. p \<bullet> x = q"] 
         using A A''_b'' b carrier_vecD 
-        by (metis IntD1 IntD2 IntI Un_iff \<open>\<forall>x\<in>F. \<forall>i\<in>I' \<inter> {0..<dim_row A}. row A i \<bullet> x = b $ i\<close> \<open>x \<in> F\<close> carrier_matD(1))
+        by (metis IntD1 IntD2 IntI Un_iff 2 \<open>x \<in> F\<close> carrier_matD(1))
       then show " A'' *\<^sub>v x = b''"
         using eq_for_all_index_then_eq[of A'' b'' x] `dim_row A'' = dim_vec b''` by auto
     }
@@ -379,13 +373,13 @@ proof -
       assume "x \<in> P" "b'' = A'' *\<^sub>v x" 
       then have "\<forall> i < dim_row A''. (row A'' i) \<bullet> x =  (b'' $ i)"
         by (metis index_mult_mat_vec)
-      then have "\<forall>i \<in> (J \<union> I') \<inter> {0..<dim_row A}.  (row A i) \<bullet> x = (b $ i)"
+      then have 4:"\<forall>i \<in> (J \<union> I') \<inter> {0..<dim_row A}.  (row A i) \<bullet> x = (b $ i)"
         using subsystem_fulfills_P[of A b A'' b'' _ "\<lambda> p q. p \<bullet> x = q"] 
         using A A''_b'' b carrier_vecD by blast
-      then have "\<forall>i \<in> J \<inter> {0..<dim_row A}.  (row C i) \<bullet> x = (d $ i)"  
-        by (metis IntD1 IntD2 IntI Un_Int_eq(4) \<open>\<forall>i<dim_row A. row C i = row A i \<and> d $ i = b $ i\<close> atLeastLessThan_iff sup_commute)
+      then have 6:"\<forall>i \<in> J \<inter> {0..<dim_row A}.  (row C i) \<bullet> x = (d $ i)"  
+        by (metis IntD1 IntD2 IntI Un_Int_eq(4) 3 atLeastLessThan_iff sup_commute)
       have "\<forall>i \<in> I' \<inter> {0..<dim_row A}.  (row A i) \<bullet> x = (b $ i)"  
-        by (metis IntD1 IntD2 IntI Un_Int_eq(1) \<open>\<forall>i\<in>(J \<union> I') \<inter> {0..<dim_row A}. row A i \<bullet> x = b $ i\<close> sup_commute)
+        by (metis IntD1 IntD2 IntI Un_Int_eq(1) 4 sup_commute)
       then have "\<forall> i < dim_row A'. (row A' i) \<bullet> x =  (b' $ i)"
         using subsystem_fulfills_P'[of A b A' b' I' "\<lambda> p q. p \<bullet> x = q"] 
           A'_b'
@@ -394,21 +388,23 @@ proof -
         using eq_for_all_index_then_eq[of A' b' x] `dim_row A' = dim_vec b'` by auto
       have "dim_vec x = dim_col A'" 
       proof -
-        have "x \<in> carrier_vec n" using `x \<in> P`unfolding P_def polyhedron_def by blast
+        have "x \<in> carrier_vec n" 
+          using `x \<in> P`unfolding P_def polyhedron_def by blast
         have "dim_col A' = n" using A'_b' dim_col_subsyst_mat 
           by (metis A carrier_matD(2) fst_conv) 
         then show "dim_vec x = dim_col A'" 
           using \<open>x \<in> carrier_vec n\<close> carrier_vecD by blast
       qed
-
       then have "A' *\<^sub>v x \<le> b' \<and> (-A') *\<^sub>v x \<le> - b'"
         using eq_system_is_leq_system `A' *\<^sub>v x = b'` by blast
       then have "(A' @\<^sub>r (-A')) *\<^sub>v x = (b' @\<^sub>v (-b'))"  
-        by (smt (verit) \<open>A' *\<^sub>v x = b'\<close> \<open>dim_vec x = dim_col A'\<close> carrier_matI carrier_vec_dim_vec index_uminus_mat(3) mat_mult_append uminus_mult_mat_vec)
+        by (smt (verit) \<open>A' *\<^sub>v x = b'\<close> \<open>dim_vec x = dim_col A'\<close> carrier_matI carrier_vec_dim_vec
+            index_uminus_mat(3) mat_mult_append uminus_mult_mat_vec)
       then have "\<forall>i \<in> {dim_row A..<dim_row C}.  (row C i) \<bullet> x = (d $ i)"
-        by (metis A \<open>\<forall>i\<in>{nr..<dim_row C}. row C i = row (A' @\<^sub>r - A') (i - nr) \<and> d $ i = (b' @\<^sub>v - b') $ (i - nr)\<close> \<open>dim_row C = nr + dim_row (A' @\<^sub>r - A')\<close> add.commute atLeastLessThan_iff carrier_matD(1) index_mult_mat_vec less_diff_conv2)
+        by (metis A 5 \<open>dim_row C = nr + dim_row (A' @\<^sub>r - A')\<close> add.commute atLeastLessThan_iff 
+            carrier_matD(1) index_mult_mat_vec less_diff_conv2)
       then have "\<forall>i \<in> J \<inter> {0..<dim_row C}.  (row C i) \<bullet> x = (d $ i)" 
-        by (metis IntD1 IntD2 IntI \<open>\<forall>i\<in>J \<inter> {0..<dim_row A}. row C i \<bullet> x = d $ i\<close> atLeastLessThan_iff le_neq_implies_less nat_le_linear)
+        by (metis IntD1 IntD2 IntI 6 atLeastLessThan_iff le_neq_implies_less nat_le_linear)
       then have "\<forall> i < dim_row C'. (row C' i) \<bullet> x =  (d' $ i)"
         using subsystem_fulfills_P'[of C d C' d' J "\<lambda> p q. p \<bullet> x = q"] C'_d'   
         using C_d by blast
@@ -422,7 +418,6 @@ proof -
   then show ?thesis using char_face2[of A nr b A'' b'' "(I' \<union> J)" F'] 
     using A A''_b'' P_def assms(5) b face_non_empty by presburger
 qed
-
 
 lemma subsyst_with_max_ineq_is_min_face:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
@@ -442,26 +437,23 @@ proof
   show " \<not> (\<exists>F'\<subset>{x. A' *\<^sub>v x = b' \<and> x \<in> P}. face P F')" 
   proof
     assume "\<exists>F'\<subset>{x. A' *\<^sub>v x = b' \<and> x \<in> P}. face P F'" 
-    obtain F' where "F'\<subset>{x. A' *\<^sub>v x = b' \<and> x \<in> P} \<and> face P F'" 
+    obtain F' where F':"F'\<subset>{x. A' *\<^sub>v x = b' \<and> x \<in> P} \<and> face P F'" 
       using \<open>\<exists>F'\<subset>{x. A' *\<^sub>v x = b' \<and> x \<in> P}. face P F'\<close> by presburger
-    then obtain C d I' where "((C, d) = sub_system A b I')
+    then obtain C d I' where C_d:"((C, d) = sub_system A b I')
                               \<and> F' = {x. C *\<^sub>v x = d \<and> x \<in> P}" "(I \<inter> {0..<nr}) \<subset> (I' \<inter> {0..<nr})" 
       using obtain_I_for_subface[of A nr b A' b' I "{x. A' *\<^sub>v x = b' \<and> x \<in> P}" F']
       using A b P_def `face P {x. A' *\<^sub>v x = b' \<and> x \<in> P}` assms(4) 
       by force
-    then have "dim_vec b' < dim_vec d" using less_I_less_dims_subsystem[of A nr b I I' A' b' C d]
-
-      using A assms(4) b by blast
+    then have "dim_vec b' < dim_vec d" 
+      using less_I_less_dims_subsystem[of A nr b I I' A' b' C d]
+            A assms(4) b by blast
     have 1:"dim_vec d \<in> {dim_vec d| C d I. (C, d) = sub_system A b I \<and> 
                                                 {x. C *\<^sub>v x = d \<and> x \<in> P} \<noteq> {}}" 
-
-      by (smt (verit, best) Collect_cong \<open>(C, d) = sub_system A b I' \<and> F' = {x. C *\<^sub>v x = d \<and> x \<in> P}\<close> \<open>F' \<subset> {x. A' *\<^sub>v x = b' \<and> x \<in> P} \<and> face P F'\<close> face_non_empty mem_Collect_eq)
-
+      by (smt (verit, best) Collect_cong C_d F' face_non_empty mem_Collect_eq)
     have "dim_vec b = nr" using b by auto
     let ?M = "{dim_vec d| C d I. (C, d) = sub_system A b I \<and> {x. C *\<^sub>v x = d \<and> x \<in> P} \<noteq> {}}"
     have "finite ?M"
       using subset_set_of_sub_dims_finite[of ?M A b] by blast
-
     have "?M \<noteq> {}" using 1
       by blast
     then have "Max ?M \<in> ?M \<and> (\<forall>a \<in> ?M. a \<le> (Max ?M))"
@@ -504,7 +496,7 @@ lemma face_contains_min_face:
   shows "\<exists> F'. F' \<subseteq> F \<and> min_face P F'"
 proof -
   obtain C d where C_d:"F = polyhedron C d" "dim_row C = dim_vec d" "dim_col C = n"
-    using A P_def assms(4) b face_is_polyhedron by blast
+    using A P_def assms(4) b face_is_polyhedron by metis
   have "F \<noteq> {}" 
     using assms(4) face_non_empty by auto
   obtain F' where "min_face F F'" 
@@ -515,13 +507,13 @@ proof -
   have "\<not> (\<exists>S\<subset>F'. face F S)" 
     by (simp add: \<open>min_face F F'\<close> min_face_elim(2))
   then have "\<not> (\<exists>S\<subset>F'. face P S)" 
-    by (meson \<open>min_face F F'\<close> assms(4) face_subset_polyhedron subset_is_face min_face_elim(1) psubset_imp_subset subset_trans)
+    by (meson \<open>min_face F F'\<close> assms(4) face_subset_polyhedron subset_is_face min_face_elim(1)
+        psubset_imp_subset subset_trans)
   then have "min_face P F'" 
     using \<open>face P F'\<close> by blast
   then show ?thesis 
     by (meson \<open>min_face F F'\<close> face_subset_polyhedron min_face_elim(1))
 qed
-
 
 lemma int_all_min_faces_then_int_all_faces:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
@@ -532,11 +524,11 @@ lemma int_all_min_faces_then_int_all_faces:
   shows "\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)"
 proof
   fix F
-
   show "face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)" 
   proof 
     assume "face P F" 
-    then obtain F' where "F' \<subseteq> F \<and> min_face P F'" using face_contains_min_face assms by metis
+    then obtain F' where "F' \<subseteq> F \<and> min_face P F'"
+      using face_contains_min_face assms by metis
     then show "\<exists> x \<in> F. x \<in> \<int>\<^sub>v" 
       by (meson assms(4) subset_iff)
   qed
@@ -551,7 +543,6 @@ lemma int_all_faces_then_int_all_min_faces:
   shows "\<forall> F. min_face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)" 
   using assms(4) min_face_elim(1) 
   by presburger
-
 
 lemma int_all_min_faces_iff_int_all_faces:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
@@ -575,14 +566,13 @@ lemma lin_comb_in_hyp:
   assumes "l > 0 \<and> l < 1" 
   shows "\<alpha> \<bullet> y = \<beta>" 
 proof -
-  have "\<alpha> \<in> carrier_vec n" using assms(4) unfolding support_hyp_def by auto
+  have "\<alpha> \<in> carrier_vec n" 
+    using assms(4) unfolding support_hyp_def by auto
   have " \<beta> = \<alpha> \<bullet> (l \<cdot>\<^sub>v y) + \<alpha> \<bullet> ((1 - l) \<cdot>\<^sub>v z)" 
     using scalar_prod_add_distrib[of \<alpha> n "l \<cdot>\<^sub>v y" "(1 - l) \<cdot>\<^sub>v z"] `\<alpha> \<in> carrier_vec n`
       assms(1-3) assms(5) by blast
-
   then have 1: "l * (\<alpha> \<bullet> y) + (1 - l) * (\<alpha> \<bullet> z) = \<beta>" 
     using \<open>\<alpha> \<in> carrier_vec n\<close> assms(1-3) in_mono by fastforce
-
   have "\<alpha> \<bullet> y \<le> \<beta>" 
     using assms(2) assms(4) support_hyp_is_valid(1) valid_ineqE by blast
   have "\<alpha> \<bullet> z \<le> \<beta>" 
@@ -607,7 +597,6 @@ proof -
     then show ?thesis using 1 by blast  
   qed
 qed
-
 
 lemma P_int_then_face_int:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
@@ -663,7 +652,7 @@ proof(safe)
   let ?\<beta> = "Maximum { \<alpha> \<bullet> x | x. x \<in> P}" 
 
   have "?\<beta> \<in>  { \<alpha> \<bullet> x | x. x \<in> P}" 
-   apply(rule has_MaximumD \<open>has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}\<close>) 
+    apply(rule has_MaximumD \<open>has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}\<close>) 
     by (simp add: \<open>has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}\<close>)
   have "support_hyp P \<alpha> ?\<beta>" unfolding support_hyp_def 
     using \<open>\<alpha> \<in> carrier_vec n\<close> \<open>has_Maximum {\<alpha> \<bullet> x |x. x \<in> P}\<close> by blast
@@ -676,20 +665,19 @@ proof(safe)
     by blast
 qed
 
-
 text \<open>f ==> a\<close>
 
 lemma int_hull_subset:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
- defines "P \<equiv> polyhedron A b"
- shows "integer_hull P \<subseteq> P"
+  defines "P \<equiv> polyhedron A b"
+  shows "integer_hull P \<subseteq> P"
   by (metis A Int_subset_iff P_def b convex_def convex_hull_mono 
       integer_hull_def order_refl polyhedra_are_convex)
 
 lemma not_in_int_hull_not_int:
- fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
   defines "P \<equiv> polyhedron A b"
@@ -707,9 +695,8 @@ proof
     by blast
 qed
 
-
 lemma exists_eq_in_P_for_outside_elem:
- fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
+  fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
   defines "P \<equiv> polyhedron A b"
@@ -731,9 +718,8 @@ proof(rule ccontr)
     by (simp add: assms(4))
 qed
 
-
 lemma eq_in_P_has_max:
-    fixes A :: "'a  mat"
+  fixes A :: "'a  mat"
   fixes b:: "'a vec" 
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
@@ -744,7 +730,7 @@ lemma eq_in_P_has_max:
 proof -
   have "\<forall> x \<in> P. row A i \<bullet> x \<le> b $ i" 
     using P_def unfolding polyhedron_def 
-  mult_mat_vec_def 
+      mult_mat_vec_def 
     apply  (auto simp:  less_eq_vec_def) 
     using assms(4) b by force
   then have "valid_ineq P (row A i) (b $ i)" unfolding valid_ineq_def 
@@ -754,5 +740,4 @@ proof -
 qed
 
 end
-
 end

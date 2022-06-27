@@ -93,17 +93,13 @@ lemma sumlist_swap_upd_same':
   shows " sumlist xs = sumlist (xs[i:= xs ! j, j:= xs ! i])" 
   by (auto simp: sumlist_as_summset assms perm_swap)
 
-lemma dqwd:
-  shows "map f (x#xs) = f x # (map f xs)" 
-  by auto
-
-lemma ff:
+lemma add_zero_to_range_list:
   assumes "m > 0" 
   shows "0 # [1..< m] = [0..<m]"
   using upt_eq_Cons_conv[of 0 m 0 "[1..< m]"]
   by (auto simp: assms)
 
-lemma nmdo:
+lemma map_swap_fun_same:
   fixes xs :: "'a vec list" 
   assumes "i < length xs"
   assumes "j < length xs"
@@ -287,7 +283,7 @@ lemma length_upt_same:
   shows "length (xs[0 := xs ! i, i := xs ! 0]) = length xs"
   by auto
 
-lemma ouiou:
+lemma lincomb_map_set_carrier:
   assumes "set Wsl \<subseteq> carrier_vec n"
   shows "set (map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl]) \<subseteq> carrier_vec n"
 proof
@@ -314,13 +310,12 @@ proof -
     using \<open>i < length Wsl\<close>  nth_mem 0 length_pos_if_in_set  by fastforce
   show ?thesis 
     apply (insert sumlist_swap_upd_same[of "(map (\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia) [0..<length Wsl])" 0 i]) 
-    apply (insert nmdo[of 0 Wsl i "(\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia)"] )
-    apply (simp only: assms ouiou[of Wsl c] 1 0 length_map less_nat_zero_code) 
+    apply (insert map_swap_fun_same[of 0 Wsl i "(\<lambda>ia. c ia \<cdot>\<^sub>v Wsl ! ia)"] )
+    apply (simp only: assms lincomb_map_set_carrier[of Wsl c] 1 0 length_map less_nat_zero_code) 
     using assms(2) by fastforce
 qed
 
-
-lemma opop:
+lemma convex_lincomb_list_swap:
   assumes "convex_lincomb_list c Wsl x"
   assumes "set Wsl \<subseteq> carrier_vec n"
   assumes "i < length Wsl"
@@ -341,7 +336,7 @@ proof -
         not_less_zero sum.infinite zero_less_iff_neq_zero)
 qed
 
-lemma gegwe:
+lemma convex_lincomb_in_convex_hull_list:
   assumes "set L \<subseteq> carrier_vec n"
   assumes "convex_lincomb c' (set L) x"
   shows "x \<in> convex_hull_list L"
@@ -353,12 +348,12 @@ proof -
     by blast
 qed
 
-lemma pojop:
+lemma obt_convect_lincomb_list:
   assumes "set L \<subseteq> carrier_vec n"
   assumes "convex_lincomb c' (set L) x"
   obtains c where "convex_lincomb_list c L x" 
   using gram_schmidt.convex_hull_list_def 
-  using that gegwe assms 
+  using that convex_lincomb_in_convex_hull_list assms 
   by blast
 
 lemma sum_except_one:
@@ -370,32 +365,31 @@ proof -
   let ?g = "(\<lambda>i. f (i + 1) / (1 - f 0))" 
   have "length (a # ax) = 1 + length ax" 
     by simp
-  then have "sum (\<lambda>i. f (i + 1)) {0..<length ax} = sum (\<lambda>i. f i) {1..<length (a # ax)}"
+  then have 0:"sum (\<lambda>i. f (i + 1)) {0..<length ax} = sum (\<lambda>i. f i) {1..<length (a # ax)}"
     by (metis Nat.add_0_right  add.commute sum.shift_bounds_nat_ivl)
   then have "(1/(1 - f 0)) * sum (\<lambda>i. f (i + 1)) {0..<length ax} =
               (1/(1 - f 0)) * sum (\<lambda>i. f i) {1..<length (a # ax)}" by simp
-  have "sum ?g {0..<length ax} = (1/(1 - f 0)) * sum (\<lambda>i. f (i + 1)) {0..<length ax}"  
+  have 1:"sum ?g {0..<length ax} = (1/(1 - f 0)) * sum (\<lambda>i. f (i + 1)) {0..<length ax}"  
     using mult_hom.hom_sum[of "(1/(1 - f 0))" "(\<lambda>i. f (i + 1))" "{0..<length ax}"]
     by simp
   then have "f 0 + sum f {1..<length (a#ax)} = sum f {0..<length (a#ax)}" 
     by (metis \<open>length (a # ax) = 1 + length ax\<close> add.commute sum_range_divided_at_zero)
   then have "f 0 + sum f {1..<length (a#ax)} = 1" 
     by (metis  \<open>sum f {0..<length (a#ax)} = 1\<close>)
-  then have "sum (\<lambda>i. f (i + 1)) {0..<length ax} = 1 - f 0" 
-    using \<open>(\<Sum>i = 0..<length ax. f (i + 1)) = sum f {1..<length (a # ax)}\<close> by linarith 
+  then have 2:"sum (\<lambda>i. f (i + 1)) {0..<length ax} = 1 - f 0" 
+    using 0 by linarith 
   then have "(1/(1 - f 0)) * (1 - f 0) =  1" using `f 0 \<noteq> 1` 
     by (metis nonzero_eq_divide_eq r_right_minus_eq)
   then show ?thesis 
-    using \<open>(\<Sum>i = 0..<length ax. f (i + 1) / (1 - f 0)) = 1 / (1 - f 0) * (\<Sum>i = 0..<length ax. f (i + 1))\<close>
-      \<open>(\<Sum>i = 0..<length ax. f (i + 1)) = 1 - f 0\<close> by presburger
+    using 1 2 by presburger
 qed
 
 lemma sumlist_distr_zero:
   assumes "m > 0"
   shows "sumlist (map f [0..<m]) = f 0 + sumlist (map f [1..<m])" 
-  by (metis M.sumlist_Cons assms ff list.simps(9))
+  by (metis M.sumlist_Cons add_zero_to_range_list assms list.simps(9))
 
-lemma ioppnn:
+lemma sumlist_as_lincomb_two_elems:
   assumes "c 0 \<noteq> 1"
   assumes "set (a#ax) \<subseteq> carrier_vec n" 
   shows " sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i) [0..<length (a#ax)]) =
@@ -403,7 +397,7 @@ lemma ioppnn:
 proof -
   let ?f = "(\<lambda>i. c i \<cdot>\<^sub>v (a # ax) ! i)"  
   have "?f \<in> set [1..<length (a # ax)] \<rightarrow> carrier_vec n" 
-    using ouiou[of "a#ax" c] assms set_upt smult_closed subsetD by fastforce
+    using lincomb_map_set_carrier[of "a#ax" c] assms set_upt smult_closed subsetD by fastforce
   then have " M.sumlist (map ?f [1..<length (a # ax)]) =
     (1 - c 0) \<cdot>\<^sub>v M.sumlist (map (\<lambda>i. 1 / (1 - c 0) \<cdot>\<^sub>v ?f i) [1..<length (a # ax)])"
     using sumlist_map_mult[of ?f " [1..<length (a # ax)]" "(1 - c 0)"] `c 0 \<noteq> 1` 
@@ -435,27 +429,25 @@ proof -
 obtain Ws c' where Ws_c':"finite Ws" "Ws \<subseteq> P \<inter> \<int>\<^sub>v" "convex_lincomb c' Ws x"
   using assms(2) unfolding integer_hull_def
         by (smt (verit, ccfv_SIG) IntD1 \<open>x \<in> P\<close> gram_schmidt.convex_hull_def mem_Collect_eq)
-
-  have "Ws \<subseteq> carrier_vec n" 
+  have Ws_subs: "Ws \<subseteq> carrier_vec n" 
     by (meson Int_subset_iff Ws_c'(2) assms(1) dual_order.trans)
   have "x \<in> convex_hull Ws" 
     using Ws_c' convex_hull_def by blast
- 
-  obtain Wsl where "set Wsl =  Ws "
+  obtain Wsl where Wsl:"set Wsl =  Ws "
     by (meson Ws_c'(1) finite_list)
-  then obtain c where c:"convex_lincomb_list c Wsl x" 
-    using \<open>Ws \<subseteq> carrier_vec n\<close> Ws_c' pojop by blast
+  then obtain c where c: "convex_lincomb_list c Wsl x" 
+    using Ws_subs Ws_c' obt_convect_lincomb_list by blast
   then obtain i where i: "i < length Wsl \<and> c i \<noteq> 0" 
-    by (metis Ints_0 Ws_c'(2) \<open>Ws \<subseteq> carrier_vec n\<close> \<open>set Wsl = Ws\<close> assms(4) convex_lincom_int inf.boundedE)
-  have "Ws = set (Wsl[0:= Wsl ! i, i:=Wsl ! 0])"
-    by (metis i \<open>set Wsl = Ws\<close> length_pos_if_in_set nth_mem set_swap)
+    by (metis Ints_0 Ws_c'(2) Ws_subs Wsl assms(4) convex_lincom_int inf.boundedE)
+  have Ws_swap: "Ws = set (Wsl[0:= Wsl ! i, i:=Wsl ! 0])"
+    by (metis i Wsl length_pos_if_in_set nth_mem set_swap)
  have "Ws \<noteq> {}" 
     using \<open>x \<in> convex_hull Ws\<close> convex_hull_empty(2) by blast
  then have "Wsl \<noteq> []" 
-    using \<open>Ws \<noteq> {}\<close> 
-    using \<open>set Wsl = Ws\<close> by fastforce
-  then show ?thesis using opop[of c Wsl x i] Ws_c' 
-    by (metis \<open>Ws = set (Wsl[0 := Wsl ! i, i := Wsl ! 0])\<close> \<open>Ws \<subseteq> carrier_vec n\<close> \<open>set Wsl = Ws\<close> c fun_upd_other fun_upd_same i list_update_nonempty that)
+    using \<open>Ws \<noteq> {}\<close> Wsl by fastforce
+  then show ?thesis
+    using convex_lincomb_list_swap[of c Wsl x i] Ws_c'
+    by (metis Ws_swap Ws_subs Wsl c fun_upd_other fun_upd_same i list_update_nonempty that)
 qed
 
 lemma elem_of_P_is_lin_comb:
@@ -481,7 +473,6 @@ proof -
     using assms(4) by blast
   then have "c 0 \<noteq> 1" 
     by (metis Wc length_greater_0_conv less_numeral_extra(4))
-
   let ?f = "(\<lambda>i. c (i + 1) / (1 - c 0))" 
   have "sum ?f {0..<length ax} = 1" using sum_except_one 
     by (metis \<open>Wsl = a # ax\<close> \<open>c 0 \<noteq> 1\<close> \<open>sum c {0..<length Wsl} = 1\<close>)
@@ -492,10 +483,9 @@ proof -
   have " set ax \<subseteq> P \<inter> \<int>\<^sub>v" 
     using Wc \<open>set ax \<subseteq> set Wsl\<close>   by blast
   have "(\<forall> i < length Wsl. c i \<ge> 0)" 
-    using \<open>lincomb_list c Wsl = x \<and> (\<forall>i<length Wsl. 0 \<le> c i) \<and> sum c {0..<length Wsl} = 1\<close> by presburger
+    using lin_comb_x by presburger
   have "(1 - c 0) > 0" using nonneg_sum_range_each_le[of "length Wsl" c] 
     by (meson Wc \<open>\<forall>i<length Wsl. c i < 1\<close> diff_gt_0_iff_gt gr_zeroI length_0_conv)
-
   then have " \<forall>i<length ax. 0 \<le> ?f i"  
     by (simp add: \<open>Wsl = a # ax\<close> \<open>\<forall>i<length Wsl. 0 \<le> c i\<close>)
   have 1:"sumlist (map (\<lambda>i. ?f i \<cdot>\<^sub>v ax ! i) [0..<length ax]) \<in> P" 
@@ -504,10 +494,8 @@ proof -
     unfolding lincomb_list_def 
     by blast
   have 2:"x = c 0 \<cdot>\<^sub>v a + (1 - c 0) \<cdot>\<^sub>v sumlist ( map (\<lambda>i. ?f i \<cdot>\<^sub>v ax ! i) [0..<length ax])"
-    using ioppnn[of c a ax] 
-    using \<open>Wsl = a # ax\<close> \<open>c 0 \<noteq> 1\<close>
-      lin_comb_x assms(1) Wc
-    by (auto simp: lincomb_list_def)
+    using sumlist_as_lincomb_two_elems[of c a ax]  \<open>Wsl = a # ax\<close> \<open>c 0 \<noteq> 1\<close>
+      lin_comb_x assms(1) Wc by (auto simp: lincomb_list_def)
   have 3:"a \<in> P \<inter> \<int>\<^sub>v" 
     using \<open>Wsl = a # ax\<close> Wc  by force
   have 4:"c 0 > 0" 
@@ -519,21 +507,11 @@ proof -
     using \<open>c 0 \<noteq> 1\<close> by force
 qed
 
-
-
 lemma lincomb_then_lincomb_list:
   assumes "set L \<subseteq> carrier_vec n"
   assumes "x = lincomb c' (set L)"
   obtains c where "x = lincomb_list c L" 
   using assms(1) assms(2) lincomb_as_lincomb_list by blast
-
-lemma sum_only_non_zero:
-  assumes "finite S"
-  assumes "I \<subseteq> S" 
-  assumes "\<forall>i \<in> S - I. f i = 0"
-  shows "sum f S = sum f I" 
-  oops
-
 
 end
 end
