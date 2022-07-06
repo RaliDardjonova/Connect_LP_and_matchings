@@ -7,7 +7,29 @@ theory Faces
     Jordan_Normal_Form.DL_Rank_Submatrix
     Subsystems
 begin 
+(*
 
+definition undef_vec :: "nat \<Rightarrow> 'a" where
+  "undef_vec i \<equiv> [] ! i"
+
+definition mk_vec :: "nat \<Rightarrow> (nat \<Rightarrow> 'a) \<Rightarrow> (nat \<Rightarrow> 'a)" where
+  "mk_vec n f \<equiv> \<lambda> i. if i < n then f i else undef_vec (i - n)"
+
+typedef 'a vec = "{(n, mk_vec n f) | n f :: nat \<Rightarrow> 'a. True}"
+  by auto
+
+definition mk_mat :: "nat \<Rightarrow> nat \<Rightarrow> (nat \<times> nat \<Rightarrow> 'a) \<Rightarrow> (nat \<times> nat \<Rightarrow> 'a)" where
+  "mk_mat nr nc f \<equiv> \<lambda> (i,j). if i < nr \<and> j < nc then f (i,j) else undef_mat nr nc f (i,j)"
+
+lemma cong_mk_mat: assumes "\<And> i j. i < nr \<Longrightarrow> j < nc \<Longrightarrow> f (i,j) = f' (i,j)"
+  shows "mk_mat nr nc f = mk_mat nr nc f'"
+  using undef_cong_mat[of nr nc f f', OF assms]
+  using assms unfolding mk_mat_def
+  by auto
+
+typedef 'a mat = "{(nr, nc, mk_mat nr nc f) | nr nc f :: nat \<times> nat \<Rightarrow> 'a. True}"
+  by auto
+*)
 definition
   one_vec :: "nat \<Rightarrow> 'a :: one vec" ("1\<^sub>v")
   where "1\<^sub>v n \<equiv> vec n (\<lambda> i. 1)"

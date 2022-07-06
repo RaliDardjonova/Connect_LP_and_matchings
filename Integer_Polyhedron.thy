@@ -522,16 +522,13 @@ lemma int_all_min_faces_then_int_all_faces:
   defines "P \<equiv> polyhedron A b"
   assumes "\<forall> F. min_face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)"
   shows "\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)"
-proof
+proof safe
   fix F
-  show "face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)" 
-  proof 
-    assume "face P F" 
-    then obtain F' where "F' \<subseteq> F \<and> min_face P F'"
-      using face_contains_min_face assms by metis
-    then show "\<exists> x \<in> F. x \<in> \<int>\<^sub>v" 
-      by (meson assms(4) subset_iff)
-  qed
+  assume "face P F" 
+  then obtain F' where "F' \<subseteq> F \<and> min_face P F'"
+    using face_contains_min_face assms by metis
+  then show "\<exists> x \<in> F. x \<in> \<int>\<^sub>v" 
+    by (meson assms(4) subset_iff)
 qed
 
 lemma int_all_faces_then_int_all_min_faces:
@@ -600,9 +597,7 @@ qed
 
 lemma P_int_then_face_int:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
+  assumes "P \<subseteq> carrier_vec n" 
   assumes "P = integer_hull P" 
   shows "(\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))" 
 proof
@@ -623,9 +618,8 @@ proof
         using \<open>face P F\<close> face_def by auto
       obtain y z l where lin_comb_x:"y \<in> P \<inter> \<int>\<^sub>v" "z \<in> P" "x = l \<cdot>\<^sub>v y + (1 - l) \<cdot>\<^sub>v z" "l > 0 \<and> l < 1"
         using elem_of_P_is_lin_comb[of P x] 
-        using P_def assms(4) gram_schmidt.polyhedron_def False \<open>x \<in> F\<close> 
+        using assms gram_schmidt.polyhedron_def False \<open>x \<in> F\<close> 
         using \<open>face P F\<close> face_subset_polyhedron by blast 
-      have "P \<subseteq> carrier_vec n" unfolding P_def polyhedron_def by auto
       have "\<alpha> \<bullet> y = \<beta>" 
         using lin_comb_in_hyp[of P y z \<alpha> \<beta> l] 
           \<alpha>_\<beta> lin_comb_x `P \<subseteq> carrier_vec n` \<open>x \<in> F\<close> by fastforce
@@ -640,9 +634,7 @@ text\<open>b \<Longrightarrow> f\<close>
 
 lemma int_face_then_max_suphyp_int:
   fixes A :: "'a :: trivial_conjugatable_linordered_field mat"
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
+  assumes "P \<subseteq> carrier_vec n"
   assumes "(\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))" 
   shows "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> P} \<longrightarrow>
    (\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v)"
@@ -661,7 +653,7 @@ proof(safe)
     apply(auto)
     using \<open>Maximum {\<alpha> \<bullet> x |x. x \<in> P} \<in> {\<alpha> \<bullet> x |x. x \<in> P}\<close> apply blast
     using \<open>support_hyp P \<alpha> (Maximum {\<alpha> \<bullet> x |x. x \<in> P})\<close> by blast
-  then show "\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v" using assms(4)
+  then show "\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v" using assms(1-2)
     by blast
 qed
 

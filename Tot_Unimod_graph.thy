@@ -1,9 +1,23 @@
 theory Tot_Unimod_graph
-  imports Totally_Unimodular "../archive-of-graph-formalizations/Undirected_Graphs/Bipartite"
+  imports Totally_Unimodular 
 begin
 
 context gram_schmidt_floor
 begin
+
+definition Vs where "Vs E \<equiv> \<Union> E"
+
+
+abbreviation "graph_invar E \<equiv> (\<forall>e\<in>E. \<exists>u v. e = {u, v} \<and> u \<noteq> v) \<and> finite (Vs E)"
+
+definition bipartite where 
+  "bipartite E \<equiv> graph_invar E \<and> (\<exists> X \<subseteq> Vs E. \<forall> e \<in> E. \<exists> u v. 
+                                   e = {u, v} \<and> (u \<in> X \<and> v \<in> Vs E - X))" 
+
+lemma card_edge:
+  assumes "graph_invar E"
+  shows "\<forall> e\<in> E. card e = 2" 
+  by (simp add: assms card_2_iff)
 
 definition set_to_list :: "'b set \<Rightarrow> 'b list"
   where "set_to_list s = (SOME l. set l = s \<and> distinct l)"
@@ -637,5 +651,157 @@ proof -
     using "1" one_carrier_vec by blast
 qed
 
+definition perfect_mathing_polyhedron where 
+  "perfect_mathing_polyhedron A b = {x. x \<in> carrier_vec n \<and> A *\<^sub>v x = b \<and> x \<ge> 0\<^sub>v n}"
+
+lemma perfect_mathing_polyhedron_face:
+  assumes "A \<in> carrier_mat nr n"
+  assumes "b \<in> carrier_vec nr"
+  assumes "(perfect_mathing_polyhedron A b) \<noteq> {}"
+  shows "face (pos_polyhedron A b) (perfect_mathing_polyhedron A b)"
+proof -
+  have 1:"(A, b) = sub_system (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n) {0..<nr}" 
+  proof
+    have "A = submatrix (A @\<^sub>r - 1\<^sub>m n) {0..<nr} UNIV"
+    
+    oops
+  have "{x. x \<in> carrier_vec n \<and> A *\<^sub>v x = b \<and> x \<ge> 0\<^sub>v n} = 
+              {x. A *\<^sub>v x = b \<and> x \<in> (pos_polyhedron A b)}" 
+    unfolding pos_polyhedron_def 
+    by fast
+  then have "(perfect_mathing_polyhedron A b) = 
+           {x. A *\<^sub>v x = b \<and> x \<in> (pos_polyhedron A b)}" 
+    unfolding perfect_mathing_polyhedron_def by auto
+  have "pos_polyhedron A b = polyhedron (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n)" 
+    using assms(1) assms(2) pos_polyh_is_polyh by presburger
+  have 2: "(A @\<^sub>r - 1\<^sub>m n) \<in> carrier_mat (nr+n) n" 
+    by (meson assms(1) carrier_append_rows one_carrier_mat uminus_carrier_mat)
+  have 3: "(b @\<^sub>v 0\<^sub>v n) \<in> carrier_vec (nr+n)"
+    by (simp add: assms(2))
+  then have "face (polyhedron (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n)) (perfect_mathing_polyhedron A b)" 
+    using char_face2[OF 2 3 1] 
+    using \<open>perfect_mathing_polyhedron A b = {x. A *\<^sub>v x = b \<and> x \<in> pos_polyhedron A b}\<close> 
+      \<open>pos_polyhedron A b = local.polyhedron (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n)\<close> assms(3) by presburger
+  then show ?thesis 
+    using \<open>pos_polyhedron A b = local.polyhedron (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n)\<close> by presburger
+qed
+
+lemma face_int_polyhedron_int_matrix:
+   fixes A :: "'a  mat"
+ fixes b
+ assumes A: "A \<in> carrier_mat nr n"
+ assumes b: "b \<in> carrier_vec nr"
+  defines "P \<equiv> polyhedron A b"
+ assumes "(A', b') = sub_system A b I'"
+ assumes " F = {x.  x \<in> carrier_vec n \<and> A' *\<^sub>v x = b' \<and> A *\<^sub>v x \<le> b}"
+  assumes "A \<in> \<int>\<^sub>m"
+  assumes "b \<in> \<int>\<^sub>v"
+  shows "((A' @\<^sub>r (-A')) @\<^sub>r A) \<in> \<int>\<^sub>m" "((b' @\<^sub>v (-b')) @\<^sub>v b) \<in> \<int>\<^sub>v"
+proof -
+  have "A' \<in> \<int>\<^sub>m" 
+    by (metis assms(4) assms(6) prod.simps(1) sub_system_def submatrix_int_mat)
+  then show "((A' @\<^sub>r (-A')) @\<^sub>r A) \<in> \<int>\<^sub>m" 
+    by (metis assms(1) assms(4) assms(6) b carrier_mat_triv gram_schmidt.append_int_mat_is_int gram_schmidt.face_is_polyhedron'(3) minus_in_Ints_mat_iff uminus_carrier_iff_mat)
+  have "b' \<in> \<int>\<^sub>v" 
+    using assms(4) unfolding sub_system_def
+    using subvec_int_int 
+    using assms(7) by blast
+  then show "((b' @\<^sub>v (-b')) @\<^sub>v b) \<in> \<int>\<^sub>v" 
+    by (meson append_int_vec_is_int assms(7) carrier_vec_dim_vec minus_in_Ints_vec_iff)
+qed
+
+lemma face_is_int_polyhedron:
+   fixes A :: "'a mat"
+ fixes b
+ assumes A: "A \<in> carrier_mat nr n"
+ assumes b: "b \<in> carrier_vec nr"
+ defines "P \<equiv> polyhedron A b"
+ assumes "face P F" 
+ assumes "A \<in> \<int>\<^sub>m"
+  assumes "b \<in> \<int>\<^sub>v"
+  obtains A' b' where "F = polyhedron A' b'" "dim_row A' = dim_vec b'" "dim_col A' = n"
+                      "A' \<in> \<int>\<^sub>m" "b' \<in> \<int>\<^sub>v"
+proof -
+  obtain  A' b' I'  where  A'_b': "(A', b') = sub_system A b I'" 
+                      " F = {x.  A' *\<^sub>v x = b' \<and> x \<in> P}"
+    using char_face1[of A nr b F]
+    using A P_def assms(4) b by blast
+  have 1: "F = {x \<in> carrier_vec n. A' *\<^sub>v x = b' \<and> A *\<^sub>v x \<le> b}" 
+    using A'_b'(2) unfolding P_def polyhedron_def by auto
+  show ?thesis
+    using face_is_polyhedron''[OF assms(1) assms(2) A'_b'(1) 1 ]
+      face_int_polyhedron_int_matrix[OF assms(1) assms(2) A'_b'(1) 1 assms(5) assms(6)]
+    using that by presburger
+qed
+
+lemma int_poly_face_int:
+ fixes A :: "'a mat"
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+  defines "P \<equiv> polyhedron A b" 
+  assumes "int_polyh P"
+  assumes "face P F"
+  assumes "A \<in> \<int>\<^sub>m"
+  assumes "b \<in> \<int>\<^sub>v" 
+  shows "int_polyh F" 
+proof -
+  have "P = integer_hull P"
+    using assms(4) gram_schmidt_floor.int_polyh_def by blast
+  have "P \<subseteq> carrier_vec n" unfolding P_def polyhedron_def 
+    by blast 
+  then have "(\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))"
+  using P_int_then_face_int \<open>P = integer_hull P\<close> by presburger
+  have "(\<forall> F'. face F F' \<longrightarrow> (\<exists> x \<in> F'. x \<in> \<int>\<^sub>v))"
+    using P_def P_int_then_face_int \<open>P = integer_hull P\<close> \<open>P \<subseteq> carrier_vec n\<close> 
+      assms(1) assms(5) b face_trans by presburger
+  obtain A' b'  where "F = polyhedron A' b'" "dim_row A' = dim_vec b'" "dim_col A' = n"
+                      "A' \<in> \<int>\<^sub>m" "b' \<in> \<int>\<^sub>v" using face_is_int_polyhedron 
+    by (metis P_def assms(1) assms(5) assms(6) assms(7) b)
+  
+  then have "F = integer_hull F" using face_iff_int_polyh 
+    using \<open>\<forall>F'. face F F' \<longrightarrow> (\<exists>x\<in>F'. x \<in> \<int>\<^sub>v)\<close> carrier_vec_dim_vec by blast
+  then show ?thesis unfolding int_polyh_def by auto
+qed
+
+lemma perfect_mathing_polyhedron_integral:
+  assumes "bipartite E"
+  shows "gram_schmidt_floor.int_polyh (card E) 
+            (gram_schmidt_floor.perfect_mathing_polyhedron (card E) 
+        (insidence_mat E) (1\<^sub>v (card (Vs E))))" 
+proof -
+  have "gram_schmidt_floor.int_polyh (card E) 
+            (gram_schmidt_floor.pos_polyhedron (card E) (insidence_mat E) (1\<^sub>v (card (Vs E))))"
+    using assms gram_schmidt_floor.matching_polyh_int by blast
+  have "\<forall> F. gram_schmidt.face (card E) (gram_schmidt_floor.pos_polyhedron (card E) (insidence_mat E) (1\<^sub>v (card (Vs E)))) F
+           \<longrightarrow> gram_schmidt_floor.int_polyh (card E) F"
+  proof safe
+    fix F
+    assume asm: "gram_schmidt.face (card E) (gram_schmidt_floor.pos_polyhedron (card E) (insidence_mat E) (1\<^sub>v (card (Vs E)))) F" 
+    have "gram_schmidt_floor.pos_polyhedron (card E) (insidence_mat E) (1\<^sub>v (card (Vs E))) = 
+                  gram_schmidt.polyhedron (card E) ((insidence_mat E) @\<^sub>r - 1\<^sub>m (card E))
+           ((1\<^sub>v (card (Vs E))) @\<^sub>v 0\<^sub>v (card E))" 
+      using gram_schmidt_floor.pos_polyh_is_polyh 
+      by (metis gram_schmidt_floor.insidence_mat_def mat_carrier one_carrier_vec)
+    have 1:"(insidence_mat E) @\<^sub>r - 1\<^sub>m (card E) \<in> \<int>\<^sub>m" 
+      using assms bipartite_tot_unimod dim_col_insidence_mat gram_schmidt_floor.tot_unimod_append_minus_one totally_unimod_mat_int by blast
+    have 2: "(1\<^sub>v (card (Vs E))) @\<^sub>v 0\<^sub>v (card E) \<in> \<int>\<^sub>v" 
+      by (simp add: append_int_vec_is_int carrier_dim_vec gram_schmidt.one_vec_int gram_schmidt.zero_vec_is_int)
+    have 3: "gram_schmidt_floor.int_polyh (card E) (gram_schmidt.polyhedron (card E)
+       ((insidence_mat E) @\<^sub>r - 1\<^sub>m (card E)) ((1\<^sub>v (card (Vs E))) @\<^sub>v 0\<^sub>v (card E)))" 
+      using \<open>gram_schmidt_floor.int_polyh (card E) (gram_schmidt_floor.pos_polyhedron (card E) (insidence_mat E) (1\<^sub>v (card (Vs E))))\<close> \<open>gram_schmidt_floor.pos_polyhedron (card E) (insidence_mat E) (1\<^sub>v (card (Vs E))) = gram_schmidt.polyhedron (card E) (insidence_mat E @\<^sub>r - 1\<^sub>m (card E)) (1\<^sub>v (card (Vs E)) @\<^sub>v 0\<^sub>v (card E))\<close> by force
+    have 4: "gram_schmidt.face (card E) (gram_schmidt.polyhedron (card E) ((insidence_mat E) @\<^sub>r - 1\<^sub>m (card E))
+           ((1\<^sub>v (card (Vs E))) @\<^sub>v 0\<^sub>v (card E))) F" 
+      using asm \<open>gram_schmidt_floor.pos_polyhedron (card E) (insidence_mat E) (1\<^sub>v (card (Vs E))) = gram_schmidt.polyhedron (card E) (insidence_mat E @\<^sub>r - 1\<^sub>m (card E)) (1\<^sub>v (card (Vs E)) @\<^sub>v 0\<^sub>v (card E))\<close> by force
+    have 5: "(insidence_mat E) @\<^sub>r - 1\<^sub>m (card E) \<in> carrier_mat ((card (Vs E)) + (card E)) (card E)" 
+      by (simp add: insidence_mat_def)
+    have 6: "((1\<^sub>v (card (Vs E))) @\<^sub>v 0\<^sub>v (card E)) \<in> carrier_vec ((card (Vs E)) + (card E))" 
+      by simp
+    show "gram_schmidt_floor.int_polyh (card E) F"
+      using gram_schmidt_floor.int_poly_face_int[OF 5 6 3 4 1 2] by auto
+  qed
+  then show ?thesis using gram_schmidt_floor.perfect_mathing_polyhedron_face 
+    by (metis Union_disjoint Union_empty carrier_matI dim_col_insidence_mat dim_row_insidence_mat gram_schmidt.convex_hull_empty(1) gram_schmidt.integer_hull_def gram_schmidt_floor.int_polyh_def mem_simps(2) one_carrier_vec)
+qed
+  
 end
 end

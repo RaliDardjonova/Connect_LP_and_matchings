@@ -27,6 +27,16 @@ proof -
     by (simp add:int_in_carr set_in_convex_hull convex_hull_mono)
 qed
 
+lemma integer_hull_in_carrier:
+  assumes "P \<subseteq> carrier_vec n"
+  shows "integer_hull P \<subseteq> carrier_vec n"
+proof -
+   have int_in_carr: "P \<inter> \<int>\<^sub>v \<subseteq> carrier_vec n" 
+     using assms by auto
+   then show ?thesis 
+     by (simp add: gram_schmidt.convex_hull_carrier gram_schmidt.integer_hull_def)
+ qed
+
 lemma min_face_min_subsyst:
   fixes A :: "'a  mat"
   assumes A: "A \<in> carrier_mat nr n"
@@ -82,224 +92,6 @@ lemma elems_ge_min:
   assumes "a = Min S" 
   shows "b \<ge> a" 
   by (simp add: assms)
-
-lemma min_face_distinct:
-  fixes A :: "'a  Matrix.mat"
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
-  assumes "P \<noteq> {}"
-  assumes "min_face P F"
-  assumes "dim_vec b' = Min {dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
-          (C, d) = sub_system A b I'}"
-  assumes " F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'}"  
-  assumes "(A', b') = sub_system A b I"
-  shows "distinct (Matrix.rows A')" 
-proof(rule ccontr)
-  let ?M = "{dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
-          (C, d) = sub_system A b I'}" 
-  have dims_eq: "dim_row A = dim_vec b" 
-    by (metis assms(1) assms(2) carrier_matD(1) carrier_vecD)
-  assume "\<not> distinct (Matrix.rows A') "
-  then obtain j1 j2 where j1j2: "j1 \<noteq> j2 \<and> j1 < dim_row A' \<and> 
-                                 j2 < dim_row A' \<and> row A' j1 = row A' j2" 
-    by (metis distinct_conv_nth length_rows nth_rows)
-  obtain i1 where i1:"i1 < dim_row A \<and> i1 \<in> I \<and> row A i1 = row A' j1 \<and>
-                      i1 = (pick I j1) \<and> b' $ j1 = b $ i1" 
-    by (metis assms(8) dims_eq dims_subsyst_same exist_index_in_A fst_conv j1j2 snd_conv)
-  obtain i2 where i2: "i2 < dim_row A \<and> i2 \<in> I \<and> row A i2 = row A' j2 \<and> 
-                       i2 = (pick I j2) \<and> b' $ j2 = b $ i2" 
-    by (metis assms(8) dims_eq dims_subsyst_same exist_index_in_A fst_conv j1j2 snd_conv)
-  then have "i1 \<noteq> i2" using subsyst_indx_neq_syst_indx_neq[of i1 I j1 i2 j2 A' b' A b] 
-    using i1 j1j2 assms(8) by presburger
-  have " b $ i1 =  b $ i2" 
-  proof(rule ccontr)
-    assume "b $ i1 \<noteq> b $ i2"
-    then have "b' $ j1 \<noteq> b' $ j2" using i1 i2 by auto
-    obtain x where "x \<in> F" 
-      by (metis A P_def assms(5) b equals0I gram_schmidt.char_min_face)
-    then have "x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'" 
-      using assms(7) by blast
-    have "row A' j1 = row A' j2" using j1j2 
-      by blast
-    then show False 
-      using j1j2 \<open>x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'\<close> index_mult_mat_vec
-      using \<open>b' $ j1 \<noteq> b' $ j2\<close> 
-      by metis  
-  qed
-  obtain C d where C_d: "(C, d) = sub_system A b (I - {i1})"
-    by (metis surj_pair)
-  have "{x.  A' *\<^sub>v x = b'} = {x.  C *\<^sub>v x = d \<and> row A i1 \<bullet> x = b $ i1 }"
-    using remove_index_sub_system_eq[of A b i1 I A' b' C d] 
-    by (metis A C_d i1 assms(8) b carrier_matD(1) carrier_vecD)
-  have "\<forall>x.  C *\<^sub>v x = d \<longrightarrow> row A i1 \<bullet> x = b $ i1"
-  proof(safe)
-    fix x
-    assume "d = C *\<^sub>v x" 
-    have "i2 \<in> I - {i1}" 
-      using \<open>i1 \<noteq> i2\<close> i2 by blast
-    then obtain j where j: "j < dim_row C \<and> row A i2 = row C j \<and> b $ i2 = d $ j" 
-      by (metis C_d dims_eq dims_subsyst_same' exist_index_in_A' fst_conv i2 snd_conv)
-    then have "row A i1 = row C j \<and> b $ i1 = d $ j" 
-      by (metis \<open>b $ i1 = b $ i2\<close> i1 i2 j1j2)
-    then have "row C j \<bullet> x = d $ j" using `d = C *\<^sub>v x`  j 
-      by (metis index_mult_mat_vec)
-    then show "row A i1 \<bullet> x = b $ i1" 
-      by (metis \<open>b $ i1 = b $ i2\<close> i1 i2 j j1j2)
-  qed
-  then have "{x.  A' *\<^sub>v x = b'} = {x. C *\<^sub>v x = d}"
-    using \<open>{x. A' *\<^sub>v x = b'} = {x. C *\<^sub>v x = d \<and> row A i1 \<bullet> x = b $ i1}\<close> by blast
-  have "dim_vec d + 1 = dim_vec b'" 
-    using remove_index_sub_system_dims[of i1 I b A' b' A C d] 
-    by (metis C_d assms(8) dims_eq i1)
-  have "dim_vec d \<ge> dim_vec b'" 
-    using elems_ge_min[of ?M "dim_vec d" "dim_vec b'"] 
-      C_d \<open>{x. A' *\<^sub>v x = b'} = {x. C *\<^sub>v x = d}\<close> assms(7)  
-      subset_set_of_sub_dims_finite[of ?M A b]  assms(6) by blast
-  then show False
-    using \<open>dim_vec d + 1 = dim_vec b'\<close> by linarith
-qed
-
-lemma subsyst_rows_carr:
-  assumes "A \<in> carrier_mat nr n"
-  assumes "(A', b') = sub_system A b I"
-  shows "set (rows A') \<subseteq> carrier_vec n" 
-  using dim_col_subsyst_mat[of A b I]
-  using assms carrier_matD(2) prod.sel(1) rows_carrier 
-  by metis
-
-lemma itself_is_subsyst_set_idcs:
-  fixes A :: "'a  mat"
-  fixes b:: "'a vec" 
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr" 
-  shows "(A, b) = sub_system A b {0..<nr}"
-  by  (auto simp: itself_is_subsyst same_subsyst_I_intersect_rows[of A nr b UNIV] assms) 
-
-lemma sum_list_of_map_eq:
-  assumes "\<forall>i \<in> set L. f i = g i"
-  shows "sum_list (map f L) = sum_list (map g L)" 
-  by (metis assms map_eq_conv)
-
-lemma list_range_lt: "i \<in> set [0..<l] \<longleftrightarrow> i < l" 
-  using atLeast_upt by blast
-
-lemma sumlist_system_result:
-  assumes "x \<in> carrier_vec n"
-  assumes "C *\<^sub>v x = d"
-  assumes "set (rows C) \<subseteq> carrier_vec n" 
-  assumes "u \<in> carrier_vec n"
-  assumes "u = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) [0..<length (rows C)])" 
-  shows "u \<bullet> x = sum_list  (map (\<lambda>i. (c i *  d $ i)) [0..<length (rows C)])" 
-proof -
-  let ?Cl = "[0..<length (rows C)]" 
-  have Cl_map_carr:"(\<And>v. v \<in> set (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) ?Cl) \<Longrightarrow> v \<in> carrier_vec n)"
-    using assms(3) lincomb_map_set_carrier by blast
-  have "u \<bullet> x =  x \<bullet> u" 
-    using assms(1) assms(4) comm_scalar_prod by blast
-  have "u \<bullet> x = sum_list (map ((\<bullet>) x) (map (\<lambda>i. c i \<cdot>\<^sub>v (rows C) ! i) ?Cl))"
-    using scalar_prod_right_sum_distrib[OF Cl_map_carr] 
-    by(simp only: `u \<bullet> x =  x \<bullet> u`,simp only: assms(5) assms(1)) 
-  also have "\<dots> = sum_list (map (\<lambda>i. (c i \<cdot>\<^sub>v (rows C) ! i) \<bullet> x) ?Cl)"
-    apply(simp only: map_map comp_def, intro sum_list_of_map_eq, safe)
-    apply(intro comm_scalar_prod, blast intro: assms(1))
-    using list_range_lt assms(3) nth_mem  by blast
-  also have "\<dots> = sum_list (map (\<lambda>i. (c i * (((rows C) ! i) \<bullet> x))) ?Cl)"
-    apply(intro sum_list_of_map_eq, safe, simp only: list_range_lt)
-    using assms(1) assms(3) nth_mem smult_scalar_prod_distrib by blast
-  also have "\<dots> = sum_list (map (\<lambda>i. (c i * d $ i)) ?Cl)"
-    apply(intro sum_list_of_map_eq, safe, simp only: list_range_lt)
-    using assms(2) by force
-  ultimately show "u \<bullet> x = sum_list (map (\<lambda>i. (c i * d $ i)) ?Cl)"
-    by presburger
-qed
-
-lemma min_face_lin_indpt:
-  fixes A :: "'a  mat"
-  fixes b:: "'a vec" 
-  assumes A: "A \<in> carrier_mat nr n"
-  assumes b: "b \<in> carrier_vec nr"
-  defines "P \<equiv> polyhedron A b"
-  assumes "P \<noteq> {}"
-  assumes "min_face P F"
-  assumes "dim_vec b' = Min {dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
-          (C, d) = sub_system A b I'}"
-  assumes " F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'}"  
-  assumes "(A', b') = sub_system A b I"
-  shows "lin_indpt (set (rows A'))"
-proof
-  let ?M = "{dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
-     (C, d) = sub_system A b I'}"
-  assume lindpA':"lin_dep (set (rows A'))" 
-  have distinctA': "distinct (rows A')" using  min_face_distinct assms 
-    by blast  
-  have carrA': "set (rows A') \<subseteq> carrier_vec n" using subsyst_rows_carr A assms(8) 
-    by blast
-  have "finite (set (rows A'))" 
-    by simp
-  have dim_sameAb: "dim_row A = dim_vec b" 
-    using assms(1) assms(2) carrier_vecD by blast
-  have 1:"(\<exists>u\<in>(set (rows A')). u \<in> span ((set (rows A')) - {u}))" 
-    using lindpA' carrA' lindep_span by blast
-  then obtain u where u:"u\<in>(set (rows A'))\<and> u \<in> span ((set (rows A')) - {u})" by auto
-  then obtain j where "j < length (rows  A') \<and> rows A' ! j = u" using in_set_conv_nth 
-    by metis
-  then have j:"j < dim_row A' \<and> row A' j = u" using nth_rows length_rows 
-    by metis
-  obtain i where i:"i < dim_row A \<and> i \<in> I \<and> row A i = row A' j \<and> i = (pick I j) \<and>  b $ i = b' $ j" 
-    by (metis assms(8) dim_sameAb dims_subsyst_same exist_index_in_A fst_conv j snd_conv)
-  obtain C d where C_d: "(C, d) = sub_system A b (I - {i})"
-    by (metis surj_pair)
-  have 4: "{x. A' *\<^sub>v x = b'} = {x.  C *\<^sub>v x = d \<and> row A i \<bullet> x = b $ i }"
-    using remove_index_sub_system_eq[of A b i I A' b' C d]  C_d assms(8) dim_sameAb i by linarith 
-  have "u \<in> carrier_vec n" 
-    using carrA' u by blast
-  have Cd_non_empty: "{x. x \<in> carrier_vec n \<and>  C *\<^sub>v x = d \<and> row A' j \<bullet> x = b' $ j } \<noteq> {}" 
-    using assms(5)  
-    unfolding min_face_def
-    by (smt (verit, best) face_non_empty assms(7) "4" Collect_empty_eq Collect_mono_iff i)
-  have "\<forall>x \<in> carrier_vec n.  C *\<^sub>v x = d \<longrightarrow> row A i \<bullet> x = b $ i"
-  proof(cases "u \<in> set (rows C)")
-    case True
-    then obtain j' where "j' < length (rows C) \<and> (rows C) ! j' = u"  
-      by (meson in_set_conv_nth)
-    then have  j': "j' < dim_row C \<and> row C  j' = u"  using length_rows nth_rows by metis  
-    obtain i' where i':"i' < nr \<and> i' \<in> (I - {i}) \<and> row A i' = row C j' \<and> d $ j' = b $ i'" 
-      by (metis exist_index_in_A_carr[of A nr n b C d _ j'] C_d assms(1) b  j')
-    then show ?thesis 
-      by (smt (verit, best) Cd_non_empty Collect_empty_eq i index_mult_mat_vec j j')
-  next
-    case False
-    have "set (rows C) \<subseteq> carrier_vec n"
-      using subsyst_rows_carr  C_d assms(1) by blast
-    have "set (rows C) = set (rows A') - {u}" 
-      using remove_index_remove_row[of A b i I A' b' C d]
-      by (metis C_d False assms(8) dim_sameAb i j)
-    then obtain c where "u = lincomb_list c (rows C)" 
-      using  `set (rows C) \<subseteq> carrier_vec n`
-      by (metis List.finite_set finite_in_span lincomb_then_lincomb_list u)
-    then have "u = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) [0..<length (rows C)])"
-      using lincomb_list_def by presburger
-    then have 6:"\<forall>x \<in> carrier_vec n.  C *\<^sub>v x = d \<longrightarrow>
-                 row A' j \<bullet> x = sum_list  (map (\<lambda>i. (c i *  d $ i)) [0..<length (rows C)])" 
-      using sumlist_system_result \<open>set (Matrix.rows C) \<subseteq> carrier_vec n\<close> j `u \<in> carrier_vec n`
-      by presburger
-    have "b' $ j = sum_list (map (\<lambda>i. (c i *  d $ i)) [0..<length (rows C)])"
-      apply(rule ccontr)
-      using "6" Cd_non_empty 
-      by force
-    then show "\<forall>x \<in> carrier_vec n.  C *\<^sub>v x = d \<longrightarrow> row A i \<bullet> x = b $ i"
-      using 6 i 
-      by (metis 6  i)
-  qed
-  then have "dim_vec b' \<le> dim_vec d"  
-    using elems_ge_min[of ?M "dim_vec d" "dim_vec b'"]
-      C_d  assms(6-7) 4 subset_set_of_sub_dims_finite[of ?M A b] by blast
-  have "dim_vec b' = dim_vec d + 1"  
-    using remove_index_sub_system_dims[of i I b A' b' A C d]  C_d assms(8) dim_sameAb i by linarith
-  then show False using `dim_vec b' \<le> dim_vec d` 
-    by linarith
-qed
 
 lemma bounded_min_faces_are_vertex:
   fixes A :: "'a  mat"
@@ -475,6 +267,224 @@ next
   then show "card F = 1" 
     by (metis \<open>F \<noteq> {}\<close> is_singletonI' is_singleton_altdef)
 qed
+
+lemma min_face_distinct:
+  fixes A :: "'a  Matrix.mat"
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+  defines "P \<equiv> polyhedron A b"
+  assumes "P \<noteq> {}"
+  assumes "min_face P F"
+  assumes "dim_vec b' = Min {dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
+          (C, d) = sub_system A b I'}"
+  assumes " F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'}"  
+  assumes "(A', b') = sub_system A b I"
+  shows "distinct (Matrix.rows A')" 
+proof(rule ccontr)
+  let ?M = "{dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
+          (C, d) = sub_system A b I'}" 
+  have dims_eq: "dim_row A = dim_vec b" 
+    by (metis assms(1) assms(2) carrier_matD(1) carrier_vecD)
+  assume "\<not> distinct (Matrix.rows A') "
+  then obtain j1 j2 where j1j2: "j1 \<noteq> j2 \<and> j1 < dim_row A' \<and> 
+                                 j2 < dim_row A' \<and> row A' j1 = row A' j2" 
+    by (metis distinct_conv_nth length_rows nth_rows)
+  obtain i1 where i1:"i1 < dim_row A \<and> i1 \<in> I \<and> row A i1 = row A' j1 \<and>
+                      i1 = (pick I j1) \<and> b' $ j1 = b $ i1" 
+    by (metis assms(8) dims_eq dims_subsyst_same exist_index_in_A fst_conv j1j2 snd_conv)
+  obtain i2 where i2: "i2 < dim_row A \<and> i2 \<in> I \<and> row A i2 = row A' j2 \<and> 
+                       i2 = (pick I j2) \<and> b' $ j2 = b $ i2" 
+    by (metis assms(8) dims_eq dims_subsyst_same exist_index_in_A fst_conv j1j2 snd_conv)
+  then have "i1 \<noteq> i2" using subsyst_indx_neq_syst_indx_neq[of i1 I j1 i2 j2 A' b' A b] 
+    using i1 j1j2 assms(8) by presburger
+  have " b $ i1 =  b $ i2" 
+  proof(rule ccontr)
+    assume "b $ i1 \<noteq> b $ i2"
+    then have "b' $ j1 \<noteq> b' $ j2" using i1 i2 by auto
+    obtain x where "x \<in> F" 
+      by (metis A P_def assms(5) b equals0I gram_schmidt.char_min_face)
+    then have "x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'" 
+      using assms(7) by blast
+    have "row A' j1 = row A' j2" using j1j2 
+      by blast
+    then show False 
+      using j1j2 \<open>x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'\<close> index_mult_mat_vec
+      using \<open>b' $ j1 \<noteq> b' $ j2\<close> 
+      by metis  
+  qed
+  obtain C d where C_d: "(C, d) = sub_system A b (I - {i1})"
+    by (metis surj_pair)
+  have "{x.  A' *\<^sub>v x = b'} = {x.  C *\<^sub>v x = d \<and> row A i1 \<bullet> x = b $ i1 }"
+    using remove_index_sub_system_eq[of A b i1 I A' b' C d] 
+    by (metis A C_d i1 assms(8) b carrier_matD(1) carrier_vecD)
+  have "\<forall>x.  C *\<^sub>v x = d \<longrightarrow> row A i1 \<bullet> x = b $ i1"
+  proof(safe)
+    fix x
+    assume "d = C *\<^sub>v x" 
+    have "i2 \<in> I - {i1}" 
+      using \<open>i1 \<noteq> i2\<close> i2 by blast
+    then obtain j where j: "j < dim_row C \<and> row A i2 = row C j \<and> b $ i2 = d $ j" 
+      by (metis C_d dims_eq dims_subsyst_same' exist_index_in_A' fst_conv i2 snd_conv)
+    then have "row A i1 = row C j \<and> b $ i1 = d $ j" 
+      by (metis \<open>b $ i1 = b $ i2\<close> i1 i2 j1j2)
+    then have "row C j \<bullet> x = d $ j" using `d = C *\<^sub>v x`  j 
+      by (metis index_mult_mat_vec)
+    then show "row A i1 \<bullet> x = b $ i1" 
+      by (metis \<open>b $ i1 = b $ i2\<close> i1 i2 j j1j2)
+  qed
+  then have "{x.  A' *\<^sub>v x = b'} = {x. C *\<^sub>v x = d}"
+    using \<open>{x. A' *\<^sub>v x = b'} = {x. C *\<^sub>v x = d \<and> row A i1 \<bullet> x = b $ i1}\<close> by blast
+  have "dim_vec d + 1 = dim_vec b'" 
+    using remove_index_sub_system_dims[of i1 I b A' b' A C d] 
+    by (metis C_d assms(8) dims_eq i1)
+  have "dim_vec d \<ge> dim_vec b'" 
+    using elems_ge_min[of ?M "dim_vec d" "dim_vec b'"] 
+      C_d \<open>{x. A' *\<^sub>v x = b'} = {x. C *\<^sub>v x = d}\<close> assms(7)  
+      subset_set_of_sub_dims_finite[of ?M A b]  assms(6) by blast
+  then show False
+    using \<open>dim_vec d + 1 = dim_vec b'\<close> by linarith
+qed
+
+lemma subsyst_rows_carr:
+  assumes "A \<in> carrier_mat nr n"
+  assumes "(A', b') = sub_system A b I"
+  shows "set (rows A') \<subseteq> carrier_vec n" 
+  using dim_col_subsyst_mat[of A b I]
+  using assms carrier_matD(2) prod.sel(1) rows_carrier 
+  by metis
+
+lemma itself_is_subsyst_set_idcs:
+  fixes A :: "'a  mat"
+  fixes b:: "'a vec" 
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr" 
+  shows "(A, b) = sub_system A b {0..<nr}"
+  by  (auto simp: itself_is_subsyst same_subsyst_I_intersect_rows[of A nr b UNIV] assms) 
+
+lemma sum_list_of_map_eq:
+  assumes "\<forall>i \<in> set L. f i = g i"
+  shows "sum_list (map f L) = sum_list (map g L)" 
+  by (metis assms map_eq_conv)
+
+lemma list_range_lt: "i \<in> set [0..<l] \<longleftrightarrow> i < l" 
+  using atLeast_upt by blast
+
+lemma sumlist_system_result:
+  assumes "x \<in> carrier_vec n"
+  assumes "C *\<^sub>v x = d"
+  assumes "set (rows C) \<subseteq> carrier_vec n" 
+  assumes "u \<in> carrier_vec n"
+  assumes "u = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) [0..<length (rows C)])" 
+  shows "u \<bullet> x = sum_list  (map (\<lambda>i. (c i *  d $ i)) [0..<length (rows C)])" 
+proof -
+  let ?Cl = "[0..<length (rows C)]" 
+  have Cl_map_carr:"(\<And>v. v \<in> set (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) ?Cl) \<Longrightarrow> v \<in> carrier_vec n)"
+    using assms(3) lincomb_map_set_carrier by blast
+  have "u \<bullet> x =  x \<bullet> u" 
+    using assms(1) assms(4) comm_scalar_prod by blast
+  have "u \<bullet> x = sum_list (map ((\<bullet>) x) (map (\<lambda>i. c i \<cdot>\<^sub>v (rows C) ! i) ?Cl))"
+    using scalar_prod_right_sum_distrib[OF Cl_map_carr] 
+    by(simp only: `u \<bullet> x =  x \<bullet> u`,simp only: assms(5) assms(1)) 
+  also have "\<dots> = sum_list (map (\<lambda>i. (c i \<cdot>\<^sub>v (rows C) ! i) \<bullet> x) ?Cl)"
+    apply(simp only: map_map comp_def, intro sum_list_of_map_eq, safe)
+    apply(intro comm_scalar_prod, blast intro: assms(1))
+    using list_range_lt assms(3) nth_mem  by blast
+  also have "\<dots> = sum_list (map (\<lambda>i. (c i * (((rows C) ! i) \<bullet> x))) ?Cl)"
+    apply(intro sum_list_of_map_eq, safe, simp only: list_range_lt)
+    using assms(1) assms(3) nth_mem smult_scalar_prod_distrib by blast
+  also have "\<dots> = sum_list (map (\<lambda>i. (c i * d $ i)) ?Cl)"
+    apply(intro sum_list_of_map_eq, safe, simp only: list_range_lt)
+    using assms(2) by force
+  ultimately show "u \<bullet> x = sum_list (map (\<lambda>i. (c i * d $ i)) ?Cl)"
+    by presburger
+qed
+
+lemma min_face_lin_indpt:
+  fixes A :: "'a  mat"
+  fixes b:: "'a vec" 
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+  defines "P \<equiv> polyhedron A b"
+  assumes "P \<noteq> {}"
+  assumes "min_face P F"
+  assumes "dim_vec b' = Min {dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
+          (C, d) = sub_system A b I'}"
+  assumes " F = {x. x \<in> carrier_vec n \<and> A' *\<^sub>v x = b'}"  
+  assumes "(A', b') = sub_system A b I"
+  shows "lin_indpt (set (rows A'))"
+proof
+  let ?M = "{dim_vec d | C d I'.  F = {x. x \<in> carrier_vec n \<and> C *\<^sub>v x = d} \<and> 
+     (C, d) = sub_system A b I'}"
+  assume lindpA':"lin_dep (set (rows A'))" 
+  have carrA': "set (rows A') \<subseteq> carrier_vec n" using subsyst_rows_carr A assms(8) 
+    by blast
+  have "finite (set (rows A'))" 
+    by simp
+  have dim_sameAb: "dim_row A = dim_vec b" 
+    using assms(1) assms(2) carrier_vecD by blast
+  have 1:"(\<exists>u\<in>(set (rows A')). u \<in> span ((set (rows A')) - {u}))" 
+    using lindpA' carrA' lindep_span by blast
+  then obtain u where u:"u\<in>(set (rows A'))\<and> u \<in> span ((set (rows A')) - {u})" by auto
+  then obtain j where "j < length (rows  A') \<and> rows A' ! j = u" using in_set_conv_nth 
+    by metis
+  then have j:"j < dim_row A' \<and> row A' j = u" using nth_rows length_rows 
+    by metis
+  obtain i where i:"i < dim_row A \<and> i \<in> I \<and> row A i = row A' j \<and> i = (pick I j) \<and>  b $ i = b' $ j" 
+    by (metis assms(8) dim_sameAb dims_subsyst_same exist_index_in_A fst_conv j snd_conv)
+  obtain C d where C_d: "(C, d) = sub_system A b (I - {i})"
+    by (metis surj_pair)
+  have 4: "{x. A' *\<^sub>v x = b'} = {x.  C *\<^sub>v x = d \<and> row A i \<bullet> x = b $ i }"
+    using remove_index_sub_system_eq[of A b i I A' b' C d]  C_d assms(8) dim_sameAb i by linarith 
+  have "u \<in> carrier_vec n" 
+    using carrA' u by blast
+  have Cd_non_empty: "{x. x \<in> carrier_vec n \<and>  C *\<^sub>v x = d \<and> row A' j \<bullet> x = b' $ j } \<noteq> {}" 
+    using assms(5)  
+    unfolding min_face_def
+    by (smt (verit, best) face_non_empty assms(7) "4" Collect_empty_eq Collect_mono_iff i)
+  have "\<forall>x \<in> carrier_vec n.  C *\<^sub>v x = d \<longrightarrow> row A i \<bullet> x = b $ i"
+  proof(cases "u \<in> set (rows C)")
+    case True
+    then obtain j' where "j' < length (rows C) \<and> (rows C) ! j' = u"  
+      by (meson in_set_conv_nth)
+    then have  j': "j' < dim_row C \<and> row C  j' = u"  using length_rows nth_rows by metis  
+    obtain i' where i':"i' < nr \<and> i' \<in> (I - {i}) \<and> row A i' = row C j' \<and> d $ j' = b $ i'" 
+      by (metis exist_index_in_A_carr[of A nr n b C d _ j'] C_d assms(1) b  j')
+    then show ?thesis 
+      by (smt (verit, best) Cd_non_empty Collect_empty_eq i index_mult_mat_vec j j')
+  next
+    case False
+    have "set (rows C) \<subseteq> carrier_vec n"
+      using subsyst_rows_carr  C_d assms(1) by blast
+    have "set (rows C) = set (rows A') - {u}" 
+      using remove_index_remove_row[of A b i I A' b' C d]
+      by (metis C_d False assms(8) dim_sameAb i j)
+    then obtain c where "u = lincomb_list c (rows C)" 
+      using  `set (rows C) \<subseteq> carrier_vec n`
+      by (metis List.finite_set finite_in_span lincomb_then_lincomb_list u)
+    then have "u = sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v  (rows C) ! i) [0..<length (rows C)])"
+      using lincomb_list_def by presburger
+    then have 6:"\<forall>x \<in> carrier_vec n.  C *\<^sub>v x = d \<longrightarrow>
+                 row A' j \<bullet> x = sum_list  (map (\<lambda>i. (c i *  d $ i)) [0..<length (rows C)])" 
+      using sumlist_system_result \<open>set (Matrix.rows C) \<subseteq> carrier_vec n\<close> j `u \<in> carrier_vec n`
+      by presburger
+    have "b' $ j = sum_list (map (\<lambda>i. (c i *  d $ i)) [0..<length (rows C)])"
+      apply(rule ccontr)
+      using "6" Cd_non_empty 
+      by force
+    then show "\<forall>x \<in> carrier_vec n.  C *\<^sub>v x = d \<longrightarrow> row A i \<bullet> x = b $ i"
+      using 6 i 
+      by (metis 6  i)
+  qed
+  then have "dim_vec b' \<le> dim_vec d"  
+    using elems_ge_min[of ?M "dim_vec d" "dim_vec b'"]
+      C_d  assms(6-7) 4 subset_set_of_sub_dims_finite[of ?M A b] by blast
+  have "dim_vec b' = dim_vec d + 1"  
+    using remove_index_sub_system_dims[of i I b A' b' A C d]  C_d assms(8) dim_sameAb i by linarith
+  then show False using `dim_vec b' \<le> dim_vec d` 
+    by linarith
+qed
+
+
 
 lemma lin_dep_cols_iff_rows:
   assumes "A \<in> carrier_mat n n"
@@ -1438,75 +1448,71 @@ end
 context gram_schmidt_floor
 begin
 
-lemma support_hyp_then_has_Maximum:
+lemma int_hull_bound_then_poly_bounded:
   fixes A :: "'a  mat"
   fixes b:: "'a vec" 
   assumes A: "A \<in> carrier_mat nr n"
   assumes b: "b \<in> carrier_vec nr"
   defines "P \<equiv> polyhedron A b"
-  assumes "P \<noteq> {}"
-  assumes "integer_hull P = polyhedron C d"
-  assumes "j < dim_row C" 
-  assumes "dim_col C = n"
-  assumes "has_Maximum {row C j \<bullet> x | x. x \<in> polyhedron C d}"
-  assumes "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> P} \<longrightarrow>
-   (\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v)"
+  assumes c: "c \<in> carrier_vec n"
+  assumes "has_Maximum {c \<bullet> x | x. x \<in> integer_hull P}"
   assumes AI: "A \<in> \<int>\<^sub>m"
   assumes bI: "b \<in> \<int>\<^sub>v"
   assumes "integer_hull P \<noteq> {}"
-  shows "has_Maximum { row C j \<bullet> x | x. x \<in> P}"
+  shows "has_Maximum { c \<bullet> x | x. x \<in> P}"
 proof(rule ccontr)
-  assume "\<not> has_Maximum {row C j \<bullet> x |x. x \<in> P}" 
-  then have "\<not> (\<exists> x. x \<in> {row C j \<bullet> x |x. x \<in> P} \<and> (\<forall> y \<in> {row C j \<bullet> x |x. x \<in> P}. y \<le> x))" 
+  assume "\<not> has_Maximum {c \<bullet> x |x. x \<in> P}" 
+  then have "\<not> (\<exists> x. x \<in> {c \<bullet> x |x. x \<in> P} \<and> (\<forall> y \<in> {c \<bullet> x |x. x \<in> P}. y \<le> x))" 
     unfolding has_Maximum_def 
     by blast
-  then have "\<forall>x \<in> {row C j \<bullet> x |x. x \<in> P}. \<not> (\<forall> y \<in> {row C j \<bullet> x |x. x \<in> P}. y \<le> x)" 
+  then have "\<forall>x \<in> {c \<bullet> x |x. x \<in> P}. \<not> (\<forall> y \<in> {c \<bullet> x |x. x \<in> P}. y \<le> x)" 
     by blast
-  then have "\<forall>x \<in> {row C j \<bullet> x |x. x \<in> P}. (\<exists> y \<in> {row C j \<bullet> x |x. x \<in> P}. y > x)" 
+  then have "\<forall>x \<in> {c \<bullet> x |x. x \<in> P}. (\<exists> y \<in> {c \<bullet> x |x. x \<in> P}. y > x)" 
     by fastforce
-  then have "\<forall>x \<in> P. \<exists> y \<in> P. row C j \<bullet> y > row C j \<bullet> x" 
+  then have "\<forall>x \<in> P. \<exists> y \<in> P. c \<bullet> y > c \<bullet> x" 
     by auto
-  have "\<forall> v. \<exists> x \<in> P. row C j \<bullet> x \<ge> v"
+  have "P \<noteq> {}" using assms(8) 
+    by (metis P_def assms(1) b gram_schmidt.int_hull_subset subset_empty) 
+  have "\<forall> v. \<exists> x \<in> P. c \<bullet> x \<ge> v"
   proof(rule ccontr)
-    assume "\<not> (\<forall>v. \<exists>x\<in>P. v \<le> row C j \<bullet> x)"
-    then obtain Bnd where "\<forall> y \<in> P. row C j \<bullet> y < Bnd" 
+    assume "\<not> (\<forall>v. \<exists>x\<in>P. v \<le> c \<bullet> x)"
+    then obtain Bnd where "\<forall> y \<in> P. c \<bullet> y < Bnd" 
       by (meson less_le_not_le linorder_linear)
-    then have "\<forall> x \<in> carrier_vec n. A *\<^sub>v x \<le> b \<longrightarrow> row C j \<bullet> x \<le> Bnd"
+    then have "\<forall> x \<in> carrier_vec n. A *\<^sub>v x \<le> b \<longrightarrow> c \<bullet> x \<le> Bnd"
       unfolding P_def polyhedron_def 
       using order_le_less by auto
-    then have "has_Maximum {row C j \<bullet> x | x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}"
+    then have "has_Maximum {c \<bullet> x | x. x \<in> carrier_vec n \<and> A *\<^sub>v x \<le> b}"
       using 
-        strong_duality_theorem_primal_sat_bounded_min_max[of A nr n b "row C j" Bnd] 
-      by (metis (no_types, lifting) A Collect_empty_eq P_def 
-          assms(4) assms(7) b polyhedron_def row_carrier)
-    then show False using `\<not> has_Maximum {row C j \<bullet> x |x. x \<in> P}`
+        strong_duality_theorem_primal_sat_bounded_min_max(2)[OF A b c]
+      by (metis (no_types, lifting) Collect_empty_eq P_def `P \<noteq> {}` local.polyhedron_def) 
+    then show False using `\<not> has_Maximum {c \<bullet> x |x. x \<in> P}`
       unfolding P_def polyhedron_def 
       by fastforce
   qed
-  then have "\<forall>v. \<exists>x\<in>carrier_vec n. A *\<^sub>v x \<le> b \<and> v \<le> row C j \<bullet> x" 
+  then have "\<forall>v. \<exists>x\<in>carrier_vec n. A *\<^sub>v x \<le> b \<and> v \<le> c \<bullet> x" 
     unfolding P_def polyhedron_def 
     by auto
-  then have "\<not> (\<exists> y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = row C j)" 
-    using unbounded_primal_solutions[of A nr n b "row C j"] A b 
-    using assms(7) row_carrier by blast
-  then have "\<not>  (\<forall> y. y \<in> carrier_vec n \<longrightarrow> A *\<^sub>v y \<ge> 0\<^sub>v nr \<longrightarrow> y \<bullet> row C j \<ge> 0)"
-    using Farkas_Lemma[of "A\<^sup>T" nr "row C j"] using assms(7) row_carrier A
+  then have "\<not> (\<exists> y. y \<ge> 0\<^sub>v nr \<and> A\<^sup>T *\<^sub>v y = c)" 
+    using unbounded_primal_solutions[of A nr n b c] A b c by blast
+  then have "\<not>  (\<forall> y. y \<in> carrier_vec n \<longrightarrow> A *\<^sub>v y \<ge> 0\<^sub>v nr \<longrightarrow> y \<bullet> c \<ge> 0)"
+    using Farkas_Lemma[of "A\<^sup>T" nr c] c
+    using c  A
     by force
-  then obtain y where y: "y \<in> carrier_vec n \<and> A *\<^sub>v y \<ge> 0\<^sub>v nr \<and> y \<bullet> row C j < 0" 
+  then obtain y where y: "y \<in> carrier_vec n \<and> A *\<^sub>v y \<ge> 0\<^sub>v nr \<and> y \<bullet> c < 0" 
     using leI by blast
-  have "(-y) \<bullet> row C j > 0"
-    by (simp add: assms(7) y)
+  have "(-y) \<bullet> c > 0" 
+    using assms(4) y by auto 
   have "A *\<^sub>v (-y) \<le> 0\<^sub>v nr" 
     by (smt (verit, ccfv_SIG) A carrier_matD(1) class_ring.minus_zero dim_mult_mat_vec
         minus_mult_minus_one index_uminus_vec(1) index_zero_vec(1) less_eq_vec_def 
         mult_mat_vec neg_le_iff_le y)
-  then obtain y' where y': "y' \<in> carrier_vec n \<and> A *\<^sub>v y' \<le> 0\<^sub>v nr \<and> y' \<bullet> row C j > 0" 
-    using \<open>0 < - y \<bullet> row C j\<close> uminus_carrier_vec y by blast
+  then obtain y' where y': "y' \<in> carrier_vec n \<and> A *\<^sub>v y' \<le> 0\<^sub>v nr \<and> y' \<bullet> c > 0" 
+    using \<open>0 < - y \<bullet> c\<close> uminus_carrier_vec y by blast
   have "y' \<noteq> 0\<^sub>v n"
   proof
     assume "y' = 0\<^sub>v n"
-    then have "y' \<bullet> row C j = 0" 
-      using assms(7) row_carrier scalar_prod_left_zero by blast
+    then have "y' \<bullet> c = 0" 
+      using c assms(7) row_carrier scalar_prod_left_zero by blast
     then show False using y' 
       by linarith
   qed
@@ -1545,7 +1551,7 @@ proof(rule ccontr)
   let ?y' = " (1/Max (abs ` (vec_set y'))) \<cdot>\<^sub>v  y'" 
   let ?fullA = "A @\<^sub>r (1\<^sub>m n) @\<^sub>r (- 1\<^sub>m n)"
   let ?fullb = "0\<^sub>v nr @\<^sub>v 1\<^sub>v n @\<^sub>v 1\<^sub>v n" 
-  let ?c = "row C j"
+  let ?c = "c"
   let ?P' = "polyhedron ?fullA ?fullb"
   have 2:"?fullA \<in> carrier_mat (nr+2*n) n" 
     by (metis A carrier_append_rows mult_2 one_carrier_mat uminus_carrier_iff_mat)
@@ -1670,7 +1676,7 @@ proof(rule ccontr)
   qed
   have "?P' \<subseteq> carrier_vec n"  unfolding polyhedron_def  by auto  
   have "?c \<in> carrier_vec n" 
-    using assms(7) row_carrier by blast
+    using c by blast
   have "\<exists> bnd. \<forall> x \<in> carrier_vec n. ?fullA *\<^sub>v x \<le> ?fullb \<longrightarrow> ?c \<bullet> x \<le> bnd" 
     using bound_vec_smult_bound[of ?P' ?c] 
     apply (auto simp: 4 5 `n\<noteq>0` `?P' \<subseteq> carrier_vec n` `?c \<in> carrier_vec n`) 
@@ -1678,12 +1684,12 @@ proof(rule ccontr)
     using \<open>n \<noteq> 0\<close> by auto
   then have 4:"has_Maximum {?c \<bullet> x | x. x \<in> carrier_vec n \<and> ?fullA *\<^sub>v x \<le> ?fullb}"
     using strong_duality_theorem_primal_sat_bounded_min_max[of ?fullA "nr+2*n" n ?fullb ?c]
-    using 2 3 assms(7) row_carrier `\<exists> x \<in> carrier_vec n. ?fullA *\<^sub>v x \<le> ?fullb` 
+    using 2 3 assms(7) row_carrier `\<exists> x \<in> carrier_vec n. ?fullA *\<^sub>v x \<le> ?fullb` c
     by blast 
   then obtain \<beta> where beta: "\<beta> = Maximum {?c \<bullet> x | x. x \<in> carrier_vec n \<and> ?fullA *\<^sub>v x \<le> ?fullb}"
     by auto
   then have 4:"support_hyp ?P' ?c \<beta>" unfolding support_hyp_def  
-    by (smt (verit, best) Collect_cong 4 assms(7) mem_Collect_eq polyhedron_def row_carrier)
+    by (smt (verit, best) c Collect_cong 4 assms(7) mem_Collect_eq polyhedron_def row_carrier)
   let ?F = " ?P' \<inter> {x |x. ?c \<bullet> x = \<beta>}"
   have "face ?P' ?F" unfolding face_def using 1 4 
     by blast 
@@ -1727,9 +1733,9 @@ proof(rule ccontr)
     using 6 dim_vec by blast
   have "1\<^sub>m n \<in> \<int>\<^sub>m" using one_mat_int by auto
   have "- 1\<^sub>m n \<in> \<int>\<^sub>m" using one_mat_int by auto
-  have "?fullA \<in> \<int>\<^sub>m" using append_int_mat_is_int 
-    by (metis A \<open>- 1\<^sub>m n \<in> \<int>\<^sub>m\<close> assms(10) carrier_append_rows one_mat_int
-        one_carrier_mat uminus_carrier_iff_mat)
+  have "?fullA \<in> \<int>\<^sub>m" using append_int_mat_is_int
+    by (metis A \<open>- 1\<^sub>m n \<in> \<int>\<^sub>m\<close> assms(6) carrier_append_rows one_carrier_mat 
+        one_mat_int uminus_carrier_mat) 
   have "?fullb \<in> \<int>\<^sub>v" using append_int_vec_is_int one_vec_int 
     by (metis carrier_vec_dim_vec gram_schmidt.zero_vec_is_int)
   have "A' \<in> \<int>\<^sub>m" 
@@ -1777,7 +1783,7 @@ proof(rule ccontr)
       using 8 by presburger
   qed
   have 9:"?c \<bullet> ?y' =  (1 / Max (abs ` set\<^sub>v y')) * (?c \<bullet>  y')" 
-    using y' assms(7) row_carrier scalar_prod_smult_distrib 
+    using y' assms(7) row_carrier scalar_prod_smult_distrib c
     by force
   have "(1 / Max (abs ` set\<^sub>v y')) > 0" 
     using \<open>0 < Max (abs ` set\<^sub>v y')\<close> zero_less_divide_1_iff by blast
@@ -1788,7 +1794,7 @@ proof(rule ccontr)
     using beta 
     using "4" \<open>?y' \<in> ?P'\<close> gram_schmidt.support_hyp_is_valid(1) by blast
   then have "\<beta> > 0" 
-    using \<open>0 < row C j \<bullet> (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y')\<close> by linarith
+    using \<open>0 < c \<bullet> (1 / Max (abs ` set\<^sub>v y') \<cdot>\<^sub>v y')\<close> by linarith
   have "z \<in> carrier_vec n" 
     using A'_b'(1) \<open>z \<in> F\<close>  by force
   have 12:"z \<in> ?F" 
@@ -1802,35 +1808,36 @@ proof(rule ccontr)
   then have "A *\<^sub>v ?z' \<le> 0\<^sub>v nr" 
     using A A'_b'(1) \<open>z \<in> F\<close> 
     by (simp add: mult_mat_vec smult_nneg_npos_vec)
-  have "row C j \<in> carrier_vec n" 
-    using assms(7) row_carrier by blast
-  have "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> polyhedron C d} \<longrightarrow>
-   (\<exists>x. x \<in> polyhedron C d \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> polyhedron C d}  \<and> x \<in> \<int>\<^sub>v)" 
-  proof -
-    have "dim_row C = dim_vec d" 
-      using assms(12) assms(5) unfolding polyhedron_def less_eq_vec_def 
-      by fastforce
-    have "polyhedron C d = integer_hull (polyhedron C d)" 
+  have "c \<in> carrier_vec n" 
+    using c by blast
+  have "P \<subseteq> carrier_vec n" unfolding P_def polyhedron_def 
+    by blast 
+  then have "integer_hull P \<subseteq> carrier_vec n"
+    by (simp add: gram_schmidt.integer_hull_in_carrier)
+  have "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> integer_hull P} \<longrightarrow>
+   (\<exists>x. x \<in> integer_hull P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> integer_hull P}  \<and> x \<in> \<int>\<^sub>v)" 
+ proof -
+    have "integer_hull P = integer_hull (integer_hull P)" 
       using assms(5) unfolding P_def polyhedron_def 
       by (metis (no_types, lifting) integer_hull_is_integer_hull mem_Collect_eq subset_iff)
-    then have "(\<forall> F. face (polyhedron C d) F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))"
-      using P_int_then_face_int `dim_row C = dim_vec d ` 
-      by (metis assms(7) carrier_dim_vec carrier_mat_triv)
+    then have "(\<forall> F. face (integer_hull P) F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))"
+      using P_int_then_face_int \<open>integer_hull P \<subseteq> carrier_vec n\<close> by presburger
     then show ?thesis
-      using int_face_then_max_suphyp_int[of C _ d] `dim_row C = dim_vec d` 
+      using int_face_then_max_suphyp_int `integer_hull P \<subseteq> carrier_vec n` 
       using assms(7) carrier_vec_dim_vec by blast 
   qed
-  then obtain v where v:"v \<in> polyhedron C d \<and> 
-                         ?c \<bullet> v = Maximum { ?c \<bullet> x | x. x \<in> polyhedron C d} \<and> 
+  then obtain v where v:"v \<in> integer_hull P \<and> 
+                         ?c \<bullet> v = Maximum { ?c \<bullet> x | x. x \<in> integer_hull P} \<and> 
                          v \<in> \<int>\<^sub>v" 
-    using assms(8) `row C j \<in> carrier_vec n` 
+    using assms(5) `c \<in> carrier_vec n` 
     by meson
   then have "v \<in> integer_hull P" using assms(5) 
     by blast 
   then have "v \<in> P" 
     using A P_def b int_hull_subset by blast
   have "A *\<^sub>v v \<le> b" using `v \<in> P` unfolding P_def polyhedron_def by auto
-  have "v \<in> carrier_vec n" using v unfolding P_def polyhedron_def by auto
+  have "v \<in> carrier_vec n" using v unfolding integer_hull_def  P_def polyhedron_def 
+    using P_def \<open>v \<in> P\<close> gram_schmidt.polyhedron_def by blast
   have "?z' \<in> carrier_vec n" using `z \<in> carrier_vec n` 
     by blast 
   have 11:"\<forall> m::nat. v + of_int m \<cdot>\<^sub>v ?z' \<in> P"
@@ -1873,7 +1880,7 @@ proof(rule ccontr)
   have "?c \<bullet> z = \<beta>" 
     using 12 by blast
   then have "?c \<bullet> ?z' = abs (det A') * \<beta>" 
-    by (metis \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>row C j \<in> carrier_vec n\<close> carrier_vecD 
+    by (metis \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>c \<in> carrier_vec n\<close> carrier_vecD 
         index_smult_vec(2) scalar_prod_smult_right)
   have "v + ?z' \<in> \<int>\<^sub>v" using `\<forall> m::nat. v + of_int m \<cdot>\<^sub>v ?z' \<in> \<int>\<^sub>v` 
     using \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> \<int>\<^sub>v\<close> \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close>
@@ -1889,20 +1896,20 @@ proof(rule ccontr)
   then have "v + ?z' \<in> integer_hull P" 
     by (metis \<open>\<forall>x. v + of_int (int x) \<cdot>\<^sub>v (\<bar>det A'\<bar> \<cdot>\<^sub>v z) \<in> integer_hull P\<close> of_int_hom.hom_one
         of_nat_1 scalar_vec_one)
-  then have "v + ?z' \<in> polyhedron C d " 
+  then have "v + ?z' \<in> integer_hull P " 
     using assms(5) by blast
-  then have "?c \<bullet> (v + ?z') \<le> Maximum { ?c \<bullet> x | x. x \<in> polyhedron C d}" 
-    using assms(8) has_MaximumD(2) by blast
+  then have "?c \<bullet> (v + ?z') \<le> Maximum { ?c \<bullet> x | x. x \<in> integer_hull P}" 
+    using assms(5) has_MaximumD(2) by blast
   have "?c \<bullet> (v + ?z') = ?c \<bullet> v + ?c \<bullet> ?z'" 
-    using \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>row C j \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close>
+    using \<open>\<bar>det A'\<bar> \<cdot>\<^sub>v z \<in> carrier_vec n\<close> \<open>c \<in> carrier_vec n\<close> \<open>v \<in> carrier_vec n\<close>
       scalar_prod_add_distrib by blast
-  then have "?c \<bullet> (v + ?z') = Maximum { ?c \<bullet> x | x. x \<in> polyhedron C d} + abs (det A') * \<beta>"
+  then have "?c \<bullet> (v + ?z') = Maximum { ?c \<bullet> x | x. x \<in> integer_hull P} + abs (det A') * \<beta>"
     using `?c \<bullet> ?z' = abs (det A') * \<beta>` v 
     by presburger
-  then have "?c \<bullet> (v + ?z') > Maximum { ?c \<bullet> x | x. x \<in> polyhedron C d}" 
+  then have "?c \<bullet> (v + ?z') > Maximum { ?c \<bullet> x | x. x \<in> integer_hull P}" 
     by (simp add: \<open>0 < \<beta>\<close> \<open>det A' \<noteq> 0\<close>)
   then show False 
-    using \<open>row C j \<bullet> (v + \<bar>det A'\<bar> \<cdot>\<^sub>v z) \<le> Maximum {row C j \<bullet> x |x. x \<in> polyhedron C d}\<close> 
+    using \<open>c \<bullet> (v + \<bar>det A'\<bar> \<cdot>\<^sub>v z) \<le> Maximum {c \<bullet> x |x. x \<in> integer_hull P}\<close> 
       linorder_not_le by blast
 qed
 
@@ -1979,14 +1986,10 @@ next
       by blast
     let ?\<alpha> = "row C j"
     let ?\<beta> = "d $ j"
-    have " has_Maximum { ?\<alpha> \<bullet> x | x. x \<in> polyhedron C d}" 
-      using eq_in_P_has_max[of C nr' d j] `integer_hull P \<noteq> {}` 
-      using C_d \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> by blast
     have "?\<alpha> \<in> carrier_vec n" 
       by (meson C_d \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> row_carrier_vec)
     have " has_Maximum { ?\<alpha> \<bullet> x | x. x \<in> P}" 
-      using support_hyp_then_has_Maximum[of A nr b C d j] 
-      unfolding P_def 
+      using int_hull_bound_then_poly_bounded[of A nr b ?\<alpha>] 
       using A AI C_d False P_def \<open>integer_hull P \<noteq> {}\<close> \<open>j < nr' \<and> d $ j < row C j \<bullet> y\<close> 
         assms(6) b bI eq_in_P_has_max by force
     then obtain x where x:"x \<in> P \<and> ?\<alpha> \<bullet> x = Maximum { ?\<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v" 
@@ -2021,20 +2024,47 @@ lemma min_face_iff_int_polyh:
   defines "P \<equiv> polyhedron A b"
   shows "(\<forall> F. min_face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)) \<longleftrightarrow> P = integer_hull P"
 proof
+  have carr_P: "P \<subseteq> carrier_vec n" unfolding P_def polyhedron_def by auto
   show " \<forall>F. min_face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v) \<Longrightarrow> P = integer_hull P"
   proof -
     assume asm: "\<forall>F. min_face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)"
+
     have "(\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v))"
       using A asm assms(2) assms(5) int_all_min_faces_then_int_all_faces by presburger
     then have "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> P} \<longrightarrow>
    (\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v)"
-      using int_face_then_max_suphyp_int[OF A b] 
-      using assms(5) by fastforce
+      using int_face_then_max_suphyp_int carr_P by fastforce
     then show "P = integer_hull P" using int_support_hyp_then_int_polyhedron[OF A b AI bI] 
       using assms(5) by fastforce
   qed
   show  "P = integer_hull P \<Longrightarrow> \<forall>F. min_face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)" 
-    by (metis P_int_then_face_int assms(1) assms(2) assms(5) gram_schmidt.min_face_elim(1))
+    using carr_P
+    by (metis P_int_then_face_int gram_schmidt.min_face_elim(1))
+qed
+
+lemma face_iff_int_polyh:
+  fixes A :: "'a  mat"
+  fixes b:: "'a vec" 
+  assumes A: "A \<in> carrier_mat nr n"
+  assumes b: "b \<in> carrier_vec nr"
+    and AI: "A \<in> \<int>\<^sub>m"
+    and bI: "b \<in> \<int>\<^sub>v"
+  defines "P \<equiv> polyhedron A b"
+  shows "(\<forall> F. face P F \<longrightarrow> (\<exists> x \<in> F. x \<in> \<int>\<^sub>v)) \<longleftrightarrow> P = integer_hull P"
+proof
+  have carr_P: "P \<subseteq> carrier_vec n" unfolding P_def polyhedron_def by auto
+  show " \<forall>F. face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v) \<Longrightarrow> P = integer_hull P"
+  proof -
+    assume asm: "\<forall>F. face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)"
+    then have "\<forall> \<alpha> \<in> carrier_vec n. has_Maximum { \<alpha> \<bullet> x | x. x \<in> P} \<longrightarrow>
+   (\<exists>x. x \<in> P \<and> \<alpha> \<bullet> x = Maximum { \<alpha> \<bullet> x | x. x \<in> P}  \<and> x \<in> \<int>\<^sub>v)"
+      using int_face_then_max_suphyp_int carr_P by fastforce
+    then show "P = integer_hull P" using int_support_hyp_then_int_polyhedron[OF A b AI bI] 
+      using assms(5) by fastforce
+  qed
+  show  "P = integer_hull P \<Longrightarrow> \<forall>F. face P F \<longrightarrow> (\<exists>x\<in>F. x \<in> \<int>\<^sub>v)" 
+    using carr_P
+    by (metis P_int_then_face_int)
 qed
 
 end
