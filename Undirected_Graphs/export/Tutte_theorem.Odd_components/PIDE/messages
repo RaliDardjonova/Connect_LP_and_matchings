@@ -1,0 +1,178 @@
+information_messageserial=11837508line=271offset=8354end_offset=8359file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11863810line=540offset=18091end_offset=18096file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=11874058line=842offset=28645end_offset=28650file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11915632line=903offset=31187end_offset=31192file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11935522line=925offset=32228end_offset=32233file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11937820line=943offset=33095end_offset=33100file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=11947910line=990offset=35607end_offset=35612file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11950614line=1008offset=36491end_offset=36496file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=11975732line=634offset=21478end_offset=21483file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12047976line=1079offset=39910end_offset=39915file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12049686line=1095offset=40697end_offset=40702file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=12068172line=1154offset=43698end_offset=43703file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12070432line=1171offset=44468end_offset=44473file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=12076736line=1205offset=45958end_offset=45963file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12149858line=1294offset=49984end_offset=49989file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12154306line=1317offset=50975end_offset=50980file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12158720line=1334offset=51783end_offset=51788file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=12187958line=1388offset=54517end_offset=54522file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12189968line=1405offset=55289end_offset=55294file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=12204704line=1439offset=56782end_offset=56787file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12284624line=1532offset=61203end_offset=61208file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12285840line=1549offset=61972end_offset=61977file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=12291294line=1612offset=65055end_offset=65060file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12292432line=1631offset=65938end_offset=65943file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=12298390line=1674offset=68039end_offset=68044file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Odd_components.thyid=536Proof outline with cases:
+sendbackpadding=commandid=536  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qed

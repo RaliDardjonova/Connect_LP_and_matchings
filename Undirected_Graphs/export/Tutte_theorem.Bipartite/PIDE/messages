@@ -1,0 +1,46 @@
+information_messageserial=11761298line=168offset=5107end_offset=5112file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Bipartite.thyid=532Proof outline with cases:
+sendbackpadding=commandid=532  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=11781684line=305offset=9976end_offset=9981file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Bipartite.thyid=532Proof outline with cases:
+sendbackpadding=commandid=532  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11785324line=330offset=10650end_offset=10655file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Bipartite.thyid=532Proof outline with cases:
+sendbackpadding=commandid=532  case less
+  then show ?case sorry
+qedinformation_messageserial=11785846line=339offset=10949end_offset=10954file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Bipartite.thyid=532Proof outline with cases:
+sendbackpadding=commandid=532  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11786726line=344offset=11140end_offset=11145file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Bipartite.thyid=532Proof outline with cases:
+sendbackpadding=commandid=532  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11833812line=392offset=13018end_offset=13023file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Bipartite.thyid=532Proof outline with cases:
+sendbackpadding=commandid=532  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12175120line=718offset=27971end_offset=27976file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Bipartite.thyid=532Proof outline with cases:
+sendbackpadding=commandid=532  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12182524line=751offset=29208end_offset=29213file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Bipartite.thyid=532Proof outline with cases:
+sendbackpadding=commandid=532  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qed

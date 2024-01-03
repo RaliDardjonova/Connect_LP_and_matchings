@@ -1,0 +1,31 @@
+information_messageserial=11805702line=16offset=396end_offset=401file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Cardinality_sums.thyid=534Proof outline with cases:
+sendbackpadding=commandid=534  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=11807948line=70offset=2203end_offset=2208file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Cardinality_sums.thyid=534Proof outline with cases:
+sendbackpadding=commandid=534  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=11818314line=121offset=3937end_offset=3942file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Cardinality_sums.thyid=534Proof outline with cases:
+sendbackpadding=commandid=534  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=11823342line=158offset=5211end_offset=5216file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Cardinality_sums.thyid=534Proof outline with cases:
+sendbackpadding=commandid=534  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=11824030line=195offset=6475end_offset=6480file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Cardinality_sums.thyid=534Proof outline with cases:
+sendbackpadding=commandid=534  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qed

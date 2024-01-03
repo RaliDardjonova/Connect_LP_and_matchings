@@ -433,7 +433,7 @@ proof(induct "dim_row B" arbitrary: B I J rule: less_induct)
           then show ?thesis 
             by (metis 12 13 mult_cancel_right2)
         next
-          case False
+          case False             
           show ?thesis
           proof(cases "dim_row B = 0")
             case True
@@ -652,7 +652,23 @@ proof -
 qed
 
 definition perfect_mathing_polyhedron where 
-  "perfect_mathing_polyhedron A b = {x. x \<in> carrier_vec n \<and> A *\<^sub>v x = b \<and> x \<ge> 0\<^sub>v n}"
+  "perfect_mathing_polyhedron A b = {x. x \<in> carrier_vec n \<and> A *\<^sub>v x  = b \<and> x \<ge> 0\<^sub>v n}"
+
+lemma pick_from_range_less:
+  assumes "i < k"
+  shows "pick {0..<k} i = i"
+proof -
+  have "i < card {0..<k}" 
+    by (simp add: assms)
+  have "card {a\<in>{0..<k}. a < pick {0..<k} i} = i" 
+    by (metis assms card_atLeastLessThan card_pick diff_zero)
+  have 2: "{a\<in>{0..<k}. a < pick {0..<k} i} = {a . a < pick {0..<k} i}" 
+    by (metis \<open>i < card {0..<k}\<close> atLeast0LessThan basic_trans_rules(19) lessThan_iff pick_in_set_le)
+  have "card {a . a < pick {0..<k} i} = pick {0..<k} i" 
+    using card_Collect_less_nat by blast
+  then show ?thesis 
+    using \<open>card {a \<in> {0..<k}. a < pick {0..<k} i} = i\<close> 2 by force
+qed
 
 lemma perfect_mathing_polyhedron_face:
   assumes "A \<in> carrier_mat nr n"
@@ -660,11 +676,70 @@ lemma perfect_mathing_polyhedron_face:
   assumes "(perfect_mathing_polyhedron A b) \<noteq> {}"
   shows "face (pos_polyhedron A b) (perfect_mathing_polyhedron A b)"
 proof -
+ have 2: "(A @\<^sub>r - 1\<^sub>m n) \<in> carrier_mat (nr+n) n" 
+    by (meson assms(1) carrier_append_rows one_carrier_mat uminus_carrier_mat)
+  have 3: "(b @\<^sub>v 0\<^sub>v n) \<in> carrier_vec (nr+n)"
+    by (simp add: assms(2))
   have 1:"(A, b) = sub_system (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n) {0..<nr}" 
-  proof
-    have "A = submatrix (A @\<^sub>r - 1\<^sub>m n) {0..<nr} UNIV"
-    
-    oops
+  proof -
+    have 7: "submatrix (A @\<^sub>r - 1\<^sub>m n) {0..<nr} UNIV = 
+            submatrix A {0..<nr} UNIV @\<^sub>r submatrix (- 1\<^sub>m n) 
+                                         ((\<lambda> i. i - nr) ` ({0..<nr} - {0..<nr})) UNIV"
+      by (metis append_submatrix_is_submatrix assms(1) one_carrier_mat uminus_carrier_iff_mat)
+    have "submatrix A {0..<nr} UNIV = A" 
+      by (metis assms(1) assms(2) itself_is_subsyst_set_idcs prod.sel(1) sub_system_fst)
+    have "submatrix (- 1\<^sub>m n) ((\<lambda> i. i - nr) ` ({0..<nr} - {0..<nr})) UNIV =
+        submatrix (- 1\<^sub>m n) {} UNIV" 
+      by simp
+    then have 8: "A = submatrix (A @\<^sub>r - 1\<^sub>m n) {0..<nr} UNIV" 
+      by (smt (verit, best) "7" \<open>submatrix A {0..<nr} UNIV = A\<close> assms(1) index_uminus_mat(3)
+          carrier_mat_triv dim_col_submatrix_UNIV empty_set_submatrix_iz_zero_mat
+          gram_schmidt_floor.append_mat_empty index_one_mat(3) index_zero_mat(2))
+
+    have 9:"b = vec_of_list (nths (list_of_vec (b @\<^sub>v 0\<^sub>v n)) {0..<nr})" 
+    proof
+      have 4: "dim_vec (snd (sub_system (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n) {0..<nr})) = 
+            card {i. i < dim_vec (b @\<^sub>v 0\<^sub>v n) \<and> i \<in> {0..<nr}}" 
+        using dim_subsyst_vec 
+        by blast
+      have "dim_vec (b @\<^sub>v 0\<^sub>v n) = nr + n" 
+        by (simp add: assms(2))
+      then have "{i. i < dim_vec (b @\<^sub>v 0\<^sub>v n) \<and> i \<in> {0..<nr}} = {0..<nr}" 
+        by fastforce
+     
+      then have " card {i. i < dim_vec (b @\<^sub>v 0\<^sub>v n) \<and> i \<in> {0..<nr}} = card {0..<nr}" 
+        by presburger
+      then have 5: "dim_vec (vec_of_list (nths (list_of_vec (b @\<^sub>v 0\<^sub>v n)) {0..<nr})) = nr" 
+        by (metis (no_types, lifting) 4 card_atLeastLessThan diff_zero dim_subsyst_vec
+            dim_vec nths_list_pick_vec_same) 
+      then show 4:"dim_vec b = dim_vec (vec_of_list (nths (list_of_vec (b @\<^sub>v 0\<^sub>v n)) {0..<nr}))"
+        by (metis assms(2) carrier_vecD)
+      fix i
+      assume asmi: "i < dim_vec (vec_of_list (nths (list_of_vec (b @\<^sub>v 0\<^sub>v n)) {0..<nr}))"
+      then have asmi': "i < dim_vec b" 
+        using 4 by presburger
+      obtain k where k: "k < dim_vec (b @\<^sub>v 0\<^sub>v n) \<and> k \<in> {0..<nr} \<and> 
+          row (fst (sub_system (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n) {0..<nr})) i = row (A @\<^sub>r - 1\<^sub>m n) k 
+          \<and> (snd (sub_system (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n) {0..<nr})) $ i = (b @\<^sub>v 0\<^sub>v n) $ k \<and> 
+      k = pick {0..<nr} i"
+        using exist_index_in_A[of "(A @\<^sub>r - 1\<^sub>m n)" "(b @\<^sub>v 0\<^sub>v n)" i "{0..<nr}"] 2 3
+        by (metis \<open>dim_vec (b @\<^sub>v 0\<^sub>v n) = nr + n\<close> asmi carrier_matD(1) sub_system_snd)
+      
+      have 6: "(vec_of_list (nths (list_of_vec (b @\<^sub>v 0\<^sub>v n)) {0..<nr})) $v i = (b @\<^sub>v 0\<^sub>v n) $ k"
+        by (metis k sub_system_snd)     
+      have "pick {0..<nr} i = i"  
+        using pick_from_range_less 5 asmi by presburger
+      then have "(b @\<^sub>v 0\<^sub>v n) $ k = (b @\<^sub>v 0\<^sub>v n) $ i" 
+        using k by auto
+      have "(b @\<^sub>v 0\<^sub>v n) $ i = b $ i" 
+        by (simp add: asmi' trans_less_add1)
+      then show "b $v i = vec_of_list (nths (list_of_vec (b @\<^sub>v 0\<^sub>v n)) {0..<nr}) $v i" 
+        using \<open>(b @\<^sub>v 0\<^sub>v n) $v k = (b @\<^sub>v 0\<^sub>v n) $v i\<close> 6 by presburger
+    qed
+    show "(A, b) = sub_system (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n) {0..<nr}"
+      unfolding sub_system_def using 8 9 
+      by blast
+  qed
   have "{x. x \<in> carrier_vec n \<and> A *\<^sub>v x = b \<and> x \<ge> 0\<^sub>v n} = 
               {x. A *\<^sub>v x = b \<and> x \<in> (pos_polyhedron A b)}" 
     unfolding pos_polyhedron_def 
@@ -674,10 +749,7 @@ proof -
     unfolding perfect_mathing_polyhedron_def by auto
   have "pos_polyhedron A b = polyhedron (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n)" 
     using assms(1) assms(2) pos_polyh_is_polyh by presburger
-  have 2: "(A @\<^sub>r - 1\<^sub>m n) \<in> carrier_mat (nr+n) n" 
-    by (meson assms(1) carrier_append_rows one_carrier_mat uminus_carrier_mat)
-  have 3: "(b @\<^sub>v 0\<^sub>v n) \<in> carrier_vec (nr+n)"
-    by (simp add: assms(2))
+ 
   then have "face (polyhedron (A @\<^sub>r - 1\<^sub>m n) (b @\<^sub>v 0\<^sub>v n)) (perfect_mathing_polyhedron A b)" 
     using char_face2[OF 2 3 1] 
     using \<open>perfect_mathing_polyhedron A b = {x. A *\<^sub>v x = b \<and> x \<in> pos_polyhedron A b}\<close> 

@@ -1,0 +1,79 @@
+writeln_messageserial=11516446line=17offset=232end_offset=235file=~~/src/HOL/Combinatorics/Cycles.thyid=530blockindent=2Found termination order:breakwidth=1 blockindent=1"languagename=termsymbols=trueantiquotes=falsedelimited=falseblockblockentitydef_theory=HOL.Listref=2568496def_line=243def_offset=7560def_end_offset=7566def_file=~~/src/HOL/List.thydef_id=146name=List.lengthkind=constantblocklength entitydef_theory=HOL.Wellfoundedref=1058830def_line=816def_offset=22807def_end_offset=22816def_file=~~/src/HOL/Wellfounded.thydef_id=60name=Wellfounded.mlex_prodkind=constantblockliteralblock<*mlex*>breakwidth=1 entitydef_theory=HOL.Setref=301440def_line=136def_offset=3313def_end_offset=3318def_file=~~/src/HOL/Set.thydef_id=26name=Set.emptykind=constantblockdelimiterblock{}"writeln_messageserial=11523830line=459offset=18021end_offset=18030file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proofs for inductive predicate(s) "cycle_decomp"writeln_messageserial=11524344line=459offset=18021end_offset=18030file=~~/src/HOL/Combinatorics/Cycles.thyid=530  Proving monotonicity ...information_messageserial=11707068line=32offset=714end_offset=719file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case (1 i j cs)
+  then show ?case sorry
+next
+  case "2_1"
+  then show ?case sorry
+next
+  case ("2_2" v)
+  then show ?case sorry
+qedinformation_messageserial=11715072line=45offset=1234end_offset=1239file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case (1 i j cs)
+  then show ?case sorry
+next
+  case "2_1"
+  then show ?case sorry
+next
+  case ("2_2" v)
+  then show ?case sorry
+qedinformation_messageserial=11715742line=52offset=1505end_offset=1510file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11725504line=123offset=4597end_offset=4602file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case (1 i j cs)
+  then show ?case sorry
+next
+  case "2_1"
+  then show ?case sorry
+next
+  case ("2_2" v)
+  then show ?case sorry
+qedinformation_messageserial=11728676line=164offset=6541end_offset=6546file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case 1
+  then show ?thesis sorry
+next
+  case 2
+  then show ?thesis sorry
+next
+  case 3
+  then show ?thesis sorry
+qedinformation_messageserial=11729582line=206offset=7869end_offset=7874file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=11732408line=273offset=10515end_offset=10520file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedwarning_messageserial=11732778line=264offset=10184end_offset=10186file=~~/src/HOL/Combinatorics/Cycles.thyid=530Metis: Unused theorems: "Cycles.least_powerI_2"warning_messageserial=11733378line=264offset=10184end_offset=10186file=~~/src/HOL/Combinatorics/Cycles.thyid=530Metis: Unused theorems: "Cycles.least_powerI_1"information_messageserial=11741520line=434offset=17104end_offset=17109file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11742362line=510offset=20184end_offset=20189file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case less
+  then show ?case sorry
+qedinformation_messageserial=11742436line=512offset=20265end_offset=20270file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11742838line=528offset=20852end_offset=20857file=~~/src/HOL/Combinatorics/Cycles.thyid=530Proof outline with cases:
+sendbackpadding=commandid=530  case 1
+  then show ?thesis sorry
+next
+  case 2
+  then show ?thesis sorry
+next
+  case 3
+  then show ?thesis sorry
+qed

@@ -1,0 +1,222 @@
+state_messageserial=11997156line=94offset=3263end_offset=3269file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550blocktext_foldblockblockindent=2keyword1blocklocalebreakwidth=1 entitydef_theory=Tutte_theorem.Tutte_matrixref=11996988def_line=94def_offset=3270def_end_offset=3282def_file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thydef_id=550name=Tutte_matrix.tutte_matrixkind=localeblocktutte_matrix
+blocktext_foldblockblockindent=2keyword2blockfixesbreakwidth=1 blockindent=2E ::breakwidth=1 blockindent=1"languagename=typesymbols=trueantiquotes=falsedelimited=falseblocktfreeblock'a entitydef_theory=HOL.Setref=299172def_line=15def_offset=272def_end_offset=275def_file=~~/src/HOL/Set.thydef_id=26name=Set.setkind=type_nameblockset entitydef_theory=HOL.Setref=299172def_line=15def_offset=272def_end_offset=275def_file=~~/src/HOL/Set.thydef_id=26name=Set.setkind=type_nameblockset"
+blocktext_foldblockblockindent=2keyword2blockassumesbreakwidth=1 blockindent=2blockindent=1"languagename=termsymbols=trueantiquotes=falsedelimited=falseblockblockblockindent=1entitydef_theory=Tutte_theorem.Tutte_matrixref=11996516def_line=94def_offset=3270def_end_offset=3282def_file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thydef_id=550name=Tutte_matrix.tutte_matrixkind=constantblocktutte_matrixbreakwidth=1 fixedname=EblockfreeblockE"information_messageserial=12423400line=39offset=1153end_offset=1158file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case less
+  then show ?case sorry
+qedinformation_messageserial=12423484line=42offset=1239end_offset=1244file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12423722line=51offset=1459end_offset=1464file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12425702line=183offset=6125end_offset=6130file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12429366line=417offset=12994end_offset=12999file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12429408line=359offset=11238end_offset=11243file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case Nil
+  then show ?case sorry
+next
+  case (Cons a xs)
+  then show ?case sorry
+qedinformation_messageserial=12429550line=461offset=14324end_offset=14329file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12430832line=376offset=11746end_offset=11751file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12431318line=387offset=11993end_offset=11998file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12443252line=663offset=22374end_offset=22379file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case path0
+  then show ?case sorry
+next
+  case (path1 v)
+  then show ?case sorry
+next
+  case (path2 v v' vs)
+  then show ?case sorry
+qedinformation_messageserial=12449660line=683offset=22993end_offset=22998file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12465528line=1235offset=44216end_offset=44221file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12472746line=1304offset=46899end_offset=46904file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case less
+  then show ?case sorry
+qedinformation_messageserial=12472842line=1362offset=49238end_offset=49243file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12473270line=1309offset=47059end_offset=47064file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12484134line=838offset=28735end_offset=28740file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12496674line=1504offset=54838end_offset=54843file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case 0
+  then show ?case sorry
+next
+  case (Suc n)
+  then show ?case sorry
+qedinformation_messageserial=12496834line=1532offset=56012end_offset=56017file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case 0
+  then show ?case sorry
+next
+  case (Suc n)
+  then show ?case sorry
+qedinformation_messageserial=12497470line=1649offset=60744end_offset=60749file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12507582line=1574offset=57823end_offset=57828file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12510922line=1781offset=66061end_offset=66066file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12517448line=1611offset=59386end_offset=59391file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12518700line=1677offset=61861end_offset=61866file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12522816line=1945offset=72666end_offset=72671file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12523754line=1983offset=74104end_offset=74109file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=12524822line=1986offset=74161end_offset=74166file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12526120line=1995offset=74625end_offset=74630file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12528132line=2063offset=77376end_offset=77381file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12529002line=2086offset=78254end_offset=78259file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=12534414line=2024offset=75908end_offset=75913file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12534904line=2142offset=81008end_offset=81013file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=12535980line=2148offset=81266end_offset=81271file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12536356line=2158offset=81589end_offset=81594file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qedinformation_messageserial=12538124line=2286offset=87630end_offset=87635file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12554240line=920offset=32485end_offset=32490file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12554362line=923offset=32582end_offset=32587file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12572966line=962offset=34392end_offset=34397file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Tutte_matrix.thyid=550Proof outline with cases:
+sendbackpadding=commandid=550  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qed

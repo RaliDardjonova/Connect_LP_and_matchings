@@ -1,0 +1,13 @@
+information_messageserial=11425198line=81offset=2346end_offset=2351file=~~/src/HOL/Analysis/L2_Norm.thyid=520Proof outline with cases:
+sendbackpadding=commandid=520  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=11425540line=87offset=2441end_offset=2446file=~~/src/HOL/Analysis/L2_Norm.thyid=520Proof outline with cases:
+sendbackpadding=commandid=520  case empty
+  then show ?case sorry
+next
+  case (insert x F)
+  then show ?case sorry
+qed

@@ -1,0 +1,64 @@
+state_messageserial=11617718line=816offset=34537end_offset=34543file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540blocktext_foldblockblockindent=2keyword1blocklocalebreakwidth=1 entitydef_theory=Tutte_theorem.Berge_formularef=11617592def_line=816def_offset=34544def_end_offset=34556def_file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thydef_id=540name=Berge_formula.add_verticeskind=localeblockadd_vertices
+blocktext_foldblockblockindent=2keyword2blockfixesbreakwidth=1 blockindent=2E ::breakwidth=1 blockindent=1"languagename=typesymbols=trueantiquotes=falsedelimited=falseblocktfreeblock'a entitydef_theory=HOL.Setref=299172def_line=15def_offset=272def_end_offset=275def_file=~~/src/HOL/Set.thydef_id=26name=Set.setkind=type_nameblockset entitydef_theory=HOL.Setref=299172def_line=15def_offset=272def_end_offset=275def_file=~~/src/HOL/Set.thydef_id=26name=Set.setkind=type_nameblockset"
+text_foldblockblockindent=2  keyword2blockandbreakwidth=1 blockindent=2f ::breakwidth=1 blockindent=1"languagename=typesymbols=trueantiquotes=falsedelimited=falseblockblocktfreeblock'abreakwidth=1 entitydef_theory=Pureref=184def_line=71def_file=pure_thy.MLname=funkind=type_nameblockdelimiterblock\<Rightarrow> tfreeblock'a"
+blocktext_foldblockblockindent=2keyword2blockassumesbreakwidth=1 blockindent=2blockindent=1"languagename=termsymbols=trueantiquotes=falsedelimited=falseblockblockblockindent=1entitydef_theory=Tutte_theorem.Berge_formularef=11617290def_line=816def_offset=34544def_end_offset=34556def_file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thydef_id=540name=Berge_formula.add_verticeskind=constantblockadd_verticesbreakwidth=1 fixedname=EblockfreeblockEbreakwidth=1 fixedname=fblockfreeblockf"information_messageserial=12050132line=30offset=777end_offset=782file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12053914line=271offset=11813end_offset=11818file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12054728line=285offset=12217end_offset=12222file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12058066line=313offset=13221end_offset=13226file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12076946line=603offset=25530end_offset=25535file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12078934line=617offset=25917end_offset=25922file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12104924line=381offset=15865end_offset=15870file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12148568line=674offset=28709end_offset=28714file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12241646line=478offset=19791end_offset=19796file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qedinformation_messageserial=12279404line=547offset=23143end_offset=23148file=~/Documents/moi/archive-of-graph-formalizations/Undirected_Graphs/Berge_formula.thyid=540Proof outline with cases:
+sendbackpadding=commandid=540  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qed
