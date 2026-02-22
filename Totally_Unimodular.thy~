@@ -1875,10 +1875,9 @@ lemma append_last_row_submatrix_is_mat:
 proof 
   have 6: "dim_row (submatrix A {0..<nr - 1} UNIV @\<^sub>r mat_of_rows n [Matrix.row A (nr - 1)]) = nr" 
     using submatrix_minus_last_row_carr[OF A]
- One_nat_def Suc_eq_plus1 append_rows_def assms(2) carrier_matD(1)
-         index_mat_four_block(2) index_zero_mat(2) le_add_diff_inverse2 list.size(3) 
-        list.size(4) mat_of_rows_carrier(2)
-    by (metis (no_types, lifting) less_eq_Suc_le)
+    by (metis (no_types, lifting) One_nat_def Suc_eq_plus1 append_rows_def assms(2) carrier_matD(1)
+        discrete index_mat_four_block(2) index_zero_mat(2) le_add_diff_inverse2 list.size(3) 
+        list.size(4) mat_of_rows_carrier(2)) 
   then show 5: "dim_row A = dim_row (submatrix A {0..<nr - 1} UNIV @\<^sub>r 
                          mat_of_rows n [Matrix.row A (nr - 1)])"
     by (metis assms(1) carrier_matD(1))
@@ -2058,9 +2057,8 @@ next
   qed
   have "tot_unimodular (A @\<^sub>r (submatrix B {0..<nr2} UNIV))" 
     using Suc.hyps 3 2 by presburger
-  have 4: "A @\<^sub>r B = (A @\<^sub>r (submatrix B {0..<nr2} UNIV)) @\<^sub>r (mat_of_rows n [row B (nr2)])"
-    by (metis (no_types, lifting) "1" "2" append_mat_assoc
-        assms(1) mat_of_rows_carrier(1))
+  have 4: "A @\<^sub>r B = (A @\<^sub>r (submatrix B {0..<nr2} UNIV)) @\<^sub>r (mat_of_rows n [row B (nr2)])" 
+    by (metis (no_types, lifting) 1 2 assms(1) mat_of_rows_carrier(1) append_mat_assoc)
   obtain j where j: "row B nr2 = unit_vec n j" 
     using Suc(3) by blast
   then have "(A @\<^sub>r (submatrix B {0..<nr2} UNIV)) @\<^sub>r (mat_of_rows n [row B (nr2)]) = 
